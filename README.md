@@ -2,7 +2,7 @@
 
 # EasyBeam
 
-Easy Application for Structural analYsis with BEAMs
+**Easy Application for Structural analYsis with BEAMs**
 
 ## Installation
 ### Prerequisites
@@ -30,6 +30,3 @@ pip install EasyBeam
 * Step 3: define the boundary conditions: which dofs are constrained
 * Step 4: define the load: dof and value
 * Step 5: define cross section and material properties
-
-## Getting started
-See iPython notebook under examples. 
