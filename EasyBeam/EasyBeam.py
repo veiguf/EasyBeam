@@ -169,7 +169,8 @@ class Beam2D:
             for j in range(self.nStep+1):
                 plt.plot(self.q[i, 0, j], self.q[i, 1, j], c=cmap.to_rgba(self.d[i,j]), ls='', marker='o', clip_on=False)
         plt.colorbar(cmap, ticks=c)
-
+        plt.show()
+        
 if __name__ == '__main__':
     Cantilever = Beam2D()
     # Knoten

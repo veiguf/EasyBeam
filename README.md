@@ -6,7 +6,7 @@
 
 ## Installation
 ### Prerequisites
-Python 3 and you can install the necessary libraries via PIP:
+Python 3.xx along with the packages SciPy, NumPy and MatPlotLib.  After installation of Python, you can install the necessary libraries via PIP:
 ```
 pip install scipy
 pip install numpy
