@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="52mm"
+   height="14mm"
+   viewBox="0 0 52 14"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   sodipodi:docname="EasyBeam.svg"
+   inkscape:export-filename="/disk/Models/EasyBeam/figures/EasyBeam.png"
+   inkscape:export-xdpi="600"
+   inkscape:export-ydpi="600">
+  <defs
+     id="defs2">
+    <linearGradient
+       id="linearGradient873"
+       inkscape:collect="always">
+      <stop
+         id="stop865"
+         offset="0"
+         style="stop-color:#ff0300;stop-opacity:1" />
+      <stop
+         style="stop-color:#ffff00;stop-opacity:1"
+         offset="0.31442082"
+         id="stop867" />
+      <stop
+         id="stop869"
+         offset="0.66430265"
+         style="stop-color:#00ffff;stop-opacity:1" />
+      <stop
+         id="stop871"
+         offset="1"
+         style="stop-color:#0000ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient999-5">
+      <stop
+         style="stop-color:#ff0500;stop-opacity:1"
+         offset="0"
+         id="stop995" />
+      <stop
+         id="stop1003"
+         offset="0.31442082"
+         style="stop-color:#ffff00;stop-opacity:0.81568629" />
+      <stop
+         style="stop-color:#00ffff;stop-opacity:1"
+         offset="0.66430265"
+         id="stop1005" />
+      <stop
+         style="stop-color:#0000ff;stop-opacity:0.99608868"
+         offset="1"
+         id="stop997" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient999-5"
+       id="linearGradient1001"
+       x1="-8.0180855"
+       y1="233.65712"
+       x2="105.03692"
+       y2="233.65712"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient873"
+       id="linearGradient863"
+       x1="1.925"
+       y1="290.14062"
+       x2="49.996227"
+       y2="290.14062"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.959798"
+     inkscape:cx="63.351265"
+     inkscape:cy="17.243527"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1920"
+     inkscape:window-height="1043"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-283)">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;line-height:1.25;font-family:'TeX Gyre Pagella';-inkscape-font-specification:'TeX Gyre Pagella, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:url(#linearGradient863);fill-opacity:1;stroke:#000000;stroke-width:0.15;stroke-opacity:0.9752475;stroke-miterlimit:4;stroke-dasharray:none;"
+       x="1.7671666"
+       y="292.30493"
+       id="text817-1"><tspan
+         sodipodi:role="line"
+         id="tspan815-1"
+         x="1.7671666"
+         y="292.30493"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10.58333302px;font-family:'TeX Gyre Pagella';-inkscape-font-specification:'TeX Gyre Pagella, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:url(#linearGradient863);fill-opacity:1;stroke:#000000;stroke-width:0.15;stroke-opacity:0.9752475;stroke-miterlimit:4;stroke-dasharray:none;">EasyBeam</tspan></text>
+  </g>
+</svg>
