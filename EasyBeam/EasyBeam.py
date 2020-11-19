@@ -77,6 +77,7 @@ class Beam2D:
         self.u[self.DoF] = np.linalg.solve(self.k[self.DoF, :][:, self.DoF],
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
+        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
 
     def ComputeStress(self):
         NL = np.zeros([self.nEl, 3, 6])
@@ -185,7 +186,6 @@ class Beam2D:
         plt.show()
 
     def PlotDisplacement(self):
-        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
