@@ -25,7 +25,5 @@ Cantilever.Solve()
 Cantilever.nStep = 10
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
-Cantilever.PlotStressUpperFiber()
-Cantilever.PlotStressLowerFiber()
-Cantilever.PlotStressMaximum()
+Cantilever.PlotStress()
 Cantilever.PlotDisplacement()

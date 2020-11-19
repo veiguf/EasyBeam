@@ -38,7 +38,5 @@ Frame.Solve()
 Frame.nStep = 8
 Frame.Scale = 100
 Frame.ComputeStress()
-Frame.PlotStressUpperFiber()
-Frame.PlotStressLowerFiber()
-Frame.PlotStressMaximum()
+Frame.PlotStress(stress="all")
 Frame.PlotDisplacement()

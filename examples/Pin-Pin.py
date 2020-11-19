@@ -27,7 +27,5 @@ PinPin.Solve()
 PinPin.nStep = 8
 PinPin.Scale = 100
 PinPin.ComputeStress()
-PinPin.PlotStressUpperFiber()
-PinPin.PlotStressLowerFiber()
-PinPin.PlotStressMaximum()
+PinPin.PlotStress()
 PinPin.PlotDisplacement()

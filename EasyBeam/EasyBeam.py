@@ -77,7 +77,6 @@ class Beam2D:
         self.u[self.DoF] = np.linalg.solve(self.k[self.DoF, :][:, self.DoF],
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
-        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
 
     def ComputeStress(self):
         NL = np.zeros([self.nEl, 3, 6])
@@ -122,70 +121,70 @@ class Beam2D:
         # deformation
         self.q = self.r+self.w*self.Scale
 
-    def PlotStressUpperFiber(self):
-        fig, ax = plt.subplots()
-        ax.axis('off')
-        ax.set_aspect('equal')
-        plt.title('Stress: upper fiber [MPa]')
-        c = np.linspace(self.σU.min(), self.σU.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
-        norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-        cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-        cmap.set_array([])
-        for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3, ls='-',
-                     clip_on=False, marker='s')
-            plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5, ls='-',
-                     clip_on=False)
-            for j in range(self.nStep+1):
-                plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                         c=cmap.to_rgba(self.σU[i, j]), ls='', marker='o',
-                         clip_on=False)
-        plt.colorbar(cmap, ticks=c)
-        plt.show()
-
-    def PlotStressLowerFiber(self):
-        fig, ax = plt.subplots()
-        ax.axis('off')
-        ax.set_aspect('equal')
-        plt.title('Stress: lower Fiber [MPa]')
-        c = np.linspace(self.σL.min(), self.σL.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
-        norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-        cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-        cmap.set_array([])
-        for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3, ls='-',
-                     clip_on=False, marker='s')
-            plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5, ls='-',
-                     clip_on=False)
-            for j in range(self.nStep+1):
-                plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                         c=cmap.to_rgba(self.σL[i, j]), ls='', marker='o',
-                         clip_on=False)
-        plt.colorbar(cmap, ticks=c)
-        plt.show()
-
-    def PlotStressMaximum(self):
-        fig, ax = plt.subplots()
-        ax.axis('off')
-        ax.set_aspect('equal')
-        plt.title('Maximum stress [MPa]')
-        c = np.linspace(self.σMax.min(), self.σMax.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
-        norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-        cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-        cmap.set_array([])
-        for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3, ls='-',
-                     clip_on=False, marker='s')
-            plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5, ls='-',
-                     clip_on=False)
-            for j in range(self.nStep+1):
-                plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                         c=cmap.to_rgba(self.σMax[i, j]), ls='', marker='o',
-                         clip_on=False)
-        plt.colorbar(cmap, ticks=c)
-        plt.show()
+    def PlotStress(self, stress="all"):
+        if stress.lower() in ["all", "upper"]:
+            fig, ax = plt.subplots()
+            ax.axis('off')
+            ax.set_aspect('equal')
+            plt.title('Stress: upper fiber [MPa]')
+            c = np.linspace(self.σU.min(), self.σU.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+            norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
+            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
+            cmap.set_array([])
+            for i in range(self.nEl):
+                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3,
+                         ls='-', clip_on=False, marker='s')
+                plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5,
+                         ls='-', clip_on=False)
+                for j in range(self.nStep+1):
+                    plt.plot(self.q[i, 0, j], self.q[i, 1, j],
+                             c=cmap.to_rgba(self.σU[i, j]), ls='', marker='o',
+                             clip_on=False)
+            plt.colorbar(cmap, ticks=c)
+            plt.show()
+        if stress.lower() in ["all", "lower"]:
+            fig, ax = plt.subplots()
+            ax.axis('off')
+            ax.set_aspect('equal')
+            plt.title('Stress: lower fiber [MPa]')
+            c = np.linspace(self.σL.min(), self.σL.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+            norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
+            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
+            cmap.set_array([])
+            for i in range(self.nEl):
+                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3,
+                         ls='-', clip_on=False, marker='s')
+                plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5,
+                         ls='-', clip_on=False)
+                for j in range(self.nStep+1):
+                    plt.plot(self.q[i, 0, j], self.q[i, 1, j],
+                             c=cmap.to_rgba(self.σL[i, j]), ls='', marker='o',
+                             clip_on=False)
+            plt.colorbar(cmap, ticks=c)
+            plt.show()
+        if stress.lower() in ["all", "max"]:
+            fig, ax = plt.subplots()
+            ax.axis('off')
+            ax.set_aspect('equal')
+            plt.title('Maximum stress [MPa]')
+            c = np.linspace(self.σMax.min(), self.σMax.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+            norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
+            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
+            cmap.set_array([])
+            for i in range(self.nEl):
+                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3,
+                         ls='-', clip_on=False, marker='s')
+                plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5,
+                         ls='-', clip_on=False)
+                for j in range(self.nStep+1):
+                    plt.plot(self.q[i, 0, j], self.q[i, 1, j],
+                             c=cmap.to_rgba(self.σMax[i, j]), ls='',
+                             marker='o', clip_on=False)
+            plt.colorbar(cmap, ticks=c)
+            plt.show()
 
     def PlotDisplacement(self):
+        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
@@ -234,7 +233,5 @@ if __name__ == '__main__':
     Cantilever.nStep = 8
     Cantilever.Scale = 10
     Cantilever.ComputeStress()
-    Cantilever.PlotStressUpperFiber()
-    Cantilever.PlotStressLowerFiber()
-    Cantilever.PlotStressMaximum()
+    Cantilever.PlotStress(stress="all")
     Cantilever.PlotDisplacement()
