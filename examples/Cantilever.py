@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 11 19:09:52 2020
-
-@author: veit
-"""
-
 from EasyBeam import Beam2D
 import numpy as np
 
@@ -33,7 +25,7 @@ Cantilever.Solve()
 Cantilever.nStep = 10
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
-Cantilever.PlotStressUpperFibre()
-Cantilever.PlotStressLowerFibre()
+Cantilever.PlotStressUpperFiber()
+Cantilever.PlotStressLowerFiber()
 Cantilever.PlotStressMaximum()
 Cantilever.PlotDisplacement()

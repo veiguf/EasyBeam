@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 11 19:09:52 2020
-
-@author: veit
-"""
-
 from EasyBeam import Beam2D
 import numpy as np
 
@@ -35,7 +27,7 @@ PinPin.Solve()
 PinPin.nStep = 8
 PinPin.Scale = 100
 PinPin.ComputeStress()
-PinPin.PlotStressUpperFibre()
-PinPin.PlotStressLowerFibre()
+PinPin.PlotStressUpperFiber()
+PinPin.PlotStressLowerFiber()
 PinPin.PlotStressMaximum()
 PinPin.PlotDisplacement()

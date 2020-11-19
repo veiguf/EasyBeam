@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 11 19:09:52 2020
-
-@author: veit
-"""
-
 from EasyBeam import Beam2D
 import numpy as np
 
@@ -46,7 +38,7 @@ Frame.Solve()
 Frame.nStep = 8
 Frame.Scale = 100
 Frame.ComputeStress()
-Frame.PlotStressUpperFibre()
-Frame.PlotStressLowerFibre()
+Frame.PlotStressUpperFiber()
+Frame.PlotStressLowerFiber()
 Frame.PlotStressMaximum()
 Frame.PlotDisplacement()
