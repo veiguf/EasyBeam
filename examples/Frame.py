@@ -35,7 +35,7 @@ Frame.I = np.ones([Frame.nEl, 1])*85900   # mm^4
 Frame.E = np.ones([Frame.nEl, 1])*210000  # MPa
 
 Frame.Solve()
-Frame.nStep = 8
+Frame.nStep = 100
 Frame.Scale = 100
 Frame.ComputeStress()
 Frame.PlotStress(stress="all")

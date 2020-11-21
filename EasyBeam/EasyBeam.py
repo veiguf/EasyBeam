@@ -85,9 +85,9 @@ class Beam2D:
         BU = np.zeros([self.nEl, 6])
         BL = np.zeros([self.nEl, 6])
         v = np.zeros([self.nEl, 6])
-        self.σU = np.zeros([self.nEl, self.nStep+1])
-        self.σL = np.zeros([self.nEl, self.nStep+1])
-        self.σMax = np.zeros([self.nEl, self.nStep+1])
+        self.sigmaU = np.zeros([self.nEl, self.nStep+1])
+        self.sigmaL = np.zeros([self.nEl, self.nStep+1])
+        self.sigmaMax = np.zeros([self.nEl, self.nStep+1])
 
         for i in range(self.nEl):
             v[i, :] = np.concatenate((self.u[3*self.El[i, 0]:3*self.El[i, 0]+3],
@@ -107,7 +107,7 @@ class Beam2D:
                                      1/self.l[i, 0],
                                      1/self.l[i, 0]**2*6*self.eU[i, 0]*(2*ξ-1),
                                      1/self.l[i, 0]*2*self.eU[i, 0]*(1-3*ξ)])
-                self.σU[i, j] = self.E[i, 0]*BU[i, :].T@(self.T[i].T@v[i, :])
+                self.sigmaU[i, j] = self.E[i, 0]*BU[i, :].T@(self.T[i].T@v[i, :])
                 # lower Fiber
                 BL[i, :] = np.array([-1/self.l[i, 0],
                                      1/self.l[i, 0]**2*6*self.eL[i, 0]*(1-2*ξ),
@@ -115,8 +115,8 @@ class Beam2D:
                                      1/self.l[i, 0],
                                      1/self.l[i, 0]**2*6*self.eL[i, 0]*(2*ξ-1),
                                      1/self.l[i, 0]*2*self.eL[i, 0]*(1-3*ξ)])
-                self.σL[i, j] = self.E[i, 0]*BL[i, :].T@(self.T[i].T@v[i, :])
-                self.σMax[i, j] = max(abs(self.σL[i, j]), abs(self.σU[i, j]))
+                self.sigmaL[i, j] = self.E[i, 0]*BL[i, :].T@(self.T[i].T@v[i, :])
+                self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]), abs(self.sigmaU[i, j]))
 
         # deformation
         self.q = self.r+self.w*self.Scale
@@ -126,112 +126,178 @@ class Beam2D:
             fig, ax = plt.subplots()
             ax.axis('off')
             ax.set_aspect('equal')
-            plt.title('Stress: upper fiber [MPa]')
-            c = np.linspace(self.σU.min(), self.σU.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+            #plt.title('Stress: upper fiber [MPa]')
+            c = np.linspace(self.sigmaU.min(), self.sigmaU.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
             norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
             cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
             cmap.set_array([])
+            lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.sigmaMax,
+                              cmap="jet", plot=False)
             for i in range(self.nEl):
-                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3,
-                         ls='-', clip_on=False, marker='s')
-                plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5,
-                         ls='-', clip_on=False)
-                for j in range(self.nStep+1):
-                    plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                             c=cmap.to_rgba(self.σU[i, j]), ls='', marker='o',
-                             clip_on=False)
-            plt.colorbar(cmap, ticks=c)
+                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
+                         ls='-', clip_on=False)#, marker='s')
+                lc = colorline(self.q[i, 0, :], self.q[i, 1, :], self.sigmaU[i, :],
+                               cmap="jet", norm=lcAll.norm)
+            cb = plt.colorbar(lcAll, ticks=c)
+            xmin = self.q[:, 0, :].min()
+            xmax = self.q[:, 0, :].max()
+            ymin = self.q[:, 1, :].min()
+            ymax = self.q[:, 1, :].max()
+            xdelta = xmax - xmin
+            ydelta = ymax - ymin
+            buff = 0.1
+            plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
+            plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
+            cb.ax.set_title("upper fiber stress\n [MPa]\n")
             plt.show()
         if stress.lower() in ["all", "lower"]:
             fig, ax = plt.subplots()
             ax.axis('off')
             ax.set_aspect('equal')
-            plt.title('Stress: lower fiber [MPa]')
-            c = np.linspace(self.σL.min(), self.σL.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+            #plt.title('Stress: lower fiber [MPa]')
+            c = np.linspace(self.sigmaL.min(), self.sigmaL.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
             norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
             cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
             cmap.set_array([])
+            lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.sigmaL,
+                              cmap="jet", plot=False)
             for i in range(self.nEl):
-                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3,
-                         ls='-', clip_on=False, marker='s')
-                plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5,
-                         ls='-', clip_on=False)
-                for j in range(self.nStep+1):
-                    plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                             c=cmap.to_rgba(self.σL[i, j]), ls='', marker='o',
-                             clip_on=False)
-            plt.colorbar(cmap, ticks=c)
+                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
+                         ls='-', clip_on=False)#, marker='s')
+                lc = colorline(self.q[i, 0, :], self.q[i, 1, :],
+                               self.sigmaL[i,: ], cmap="jet", norm=lcAll.norm)
+            cb = plt.colorbar(lcAll, ticks=c)
+            xmin = self.q[:, 0, :].min()
+            xmax = self.q[:, 0, :].max()
+            ymin = self.q[:, 1, :].min()
+            ymax = self.q[:, 1, :].max()
+            xdelta = xmax - xmin
+            ydelta = ymax - ymin
+            buff = 0.1
+            plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
+            plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
+            cb.ax.set_title("lower fiber stress\n [MPa]\n")
             plt.show()
         if stress.lower() in ["all", "max"]:
             fig, ax = plt.subplots()
             ax.axis('off')
             ax.set_aspect('equal')
-            plt.title('Maximum stress [MPa]')
-            c = np.linspace(self.σMax.min(), self.σMax.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+            #plt.title('Maximum stress [MPa]')
+            c = np.linspace(self.sigmaMax.min(), self.sigmaMax.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
             norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
             cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
             cmap.set_array([])
+            lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.sigmaMax,
+                              cmap="jet", plot=False)
             for i in range(self.nEl):
-                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3,
-                         ls='-', clip_on=False, marker='s')
-                plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5,
+                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
                          ls='-', clip_on=False)
-                for j in range(self.nStep+1):
-                    plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                             c=cmap.to_rgba(self.σMax[i, j]), ls='',
-                             marker='o', clip_on=False)
-            plt.colorbar(cmap, ticks=c)
+                lc = colorline(self.q[i, 0, :], self.q[i, 1, :],
+                               self.sigmaMax[i, :], cmap="jet",
+                               norm=lcAll.norm)
+            cb = plt.colorbar(lcAll, ticks=c)
+            xmin = self.q[:, 0, :].min()
+            xmax = self.q[:, 0, :].max()
+            ymin = self.q[:, 1, :].min()
+            ymax = self.q[:, 1, :].max()
+            xdelta = xmax - xmin
+            ydelta = ymax - ymin
+            buff = 0.1
+            plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
+            plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
+            cb.ax.set_title("maximum stress\n [MPa]\n")
             plt.show()
 
     def PlotDisplacement(self):
+        from matplotlib.collections import LineCollection
         self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
-        plt.title('Displacement [mm]')
-        c = np.linspace(self.d.min(), self.d.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
+        #plt.title('Displacement [mm]')
+        c = np.linspace(self.d.min(), self.d.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
         norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
         cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
         cmap.set_array([])
+        #LoUp = BoundaryNorm(c)
+        lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.d,
+                               cmap="jet", plot=False)
         for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=3, ls='-',
-                     clip_on=False, marker='s')
-            plt.plot(self.q[i, 0, :], self.q[i, 1, :], c='k', lw=1.5, ls='-',
-                     clip_on=False)
-            for j in range(self.nStep+1):
-                plt.plot(self.q[i, 0, j], self.q[i, 1, j],
-                         c=cmap.to_rgba(self.d[i, j]), ls='', marker='o',
-                         clip_on=False)
-        plt.colorbar(cmap, ticks=c)
+            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1, ls='-',
+                     clip_on=False)#, marker='s')
+            lc = colorline(self.q[i, 0, :], self.q[i, 1, :], self.d[i,:],
+                               cmap="jet", norm=lcAll.norm)
+        cb = plt.colorbar(lcAll, ticks=c)
+        xmin = self.q[:, 0, :].min()
+        xmax = self.q[:, 0, :].max()
+        ymin = self.q[:, 1, :].min()
+        ymax = self.q[:, 1, :].max()
+        xdelta = xmax - xmin
+        ydelta = ymax - yminlcAll
+        buff = 0.1
+        plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
+        plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
+        cb.ax.set_title("displacement\n [mm]\n")
         plt.show()
 
 
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
+import matplotlib.collections as mcoll
+
+def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
+              plot=True, norm=None):
+    x = x.flatten()
+    y = y.flatten()
+    z = z.flatten()
+    segments = make_segments(x, y)
+    lc = mcoll.LineCollection(segments, array=z, cmap=cmap, norm=norm,
+                              linewidth=linewidth, alpha=alpha)
+    if plot:
+        ax = plt.gca()
+        ax.add_collection(lc)
+    return lc
+
+
+def make_segments(x, y):
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    return segments
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
-    Cantilever = Beam2D()
+    Test = Beam2D()
     # Knoten
-    Cantilever.N = np.array([[   0, 0],
+    Test.N = np.array([[   0, 0],
                              [ 100, 0],
                              [ 100, 100]])
     # Elemente: welche Knoten werden verbunden?
-    Cantilever.El = np.array([[0, 1],
+    Test.El = np.array([[0, 1],
                               [1, 2]])
     # Boundary conditions and loads
-    Cantilever.BC = [0, 1, 2]
-    Cantilever.Load = [[6,  100],
+    Test.BC = [0, 1, 2]
+    Test.Load = [[6,  100],
                        [7, -100]]
-    Cantilever.Initialize()
+    Test.Initialize()
     # Querschnitte
     b = 10      # mm
     h = 10      # mm
-    Cantilever.eU = np.ones([Cantilever.nEl, 1])*h/2
-    Cantilever.eL = np.ones([Cantilever.nEl, 1])*-h/2
-    Cantilever.A = np.ones([Cantilever.nEl, 1])*b*h     # mm^2
-    Cantilever.I = np.ones([Cantilever.nEl, 1])*b*h**3/12    # mm^4
+    Test.eU = np.ones([Test.nEl, 1])*h/2
+    Test.eL = np.ones([Test.nEl, 1])*-h/2
+    Test.A = np.ones([Test.nEl, 1])*b*h     # mm^2
+    Test.I = np.ones([Test.nEl, 1])*b*h**3/12    # mm^4
     # Hier den E-Modul definieren!
-    Cantilever.E = np.ones([Cantilever.nEl, 1])*210000        # MPa
-    Cantilever.Solve()
-    Cantilever.nStep = 8
-    Cantilever.Scale = 10
-    Cantilever.ComputeStress()
-    Cantilever.PlotStress(stress="all")
-    Cantilever.PlotDisplacement()
+    Test.E = np.ones([Test.nEl, 1])*210000        # MPa
+    Test.Solve()
+    Test.nStep = 100
+    Test.Scale = 5
+    Test.ComputeStress()
+    Test.PlotStress(stress="all")
+    Test.PlotDisplacement()
