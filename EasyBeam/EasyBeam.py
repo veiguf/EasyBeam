@@ -1,7 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.constants import pi
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import matplotlib.collections as mplcollect
 
 
 class Beam2D:
@@ -148,7 +149,7 @@ class Beam2D:
             buff = 0.1
             plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
             plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-            cb.ax.set_title("upper fiber stress\n [MPa]\n")
+            cb.ax.set_title("upper fiber stress\n $\\sigma_U$ [MPa]\n")
             plt.show()
         if stress.lower() in ["all", "lower"]:
             fig, ax = plt.subplots()
@@ -176,7 +177,7 @@ class Beam2D:
             buff = 0.1
             plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
             plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-            cb.ax.set_title("lower fiber stress\n [MPa]\n")
+            cb.ax.set_title("lower fiber stress\n $\\sigma_L$ [MPa]\n")
             plt.show()
         if stress.lower() in ["all", "max"]:
             fig, ax = plt.subplots()
@@ -205,11 +206,10 @@ class Beam2D:
             buff = 0.1
             plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
             plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-            cb.ax.set_title("maximum stress\n [MPa]\n")
+            cb.ax.set_title("maximum stress\n $\\sigma_{max}$ [MPa]\n")
             plt.show()
 
     def PlotDisplacement(self):
-        from matplotlib.collections import LineCollection
         self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
         fig, ax = plt.subplots()
         ax.axis('off')
@@ -219,7 +219,6 @@ class Beam2D:
         norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
         cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
         cmap.set_array([])
-        #LoUp = BoundaryNorm(c)
         lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.d,
                                cmap="jet", plot=False)
         for i in range(self.nEl):
@@ -233,18 +232,13 @@ class Beam2D:
         ymin = self.q[:, 1, :].min()
         ymax = self.q[:, 1, :].max()
         xdelta = xmax - xmin
-        ydelta = ymax - yminlcAll
+        ydelta = ymax - ymin
         buff = 0.1
         plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
         plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-        cb.ax.set_title("displacement\n [mm]\n")
+        cb.ax.set_title("deformation\n $|r|$ [mm]\n")
         plt.show()
 
-
-import matplotlib.pyplot as plt
-from matplotlib.collections import LineCollection
-from matplotlib.colors import ListedColormap, BoundaryNorm, Normalize
-import matplotlib.collections as mcoll
 
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
               plot=True, norm=None):
@@ -252,7 +246,7 @@ def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
     y = y.flatten()
     z = z.flatten()
     segments = make_segments(x, y)
-    lc = mcoll.LineCollection(segments, array=z, cmap=cmap, norm=norm,
+    lc = mplcollect.LineCollection(segments, array=z, cmap=cmap, norm=norm,
                               linewidth=linewidth, alpha=alpha)
     if plot:
         ax = plt.gca()
@@ -264,12 +258,6 @@ def make_segments(x, y):
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     return segments
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
