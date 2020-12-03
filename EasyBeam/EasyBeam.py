@@ -40,6 +40,17 @@ class Beam2D:
         for i in range(len(self.Load)):
             self.F[self.Load[i][0]] = self.Load[i][1]
 
+    def StiffMatElem():
+        return
+
+    def MassMatElem():
+        return
+
+    def Assemble():
+        return
+
+
+
     def Solve(self):
         kL = np.zeros([self.nEl, 6, 6])
         self.l = np.zeros([self.nEl, 1])
@@ -122,111 +133,24 @@ class Beam2D:
         # deformation
         self.q = self.r+self.w*self.Scale
 
-    def PlotStress(self, stress="all"):
-        if stress.lower() in ["all", "upper"]:
-            fig, ax = plt.subplots()
-            ax.axis('off')
-            ax.set_aspect('equal')
-            #plt.title('Stress: upper fiber [MPa]')
-            c = np.linspace(self.sigmaU.min(), self.sigmaU.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
-            norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-            cmap.set_array([])
-            lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.sigmaMax,
-                              cmap="jet", plot=False)
-            for i in range(self.nEl):
-                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
-                         ls='-', clip_on=False)#, marker='s')
-                lc = colorline(self.q[i, 0, :], self.q[i, 1, :], self.sigmaU[i, :],
-                               cmap="jet", norm=lcAll.norm)
-            cb = plt.colorbar(lcAll, ticks=c)
-            xmin = self.q[:, 0, :].min()
-            xmax = self.q[:, 0, :].max()
-            ymin = self.q[:, 1, :].min()
-            ymax = self.q[:, 1, :].max()
-            xdelta = xmax - xmin
-            ydelta = ymax - ymin
-            buff = 0.1
-            plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
-            plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-            cb.ax.set_title("upper fiber stress\n $\\sigma_U$ [MPa]\n")
-            plt.show()
-        if stress.lower() in ["all", "lower"]:
-            fig, ax = plt.subplots()
-            ax.axis('off')
-            ax.set_aspect('equal')
-            #plt.title('Stress: lower fiber [MPa]')
-            c = np.linspace(self.sigmaL.min(), self.sigmaL.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
-            norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-            cmap.set_array([])
-            lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.sigmaL,
-                              cmap="jet", plot=False)
-            for i in range(self.nEl):
-                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
-                         ls='-', clip_on=False)#, marker='s')
-                lc = colorline(self.q[i, 0, :], self.q[i, 1, :],
-                               self.sigmaL[i,: ], cmap="jet", norm=lcAll.norm)
-            cb = plt.colorbar(lcAll, ticks=c)
-            xmin = self.q[:, 0, :].min()
-            xmax = self.q[:, 0, :].max()
-            ymin = self.q[:, 1, :].min()
-            ymax = self.q[:, 1, :].max()
-            xdelta = xmax - xmin
-            ydelta = ymax - ymin
-            buff = 0.1
-            plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
-            plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-            cb.ax.set_title("lower fiber stress\n $\\sigma_L$ [MPa]\n")
-            plt.show()
-        if stress.lower() in ["all", "max"]:
-            fig, ax = plt.subplots()
-            ax.axis('off')
-            ax.set_aspect('equal')
-            #plt.title('Maximum stress [MPa]')
-            c = np.linspace(self.sigmaMax.min(), self.sigmaMax.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
-            norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-            cmap.set_array([])
-            lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.sigmaMax,
-                              cmap="jet", plot=False)
-            for i in range(self.nEl):
-                plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
-                         ls='-', clip_on=False)
-                lc = colorline(self.q[i, 0, :], self.q[i, 1, :],
-                               self.sigmaMax[i, :], cmap="jet",
-                               norm=lcAll.norm)
-            cb = plt.colorbar(lcAll, ticks=c)
-            xmin = self.q[:, 0, :].min()
-            xmax = self.q[:, 0, :].max()
-            ymin = self.q[:, 1, :].min()
-            ymax = self.q[:, 1, :].max()
-            xdelta = xmax - xmin
-            ydelta = ymax - ymin
-            buff = 0.1
-            plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
-            plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-            cb.ax.set_title("maximum stress\n $\\sigma_{max}$ [MPa]\n")
-            plt.show()
-
-    def PlotDisplacement(self):
-        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
+    def _plotting(self, val, title):
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
-        #plt.title('Displacement [mm]')
-        c = np.linspace(self.d.min(), self.d.max(), 5)  # np.linspace(sigma.min(), sigma.max(), 3)
+        c = np.linspace(val.min(), val.max(), 5)
         norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
         cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
         cmap.set_array([])
-        lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], self.d,
-                               cmap="jet", plot=False)
+        lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], val, cmap="jet",
+                          plot=False)
         for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1, ls='-',
-                     clip_on=False)#, marker='s')
-            lc = colorline(self.q[i, 0, :], self.q[i, 1, :], self.d[i,:],
-                               cmap="jet", norm=lcAll.norm)
-        cb = plt.colorbar(lcAll, ticks=c)
+            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
+                     ls='-', clip_on=False)#, marker='s')
+            lc = colorline(self.q[i, 0, :], self.q[i, 1, :], val[i, :],
+                           cmap="jet", norm=lcAll.norm)
+        cb = plt.colorbar(lcAll, ticks=c, shrink=0.6, ax=[ax], location="left",
+                          aspect=10)
+        #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
         xmin = self.q[:, 0, :].min()
         xmax = self.q[:, 0, :].max()
         ymin = self.q[:, 1, :].min()
@@ -236,8 +160,24 @@ class Beam2D:
         buff = 0.1
         plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
         plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-        cb.ax.set_title("deformation\n $|r|$ [mm]\n")
+        #cb.ax.set_title(title)
+        cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
         plt.show()
+
+    def PlotStress(self, stress="all"):
+        if stress.lower() in ["all", "upper"]:
+            self._plotting(self.sigmaU, "upper fiber stress $\\sigma_U$\n[MPa]")
+
+        if stress.lower() in ["all", "lower"]:
+            self._plotting(self.sigmaL, "lower fiber stress $\\sigma_U$\n[MPa]")
+
+        if stress.lower() in ["all", "max"]:
+            self._plotting(self.sigmaMax,
+                      "maximum stress $\\sigma_{max}$\n[MPa]")
+
+    def PlotDisplacement(self):
+        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
+        self._plotting(self.d, "deformation $u$\n[mm]")
 
 
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
