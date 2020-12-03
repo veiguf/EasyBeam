@@ -175,9 +175,14 @@ class Beam2D:
             self._plotting(self.sigmaMax,
                       "maximum stress $\\sigma_{max}$\n[MPa]")
 
-    def PlotDisplacement(self):
-        self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
-        self._plotting(self.d, "deformation $u$\n[mm]")
+    def PlotDisplacement(self, component="all"):
+        if component.lower() in ["mag", "all"]:
+            self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
+            self._plotting(self.d, "deformation\nmagnitude $|u|$\n[mm]")
+        if component.lower() in ["x", "all"]:
+            self._plotting(self.w[:, 0, :], "x deformation $u_x$\n[mm]")
+        if component.lower() in ["y", "all"]:
+            self._plotting(self.w[:, 1, :], "y deformation $u_y$\n[mm]")
 
 
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
