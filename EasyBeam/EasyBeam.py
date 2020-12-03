@@ -184,6 +184,42 @@ class Beam2D:
         if component.lower() in ["y", "all"]:
             self._plotting(self.w[:, 1, :], "y deformation $u_y$\n[mm]")
 
+    def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
+        fig, ax = plt.subplots()
+        ax.axis('off')
+        ax.set_aspect('equal')
+        deltaMax = max(self.N[:, 0].max()-self.N[:, 0].min(),
+                       self.N[:, 1].max()-self.N[:, 1].min())
+        p = deltaMax*0.0075
+        for i in range(self.nEl):
+            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1, ls='-',
+                     clip_on=False)
+        plt.plot(self.N[:, 0], self.N[:, 1], ".k")
+        if NodeNumber:
+            for i in range(len(self.N)):
+                ax.annotate("N"+str(i+1), (self.N[i, 0]+p, self.N[i, 1]+p),
+                            fontsize=5*FontMag, clip_on=False)
+        if ElementNumber:
+            for i in range(self.nEl):
+                posx = (self.N[self.El[i, 0], 0]+self.N[self.El[i, 1], 0])/2
+                posy = (self.N[self.El[i, 0], 1]+self.N[self.El[i, 1], 1])/2
+                ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
+                            c="gray", clip_on=False)
+        xmin = self.N[:, 0].min()
+        xmax = self.N[:, 0].max()
+        if self.N[:,1].max()-self.N[:,1].min() < 0.1:
+            ymin = -10
+            ymax = 10
+        else:
+            ymin = self.N[:, 1].min()
+            ymax = self.N[:, 1].max()
+        xdelta = xmax - xmin
+        ydelta = ymax - ymin
+        buff = 0.1
+        plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
+        plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
+        plt.show()
+
 
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
               plot=True, norm=None):
@@ -208,9 +244,9 @@ def make_segments(x, y):
 if __name__ == '__main__':
     Test = Beam2D()
     # Knoten
-    Test.N = np.array([[   0, 0],
-                             [ 100, 0],
-                             [ 100, 100]])
+    Test.N = np.array([[  0,   0],
+                       [100,   0],
+                       [100, 100]])
     # Elemente: welche Knoten werden verbunden?
     Test.El = np.array([[0, 1],
                               [1, 2]])
@@ -234,3 +270,4 @@ if __name__ == '__main__':
     Test.ComputeStress()
     Test.PlotStress(stress="all")
     Test.PlotDisplacement()
+    Test.PlotMesh()
