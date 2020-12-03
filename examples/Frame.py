@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 11 19:09:52 2020
-
-@author: veit
-"""
-
 from EasyBeam import Beam2D
 import numpy as np
 
@@ -43,10 +35,8 @@ Frame.I = np.ones([Frame.nEl, 1])*85900   # mm^4
 Frame.E = np.ones([Frame.nEl, 1])*210000  # MPa
 
 Frame.Solve()
-Frame.nStep = 8
+Frame.nStep = 100
 Frame.Scale = 100
 Frame.ComputeStress()
-Frame.PlotStressUpperFibre()
-Frame.PlotStressLowerFibre()
-Frame.PlotStressMaximum()
+Frame.PlotStress(stress="all")
 Frame.PlotDisplacement()

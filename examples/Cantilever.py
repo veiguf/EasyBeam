@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 11 19:09:52 2020
-
-@author: veit
-"""
-
 from EasyBeam import Beam2D
 import numpy as np
 
@@ -30,10 +22,8 @@ Cantilever.I = np.ones([Cantilever.nEl, 1])*b*h**3/12   # mm^4
 Cantilever.E = np.ones([Cantilever.nEl, 1])*210000      # MPa
 
 Cantilever.Solve()
-Cantilever.nStep = 10
+Cantilever.nStep = 100
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
-Cantilever.PlotStressUpperFibre()
-Cantilever.PlotStressLowerFibre()
-Cantilever.PlotStressMaximum()
+Cantilever.PlotStress()
 Cantilever.PlotDisplacement()
