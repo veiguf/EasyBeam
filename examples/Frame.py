@@ -38,5 +38,6 @@ Frame.Solve()
 Frame.nStep = 100
 Frame.Scale = 100
 Frame.ComputeStress()
+Frame.PlotMesh()
 Frame.PlotStress(stress="all")
 Frame.PlotDisplacement()

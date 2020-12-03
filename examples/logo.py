@@ -86,5 +86,8 @@ Test.Solve()
 Test.nStep = 100
 Test.Scale = 10
 Test.ComputeStress()
+Test.PlotMesh(ElementNumber=False)
+Test.PlotMesh(NodeNumber=False)
 Test.PlotStress(stress="all")
+Test.PlotDisplacement()
 Test.PlotDisplacement()

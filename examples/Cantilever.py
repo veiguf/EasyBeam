@@ -25,5 +25,7 @@ Cantilever.Solve()
 Cantilever.nStep = 100
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
+
+Cantilever.PlotMesh()
 Cantilever.PlotStress()
 Cantilever.PlotDisplacement()

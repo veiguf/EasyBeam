@@ -27,5 +27,6 @@ PinPin.Solve()
 PinPin.nStep = 100
 PinPin.Scale = 100
 PinPin.ComputeStress()
+PinPin.PlotMesh()
 PinPin.PlotStress()
 PinPin.PlotDisplacement()
