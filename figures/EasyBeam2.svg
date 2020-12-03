@@ -7,10 +7,10 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   height="184.665244pt"
+   height="33pt"
    version="1.1"
-   viewBox="0 0 347.654525 184.665244"
-   width="347.654525pt"
+   viewBox="0 0 215.00001 33"
+   width="215pt"
    id="svg6934"
    sodipodi:docname="EasyBeam2.svg"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)">
@@ -33,7 +33,8 @@
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg6934" />
+     inkscape:current-layer="svg6934"
+     inkscape:document-rotation="0" />
   <metadata
      id="metadata2">
     <rdf:RDF>
@@ -47,6 +48,7 @@
             <dc:title>Matplotlib v3.3.3, https://matplotlib.org/</dc:title>
           </cc:Agent>
         </dc:creator>
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -58,7 +60,7 @@
   </defs>
   <g
      id="axes_1"
-     transform="translate(-43.020703,-20.797205)">
+     transform="translate(-108.61028,-89.937666)">
     <g
        id="LineCollection_1">
       <path
@@ -16895,10 +16897,10 @@
     <clipPath
        id="p612246a2ee">
       <rect
-         height="35.072008"
-         width="251.1"
-         x="89.354525"
-         y="88.818333"
+         height="35.072006"
+         width="251.10001"
+         x="89.354523"
+         y="88.818336"
          id="rect6926" />
     </clipPath>
     <clipPath
@@ -16907,7 +16909,7 @@
          height="130.464"
          width="13.0464"
          x="42.828125"
-         y="41.122338"
+         y="41.122337"
          id="rect6929" />
     </clipPath>
   </defs>
