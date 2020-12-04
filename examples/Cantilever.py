@@ -27,13 +27,17 @@ Cantilever.eL = np.ones([Cantilever.nEl, 1])*-h/2    # mm
 Cantilever.A = np.ones([Cantilever.nEl, 1])*b*h     # mm^2
 Cantilever.I = np.ones([Cantilever.nEl, 1])*b*h**3/12   # mm^4
 Cantilever.E = np.ones([Cantilever.nEl, 1])*210000      # MPa
+Cantilever.rho = np.ones([Cantilever.nEl, 1])*7.85e-9   # t/mm^3
 
 # Lösen
 Cantilever.StaticAnalysis()
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
+Cantilever.EigenvalueAnalysis(nEig=3)
+
 
 # Grafische Darstellung
 Cantilever.PlotMesh()
 Cantilever.PlotStress()
 Cantilever.PlotDisplacement()
+Cantilever.PlotMode()

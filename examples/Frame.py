@@ -40,13 +40,16 @@ Frame.eL = np.ones([Frame.nEl, 1])*-20    # mm
 Frame.A = np.ones([Frame.nEl, 1])*550     # mm^2
 Frame.I = np.ones([Frame.nEl, 1])*85900   # mm^4
 Frame.E = np.ones([Frame.nEl, 1])*210000  # MPa
+Frame.rho = np.ones([Frame.nEl, 1])*7.85e-9   # t/mm^3
 
 # Lösen
 Frame.StaticAnalysis()
 Frame.Scale = 100
 Frame.ComputeStress()
+Frame.EigenvalueAnalysis(nEig=18)
 
 # Grafische Darstellung
 Frame.PlotMesh()
 Frame.PlotStress(stress="all")
 Frame.PlotDisplacement()
+Frame.PlotMode()
