@@ -29,7 +29,7 @@ Cantilever.I = np.ones([Cantilever.nEl, 1])*b*h**3/12   # mm^4
 Cantilever.E = np.ones([Cantilever.nEl, 1])*210000      # MPa
 
 # Lösen
-Cantilever.Solve()
+Cantilever.StaticAnalysis()
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
 

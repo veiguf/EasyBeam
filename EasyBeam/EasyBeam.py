@@ -3,7 +3,7 @@ from scipy.constants import pi
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplcollect
-
+import scipy.linalg as linalg
 
 class Beam2D:
     # define the nodes
@@ -89,11 +89,17 @@ class Beam2D:
             Mat[3*self.El[i, 1]:3*self.El[i, 1]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += MatG[i, 3:6, 3:6]
         return Mat
 
-    def Solve(self):
+    def StaticAnalysis(self):
         self.k = self.Assemble(self.StiffMatElem)
         self.u[self.DoF] = np.linalg.solve(self.k[self.DoF, :][:, self.DoF],
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
+
+    def EigenvalueAnalysis(self):
+        self.k = self.Assemble(self.StiffMatElem)
+        self.m = self.Assemble(self.MassMatElem)
+        # LRI, PhiRI = linalg.eigh(self.k, self.m, eigvals=(0, 6-1))
+        self.LRI, self.PhiRI = linalg.eig(self.k, self.m)
 
     def ComputeStress(self):
         NL = np.zeros([self.nEl, 3, 6])
@@ -267,7 +273,8 @@ if __name__ == '__main__':
     Test.I = np.ones([Test.nEl, 1])*b*h**3/12   # mm^4
     Test.E = np.ones([Test.nEl, 1])*210000      # MPa
     Test.rho = np.ones([Test.nEl, 1])*7.85e-9   # t/mm^3
-    Test.Solve()
+    Test.StaticAnalysis()
+    Test.EigenvalueAnalysis()
     Test.Scale = 5
     Test.ComputeStress()
     Test.PlotStress(stress="all")

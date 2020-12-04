@@ -89,7 +89,7 @@ Logo.I = np.ones([Logo.nEl, 1])*b*h**3/12    # mm^4
 Logo.E = np.ones([Logo.nEl, 1])*210000        # MPa
 
 # Lösen
-Logo.Solve()
+Logo.StaticAnalysis()
 Logo.Scale = 10
 Logo.ComputeStress()
 
