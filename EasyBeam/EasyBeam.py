@@ -179,9 +179,9 @@ class Beam2D:
             self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
             self._plotting(self.d, "deformation\nmagnitude $|u|$\n[mm]")
         if component.lower() in ["x", "all"]:
-            self._plotting(self.w[:, 0, :], "x deformation $u_x$\n[mm]")
+            self._plotting(self.w[:, 0, :], "$x$-deformation $u_x$\n[mm]")
         if component.lower() in ["y", "all"]:
-            self._plotting(self.w[:, 1, :], "y deformation $u_y$\n[mm]")
+            self._plotting(self.w[:, 1, :], "$y$-deformation $u_y$\n[mm]")
 
     def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
         fig, ax = plt.subplots()
