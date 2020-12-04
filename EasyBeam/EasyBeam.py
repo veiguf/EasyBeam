@@ -40,33 +40,37 @@ class Beam2D:
         for i in range(len(self.Load)):
             self.F[self.Load[i][0]] = self.Load[i][1]
 
-    # def StiffMatElem():
-    #     return
+    def StiffMatElem(self, i):
+        k = np.array([[ self.A[i]*self.E[i]/self.l[i],                                    0,                                   0, -self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
+                      [                             0,  12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2,                              0, -12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2],
+                      [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i]],
+                      [-self.A[i]*self.E[i]/self.l[i],                                    0,                                   0,  self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
+                      [                             0, -12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2,                              0,  12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2],
+                      [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i]]])
+        return k
 
-    # def MassMatElem():
-    #     return
+    def MassMatElem(self, i):
+        m = self.A[i]*self.l[i]*self.rho[i]/420*np.array([[140,             0,               0,  70,             0,                0],
+                                                          [  0,           156,    22*self.l[i],   0,            54,    -13*self.l[i]],
+                                                          [  0,  22*self.l[i],  4*self.l[i]**2,   0,  13*self.l[i],  -3*self.l[i]**2],
+                                                          [ 70,             0,               0, 140,             0,                0],
+                                                          [  0,            54,    13*self.l[i],   0,           156, -22*self.l[i]**2],
+                                                          [  0, -13*self.l[i], -3*self.l[i]**2,   0, -22*self.l[i],   4*self.l[i]**2]])
+        return m
 
-    # def Assemble():
-    #     return
-
-    def Solve(self):
-        kL = np.zeros([self.nEl, 6, 6])
+    def Assemble(self, MatElem):
+        MatL = np.zeros([self.nEl, 6, 6])
         self.l = np.zeros([self.nEl, 1])
         self.θ = np.zeros([self.nEl, 1])
-        kG = np.zeros([self.nEl, 6, 6])
+        MatG = np.zeros([self.nEl, 6, 6])
         self.T = np.zeros([self.nEl, 6, 6])
-        self.k = np.zeros([3*self.nN, 3*self.nN])
+        Mat = np.zeros([3*self.nN, 3*self.nN])
 
         for i in range(self.nEl):
-            self.El[i, 1]
+            # self.El[i, 1]
             self.l[i] = np.linalg.norm(self.N[self.El[i, 1], :] -
                                        self.N[self.El[i, 0], :])
-            kL[i, :, :] = np.array([[ self.A[i]*self.E[i]/self.l[i],                                    0,                                   0, -self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
-                                    [                             0,  12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2,                              0, -12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2],
-                                    [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i]],
-                                    [-self.A[i]*self.E[i]/self.l[i],                                    0,                                   0,  self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
-                                    [                             0, -12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2,                              0,  12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2],
-                                    [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i]]])
+            MatL[i, :, :] = self.StiffMatElem(i)
             if self.N[self.El[i, 1], 0] >= self.N[self.El[i, 0], 0]:
                 self.θ[i] = np.arctan((self.N[self.El[i, 1], 1]-self.N[self.El[i, 0], 1])/(self.N[self.El[i, 1], 0]-self.N[self.El[i, 0], 0]))
             else:
@@ -77,13 +81,16 @@ class Beam2D:
                                         [                0,                  0, 0, np.cos(self.θ[i]), -np.sin(self.θ[i]), 0],
                                         [                0,                  0, 0, np.sin(self.θ[i]),  np.cos(self.θ[i]), 0],
                                         [                0,                  0, 0,                 0,                  0, 1]])
-            kG[i, :, :] = self.T[i]@kL[i]@self.T[i].T
+            MatG[i, :, :] = self.T[i]@MatL[i]@self.T[i].T
 
-            self.k[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += kG[i, 0:3, 0:3]
-            self.k[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += kG[i, 0:3, 3:6]
-            self.k[3*self.El[i, 1]:3*self.El[i, 1]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += kG[i, 3:6, 0:3]
-            self.k[3*self.El[i, 1]:3*self.El[i, 1]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += kG[i, 3:6, 3:6]
+            Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += MatG[i, 0:3, 0:3]
+            Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += MatG[i, 0:3, 3:6]
+            Mat[3*self.El[i, 1]:3*self.El[i, 1]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += MatG[i, 3:6, 0:3]
+            Mat[3*self.El[i, 1]:3*self.El[i, 1]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += MatG[i, 3:6, 3:6]
+        return Mat
 
+    def Solve(self):
+        self.k = self.Assemble(self.StiffMatElem)
         self.u[self.DoF] = np.linalg.solve(self.k[self.DoF, :][:, self.DoF],
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
@@ -256,9 +263,10 @@ if __name__ == '__main__':
     h = 10      # mm
     Test.eU = np.ones([Test.nEl, 1])*h/2
     Test.eL = np.ones([Test.nEl, 1])*-h/2
-    Test.A = np.ones([Test.nEl, 1])*b*h     # mm^2
-    Test.I = np.ones([Test.nEl, 1])*b*h**3/12    # mm^4
-    Test.E = np.ones([Test.nEl, 1])*210000        # MPa
+    Test.A = np.ones([Test.nEl, 1])*b*h         # mm^2
+    Test.I = np.ones([Test.nEl, 1])*b*h**3/12   # mm^4
+    Test.E = np.ones([Test.nEl, 1])*210000      # MPa
+    Test.rho = np.ones([Test.nEl, 1])*7.85e-9   # t/mm^3
     Test.Solve()
     Test.Scale = 5
     Test.ComputeStress()
