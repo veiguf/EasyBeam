@@ -1,9 +1,12 @@
 from EasyBeam import Beam2D
 import numpy as np
 
-Test = Beam2D()
+
+# Initialisiern des Problems
+Logo = Beam2D()
+
 # Knoten
-Test.N = np.array([[ 100, 100],  # 0 E
+Logo.N = np.array([[ 100, 100],  # 0 E
                    [   0, 100],  # 1 E
                    [   0,  50],  # 2 E
                    [ 100,  50],  # 3 E
@@ -32,8 +35,9 @@ Test.N = np.array([[ 100, 100],  # 0 E
                    [ 850,   0],  # 26 M
                    [ 850, 100],  # 27 M
                    [ 950,   0]])  # 28 M
-# Elemente: welche Knoten werden verbunden?
-Test.El = np.array([[0, 1],
+
+# Elemente: verbindet die Knoten
+Logo.El = np.array([[0, 1],
                     [1, 2],
                     [2, 3],
                     [2, 4],
@@ -55,36 +59,43 @@ Test.El = np.array([[0, 1],
                     [18, 19],
                     [16, 19],
                     [20, 19],
-                    [20, 15],
                     [15, 20],
                     [21, 20],
                     [22, 19],
                     [18, 23],
                     [23, 24],
                     [25, 24],
-                    [25, 24],
                     [24, 26],
                     [26, 27],
                     [27, 28]])
+
 # Boundary conditions and loads
-Test.BC = [0, 1, 2]
-Test.Load = [[26, -10],
+Logo.BC = [0, 1, 2]
+Logo.Load = [[26, -10],
              [27, -10],
              [18, -10],
              [19, -10]]
-Test.Initialize()
-# Querschnitte
+
+# Initialisieren des Modells
+Logo.Initialize()
+
+# Querschnittgeometrie und Werkstoff
 b = 10      # mm
 h = 10      # mm
-Test.eU = np.ones([Test.nEl, 1])*h/2
-Test.eL = np.ones([Test.nEl, 1])*-h/2
-Test.A = np.ones([Test.nEl, 1])*b*h     # mm^2
-Test.I = np.ones([Test.nEl, 1])*b*h**3/12    # mm^4
-# Hier den E-Modul definieren!
-Test.E = np.ones([Test.nEl, 1])*210000        # MPa
-Test.Solve()
-Test.nStep = 100
-Test.Scale = 10
-Test.ComputeStress()
-Test.PlotStress(stress="all")
-Test.PlotDisplacement()
+Logo.eU = np.ones([Logo.nEl, 1])*h/2
+Logo.eL = np.ones([Logo.nEl, 1])*-h/2
+Logo.A = np.ones([Logo.nEl, 1])*b*h     # mm^2
+Logo.I = np.ones([Logo.nEl, 1])*b*h**3/12    # mm^4
+Logo.E = np.ones([Logo.nEl, 1])*210000        # MPa
+
+# Lösen
+Logo.Solve()
+Logo.Scale = 10
+Logo.ComputeStress()
+
+# Grafische Darstellung
+Logo.PlotMesh(ElementNumber=False)
+Logo.PlotMesh(NodeNumber=False)
+Logo.PlotStress(stress="all")
+Logo.PlotDisplacement()
+Logo.PlotDisplacement()

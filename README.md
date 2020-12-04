@@ -1,4 +1,4 @@
-<p align=center><img height="50%" width="50%" src="figures/EasyBeam.png"></p>
+<p align=center><img width="100%" src="figures/EasyBeam2.svg"></p>
 
 # EasyBeam
 
@@ -6,7 +6,7 @@
 
 ## Installation
 ### Prerequisites
-Python 3.xx along with the packages SciPy, NumPy and MatPlotLib.  After installation of Python, you can install the necessary libraries via PIP:
+Python 3 with the packages SciPy, NumPy and MatPlotLib are needed.  After installation of Python, you can install the necessary libraries via PIP:
 ```
 pip install scipy
 pip install numpy
