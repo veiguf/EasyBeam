@@ -40,16 +40,14 @@ class Beam2D:
         for i in range(len(self.Load)):
             self.F[self.Load[i][0]] = self.Load[i][1]
 
-    def StiffMatElem():
-        return
+    # def StiffMatElem():
+    #     return
 
-    def MassMatElem():
-        return
+    # def MassMatElem():
+    #     return
 
-    def Assemble():
-        return
-
-
+    # def Assemble():
+    #     return
 
     def Solve(self):
         kL = np.zeros([self.nEl, 6, 6])
@@ -245,26 +243,21 @@ def make_segments(x, y):
 
 if __name__ == '__main__':
     Test = Beam2D()
-    # Knoten
     Test.N = np.array([[  0,   0],
                        [100,   0],
                        [100, 100]])
-    # Elemente: welche Knoten werden verbunden?
     Test.El = np.array([[0, 1],
-                              [1, 2]])
-    # Boundary conditions and loads
+                        [1, 2]])
     Test.BC = [0, 1, 2]
     Test.Load = [[6,  100],
-                       [7, -100]]
+                 [7, -100]]
     Test.Initialize()
-    # Querschnitte
     b = 10      # mm
     h = 10      # mm
     Test.eU = np.ones([Test.nEl, 1])*h/2
     Test.eL = np.ones([Test.nEl, 1])*-h/2
     Test.A = np.ones([Test.nEl, 1])*b*h     # mm^2
     Test.I = np.ones([Test.nEl, 1])*b*h**3/12    # mm^4
-    # Hier den E-Modul definieren!
     Test.E = np.ones([Test.nEl, 1])*210000        # MPa
     Test.Solve()
     Test.Scale = 5
