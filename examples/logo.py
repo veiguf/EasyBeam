@@ -55,13 +55,11 @@ Test.El = np.array([[0, 1],
                     [18, 19],
                     [16, 19],
                     [20, 19],
-                    [20, 15],
                     [15, 20],
                     [21, 20],
                     [22, 19],
                     [18, 23],
                     [23, 24],
-                    [25, 24],
                     [25, 24],
                     [24, 26],
                     [26, 27],
@@ -83,7 +81,6 @@ Test.I = np.ones([Test.nEl, 1])*b*h**3/12    # mm^4
 # Hier den E-Modul definieren!
 Test.E = np.ones([Test.nEl, 1])*210000        # MPa
 Test.Solve()
-Test.nStep = 100
 Test.Scale = 10
 Test.ComputeStress()
 Test.PlotMesh(ElementNumber=False)

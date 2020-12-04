@@ -16,7 +16,7 @@ class Beam2D:
     # boundary conditions and loads
     BC = []
     Load = []
-    nStep = 1
+    nStep = 150
     Scale = 1
 
     def Initialize(self):
@@ -144,11 +144,12 @@ class Beam2D:
         lcAll = colorline(self.q[:, 0, :], self.q[:, 1, :], val, cmap="jet",
                           plot=False)
         for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1,
-                     ls='-', clip_on=False)#, marker='s')
+            xEl = self.N[self.El[i, 0], 0], self.N[self.El[i, 1], 0]
+            yEl = self.N[self.El[i, 0], 1], self.N[self.El[i, 1], 1]
+            plt.plot(xEl, yEl, c='gray', lw=1, ls='-')
             lc = colorline(self.q[i, 0, :], self.q[i, 1, :], val[i, :],
                            cmap="jet", norm=lcAll.norm)
-        cb = plt.colorbar(lcAll, ticks=c, shrink=0.6, ax=[ax], location="left",
+        cb = plt.colorbar(lcAll, ticks=c, shrink=0.5, ax=[ax], location="left",
                           aspect=10)
         #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
         xmin = self.q[:, 0, :].min()
@@ -192,8 +193,9 @@ class Beam2D:
                        self.N[:, 1].max()-self.N[:, 1].min())
         p = deltaMax*0.0075
         for i in range(self.nEl):
-            plt.plot(self.r[i, 0, :], self.r[i, 1, :], c='gray', lw=1, ls='-',
-                     clip_on=False)
+            xEl = self.N[self.El[i, 0], 0], self.N[self.El[i, 1], 0]
+            yEl = self.N[self.El[i, 0], 1], self.N[self.El[i, 1], 1]
+            plt.plot(xEl, yEl, c='gray', lw=1, ls='-')
         plt.plot(self.N[:, 0], self.N[:, 1], ".k")
         if NodeNumber:
             for i in range(len(self.N)):
@@ -265,7 +267,6 @@ if __name__ == '__main__':
     # Hier den E-Modul definieren!
     Test.E = np.ones([Test.nEl, 1])*210000        # MPa
     Test.Solve()
-    Test.nStep = 100
     Test.Scale = 5
     Test.ComputeStress()
     Test.PlotStress(stress="all")
