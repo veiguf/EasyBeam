@@ -52,7 +52,7 @@ Logo.N = np.array([[ 90, 100],
                    [300, -35],
                    [380,   0],  # B
                    [380,  50],
-                   [380, 100], 
+                   [380, 100],
                    [460, 100],
                    [470,  90],
                    [470,  60],
@@ -97,7 +97,7 @@ Logo.El = np.array([[ 0,  1],
                     [ 3,  4],
                     [ 4,  5],
                     [ 5,  6],
-                    [ 3,  7], 
+                    [ 3,  7],
                     [ 6,  8],
                     [ 8,  9],
                     [ 9, 10],
@@ -186,7 +186,7 @@ Logo.I = np.ones([Logo.nEl, 1])*b*h**3/12   # mm^4
 # E-Modul
 Logo.E = np.ones([Logo.nEl, 1])*210000      # MPa
 
-Logo.Solve()
+Logo.StaticAnalysis()
 Logo.nStep = 1
 Logo.Scale = 2
 Logo.ComputeStress()

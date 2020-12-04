@@ -70,7 +70,7 @@ class Beam2D:
             # self.El[i, 1]
             self.l[i] = np.linalg.norm(self.N[self.El[i, 1], :] -
                                        self.N[self.El[i, 0], :])
-            MatL[i, :, :] = self.StiffMatElem(i)
+            MatL[i, :, :] = MatElem(i)
             if self.N[self.El[i, 1], 0] >= self.N[self.El[i, 0], 0]:
                 self.θ[i] = np.arctan((self.N[self.El[i, 1], 1]-self.N[self.El[i, 0], 1])/(self.N[self.El[i, 1], 0]-self.N[self.El[i, 0], 0]))
             else:
@@ -82,7 +82,6 @@ class Beam2D:
                                         [                0,                  0, 0, np.sin(self.θ[i]),  np.cos(self.θ[i]), 0],
                                         [                0,                  0, 0,                 0,                  0, 1]])
             MatG[i, :, :] = self.T[i]@MatL[i]@self.T[i].T
-
             Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += MatG[i, 0:3, 0:3]
             Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += MatG[i, 0:3, 3:6]
             Mat[3*self.El[i, 1]:3*self.El[i, 1]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += MatG[i, 3:6, 0:3]
@@ -95,11 +94,15 @@ class Beam2D:
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
 
-    def EigenvalueAnalysis(self):
+    def EigenvalueAnalysis(self, nEig=2):
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
-        # LRI, PhiRI = linalg.eigh(self.k, self.m, eigvals=(0, 6-1))
-        self.LRI, self.PhiRI = linalg.eig(self.k, self.m)
+        lambdaComplex, self.Phi = linalg.eigh(self.k[self.DoF, :][:, self.DoF],
+                                 self.m[self.DoF, :][:, self.DoF],
+                                 eigvals=(0, nEig-1))
+        #self.LRI, self.PhiRI = linalg.eig(self.k, self.m)
+        self.omega = np.sqrt(lambdaComplex.real)
+        self.f0 = self.omega/2/np.pi
 
     def ComputeStress(self):
         NL = np.zeros([self.nEl, 3, 6])
@@ -196,6 +199,15 @@ class Beam2D:
         if component.lower() in ["y", "all"]:
             self._plotting(self.w[:, 1, :], "$y$-deformation $u_y$\n[mm]")
 
+    def PlotMode(self):
+        Phii = np.empty([3*self.nN, 1])
+        for i in range(len(self.omega)):
+            Phii[self.DoF, 0] = self.Phi[:, i]
+            # THIS NEXT LINE IS WRONG, NEEDS TO BE FUNCTION OF Phii!!!!!!!!
+            self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
+            self._plotting(self.d, ("mode " + str(i+1) + "\n" +
+                                    str(round(self.f0[i], 4)) + " [Hz]"))
+
     def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
         fig, ax = plt.subplots()
         ax.axis('off')
@@ -265,6 +277,7 @@ if __name__ == '__main__':
     Test.Load = [[6,  100],
                  [7, -100]]
     Test.Initialize()
+    Test.PlotMesh()
     b = 10      # mm
     h = 10      # mm
     Test.eU = np.ones([Test.nEl, 1])*h/2
@@ -274,9 +287,9 @@ if __name__ == '__main__':
     Test.E = np.ones([Test.nEl, 1])*210000      # MPa
     Test.rho = np.ones([Test.nEl, 1])*7.85e-9   # t/mm^3
     Test.StaticAnalysis()
-    Test.EigenvalueAnalysis()
     Test.Scale = 5
     Test.ComputeStress()
+    Test.EigenvalueAnalysis(nEig=5)
+    Test.PlotMode()
     Test.PlotStress(stress="all")
     Test.PlotDisplacement()
-    Test.PlotMesh()

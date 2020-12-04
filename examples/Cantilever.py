@@ -32,6 +32,8 @@ Cantilever.E = np.ones([Cantilever.nEl, 1])*210000      # MPa
 Cantilever.StaticAnalysis()
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
+Cantilever.EigenvalueAnalysis()
+
 
 # Grafische Darstellung
 Cantilever.PlotMesh()
