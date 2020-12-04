@@ -31,7 +31,7 @@ PinPin.I = np.ones([PinPin.nEl, 1])*b*h**3/12   # mm^4
 PinPin.E = np.ones([PinPin.nEl, 1])*210000      # MPa
 
 # Lösen
-PinPin.Solve()
+PinPin.StaticAnalysis()
 PinPin.Scale = 100
 PinPin.ComputeStress()
 

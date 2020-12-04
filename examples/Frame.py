@@ -42,7 +42,7 @@ Frame.I = np.ones([Frame.nEl, 1])*85900   # mm^4
 Frame.E = np.ones([Frame.nEl, 1])*210000  # MPa
 
 # Lösen
-Frame.Solve()
+Frame.StaticAnalysis()
 Frame.Scale = 100
 Frame.ComputeStress()
 
