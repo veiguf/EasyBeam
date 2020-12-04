@@ -29,13 +29,16 @@ PinPin.eL = np.ones([PinPin.nEl, 1])*-h/2   # mm
 PinPin.A = np.ones([PinPin.nEl, 1])*b*h     # mm^2
 PinPin.I = np.ones([PinPin.nEl, 1])*b*h**3/12   # mm^4
 PinPin.E = np.ones([PinPin.nEl, 1])*210000      # MPa
+PinPin.rho = np.ones([PinPin.nEl, 1])*7.85e-9   # t/mm^3
 
 # Lösen
 PinPin.StaticAnalysis()
 PinPin.Scale = 100
 PinPin.ComputeStress()
+PinPin.EigenvalueAnalysis(nEig=6)
 
 # Grafische Darstellung
 PinPin.PlotMesh()
 PinPin.PlotStress()
 PinPin.PlotDisplacement()
+PinPin.PlotMode()

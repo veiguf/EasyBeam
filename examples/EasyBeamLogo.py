@@ -183,6 +183,8 @@ Logo.eU = np.ones([Logo.nEl, 1])*h/2    # mm
 Logo.eL = np.ones([Logo.nEl, 1])*-h/2    # mm
 Logo.A = np.ones([Logo.nEl, 1])*b*h     # mm^2
 Logo.I = np.ones([Logo.nEl, 1])*b*h**3/12   # mm^4
+Logo.rho = np.ones([Logo.nEl, 1])*7.85e-9   # t/mm^3
+
 # E-Modul
 Logo.E = np.ones([Logo.nEl, 1])*210000      # MPa
 
