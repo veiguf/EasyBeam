@@ -20,8 +20,8 @@ class Beam2D:
     Scale = 1
 
     def Initialize(self):
-        self.N = np.array(self.N)
-        self.El = np.array(self.El)
+        self.N = np.array(self.N, dtype=float)
+        self.El = np.array(self.El, dtype=int)
         self.nEl = len(self.El[:, 0])     # number of elements
         self.nN = len(self.N[:, 0])       # number of nodes
 
@@ -52,28 +52,30 @@ class Beam2D:
                       [     0,   6*E*I/l**2,     4*E*I/l,      0,  -6*E*I/l**2,     2*E*I/l],
                       [-A*E/l,            0,           0,  A*E/l,            0,           0],
                       [     0, -12*E*I/l**3, -6*E*I/l**2,      0,  12*E*I/l**3, -6*E*I/l**2],
-                      [     0,   6*E*I/l**2,     2*E*I/l,      0,  -6*E*I/l**2,     4*E*I/l]])
+                      [     0,   6*E*I/l**2,     2*E*I/l,      0,  -6*E*I/l**2,     4*E*I/l]],
+                     dtype='f')
         return k
 
     def MassMatElem(self, i):
         l = self.l[i]
         if self.massMatrixType[0].lower() == "c":
-            l = self.l[i]
             m = np.array([[140,     0,       0,  70,     0,        0],
                           [  0,   156,    22*l,   0,    54,    -13*l],
                           [  0,  22*l,  4*l**2,   0,  13*l,  -3*l**2],
                           [ 70,     0,       0, 140,     0,        0],
                           [  0,    54,    13*l,   0,   156, -22*l**2],
-                          [  0, -13*l, -3*l**2,   0, -22*l,   4*l**2]])
+                          [  0, -13*l, -3*l**2,   0, -22*l,   4*l**2]],
+                         dtype=float)
             m *= self.A[i]*l*self.rho[i]/420
         elif self.massMatrixType[0].lower() == "l":
             alpha = 0
-            m = np.array([[ 1., 0.,            0., 1., 0., 0.],
-                          [ 0., 1.,            0., 0., 0., 0.],
-                          [ 0., 0., 2*alpha*l**2., 0., 0., 0.],
-                          [ 1., 0.,            0., 1., 0., 0.],
-                          [ 0., 0.,            0., 0., 1., 0.],
-                          [ 0., 0.,            0., 0., 0., 2*alpha*l**2.]])
+            m = np.array([[ 1, 0,            0, 1, 0,              0],
+                          [ 0, 1,            0, 0, 0,              0],
+                          [ 0, 0, 2*alpha*l**2, 0, 0,              0],
+                          [ 1, 0,            0, 1, 0,              0],
+                          [ 0, 0,            0, 0, 1,              0],
+                          [ 0, 0,            0, 0, 0, 2*alpha*l**2.]],
+                         dtype=float)
             m *= self.rho[i]*self.A[i]*l/2
         return m
 
@@ -99,7 +101,8 @@ class Beam2D:
                                         [                0,                  0, 1,                 0,                  0, 0],
                                         [                0,                  0, 0, np.cos(self.θ[i]), -np.sin(self.θ[i]), 0],
                                         [                0,                  0, 0, np.sin(self.θ[i]),  np.cos(self.θ[i]), 0],
-                                        [                0,                  0, 0,                 0,                  0, 1]])
+                                        [                0,                  0, 0,                 0,                  0, 1]],
+                                       dtype=float)
             MatG[i, :, :] = self.T[i]@MatL[i]@self.T[i].T
             Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += MatG[i, 0:3, 0:3]
             Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += MatG[i, 0:3, 3:6]
@@ -119,8 +122,8 @@ class Beam2D:
         self.m = self.Assemble(self.MassMatElem)
         #try:
         lambdaComplex, self.Phi = linalg.eigh(self.k[self.DoF, :][:, self.DoF],
-                                                  self.m[self.DoF, :][:, self.DoF],
-                                                  eigvals=(0, nEig-1))
+                                              self.m[self.DoF, :][:, self.DoF],
+                                              eigvals=(0, nEig-1))
         #except:
         #    lambdaComplex, self.Phi = linalg.eig(self.k[self.DoF, :][:, self.DoF],
         #                                         self.m[self.DoF, :][:, self.DoF])
@@ -165,7 +168,8 @@ class Beam2D:
                                      1/self.l[i, 0]**2*6*self.eL[i, 0]*(2*ξ-1),
                                      1/self.l[i, 0]*2*self.eL[i, 0]*(1-3*ξ)])
                 self.sigmaL[i, j] = self.E[i, 0]*BL[i, :].T@(self.T[i].T@v[i, :])
-                self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]), abs(self.sigmaU[i, j]))
+                self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]),
+                                          abs(self.sigmaU[i, j]))
 
         # deformation
         self.q = self.r+self.w*self.Scale
@@ -204,10 +208,12 @@ class Beam2D:
 
     def PlotStress(self, stress="all"):
         if stress.lower() in ["all", "upper"]:
-            self._plotting(self.sigmaU, "upper fiber stress $\\sigma_U$\n[MPa]")
+            self._plotting(self.sigmaU,
+                           "upper fiber stress $\\sigma_U$\n[MPa]")
 
         if stress.lower() in ["all", "lower"]:
-            self._plotting(self.sigmaL, "lower fiber stress $\\sigma_U$\n[MPa]")
+            self._plotting(self.sigmaL,
+                           "lower fiber stress $\\sigma_U$\n[MPa]")
 
         if stress.lower() in ["all", "max"]:
             self._plotting(self.sigmaMax,
