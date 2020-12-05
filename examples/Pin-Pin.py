@@ -6,13 +6,13 @@ import numpy as np
 PinPin = Beam2D()
 
 # Knoten [mm]
-PinPin.N = np.array([[  0, 0],
-                     [150, 0],
-                     [300, 0]])
+PinPin.N = [[  0, 0],
+            [150, 0],
+            [300, 0]]
 
 # Elemente: verbindet die Knoten
-PinPin.El = np.array([[0, 1],
-                      [1, 2]])
+PinPin.El = [[0, 1],
+             [1, 2]]
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 PinPin.BC = [0, 1, 7]

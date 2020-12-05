@@ -20,6 +20,8 @@ class Beam2D:
     Scale = 1
 
     def Initialize(self):
+        self.N = np.array(self.N)
+        self.El = np.array(self.El)
         self.nEl = len(self.El[:, 0])     # number of elements
         self.nN = len(self.N[:, 0])       # number of nodes
 
@@ -41,21 +43,38 @@ class Beam2D:
             self.F[self.Load[i][0]] = self.Load[i][1]
 
     def StiffMatElem(self, i):
-        k = np.array([[ self.A[i]*self.E[i]/self.l[i],                                    0,                                   0, -self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
-                      [                             0,  12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2,                              0, -12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2],
-                      [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i]],
-                      [-self.A[i]*self.E[i]/self.l[i],                                    0,                                   0,  self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
-                      [                             0, -12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2,                              0,  12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2],
-                      [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i]]])
+        A = self.A[i]
+        E = self.E[i]
+        l = self.l[i]
+        I = self.I[i]
+        k = np.array([[ A*E/l,            0,           0, -A*E/l,            0,           0],
+                      [     0,  12*E*I/l**3,  6*E*I/l**2,      0, -12*E*I/l**3,  6*E*I/l**2],
+                      [     0,   6*E*I/l**2,     4*E*I/l,      0,  -6*E*I/l**2,     2*E*I/l],
+                      [-A*E/l,            0,           0,  A*E/l,            0,           0],
+                      [     0, -12*E*I/l**3, -6*E*I/l**2,      0,  12*E*I/l**3, -6*E*I/l**2],
+                      [     0,   6*E*I/l**2,     2*E*I/l,      0,  -6*E*I/l**2,     4*E*I/l]])
         return k
 
     def MassMatElem(self, i):
-        m = self.A[i]*self.l[i]*self.rho[i]/420*np.array([[140,             0,               0,  70,             0,                0],
-                                                          [  0,           156,    22*self.l[i],   0,            54,    -13*self.l[i]],
-                                                          [  0,  22*self.l[i],  4*self.l[i]**2,   0,  13*self.l[i],  -3*self.l[i]**2],
-                                                          [ 70,             0,               0, 140,             0,                0],
-                                                          [  0,            54,    13*self.l[i],   0,           156, -22*self.l[i]**2],
-                                                          [  0, -13*self.l[i], -3*self.l[i]**2,   0, -22*self.l[i],   4*self.l[i]**2]])
+        l = self.l[i]
+        if self.massMatrixType[0].lower() == "c":
+            l = self.l[i]
+            m = np.array([[140,     0,       0,  70,     0,        0],
+                          [  0,   156,    22*l,   0,    54,    -13*l],
+                          [  0,  22*l,  4*l**2,   0,  13*l,  -3*l**2],
+                          [ 70,     0,       0, 140,     0,        0],
+                          [  0,    54,    13*l,   0,   156, -22*l**2],
+                          [  0, -13*l, -3*l**2,   0, -22*l,   4*l**2]])
+            m *= self.A[i]*l*self.rho[i]/420
+        elif self.massMatrixType[0].lower() == "l":
+            alpha = 0
+            m = np.array([[ 1., 0.,            0., 1., 0., 0.],
+                          [ 0., 1.,            0., 0., 0., 0.],
+                          [ 0., 0., 2*alpha*l**2., 0., 0., 0.],
+                          [ 1., 0.,            0., 1., 0., 0.],
+                          [ 0., 0.,            0., 0., 1., 0.],
+                          [ 0., 0.,            0., 0., 0., 2*alpha*l**2.]])
+            m *= self.rho[i]*self.A[i]*l/2
         return m
 
     def Assemble(self, MatElem):
@@ -94,13 +113,17 @@ class Beam2D:
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
 
-    def EigenvalueAnalysis(self, nEig=2):
+    def EigenvalueAnalysis(self, nEig=2, massMatrixType="consistent"):
+        self.massMatrixType = massMatrixType
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
+        #try:
         lambdaComplex, self.Phi = linalg.eigh(self.k[self.DoF, :][:, self.DoF],
-                                 self.m[self.DoF, :][:, self.DoF],
-                                 eigvals=(0, nEig-1))
-        #self.LRI, self.PhiRI = linalg.eig(self.k, self.m)
+                                                  self.m[self.DoF, :][:, self.DoF],
+                                                  eigvals=(0, nEig-1))
+        #except:
+        #    lambdaComplex, self.Phi = linalg.eig(self.k[self.DoF, :][:, self.DoF],
+        #                                         self.m[self.DoF, :][:, self.DoF])
         self.omega = np.sqrt(lambdaComplex.real)
         self.f0 = self.omega/2/np.pi
 
@@ -268,11 +291,11 @@ def make_segments(x, y):
 
 if __name__ == '__main__':
     Test = Beam2D()
-    Test.N = np.array([[  0,   0],
-                       [100,   0],
-                       [100, 100]])
-    Test.El = np.array([[0, 1],
-                        [1, 2]])
+    Test.N = [[  0,   0],
+              [100,   0],
+              [100, 100]]
+    Test.El = [[0, 1],
+               [1, 2]]
     Test.BC = [0, 1, 2]
     Test.Load = [[6,  100],
                  [7, -100]]
@@ -289,7 +312,7 @@ if __name__ == '__main__':
     Test.StaticAnalysis()
     Test.Scale = 5
     Test.ComputeStress()
-    Test.EigenvalueAnalysis(nEig=5)
+    Test.EigenvalueAnalysis(nEig=5, massMatrixType="c")
+    #Test.PlotStress(stress="all")
+    #Test.PlotDisplacement()
     Test.PlotMode()
-    Test.PlotStress(stress="all")
-    Test.PlotDisplacement()
