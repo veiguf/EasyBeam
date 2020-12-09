@@ -70,7 +70,7 @@ Logo.El = [[0, 1],
            [27, 28]]
 
 # Boundary conditions and loads
-Logo.BC = [0, 1, 2]
+Logo.BC = [12, 13, 14]
 Logo.Load = [[26, -10],
              [27, -10],
              [18, -10],
@@ -91,7 +91,7 @@ Logo.rho = np.ones([Logo.nEl, 1])*7.85e-9   # t/mm^3
 
 # Lösen
 Logo.StaticAnalysis()
-Logo.Scale = 10
+Logo.Scale = 100
 Logo.ComputeStress()
 Logo.EigenvalueAnalysis(nEig=10)
 
@@ -99,6 +99,5 @@ Logo.EigenvalueAnalysis(nEig=10)
 Logo.PlotMesh(ElementNumber=False)
 Logo.PlotMesh(NodeNumber=False)
 Logo.PlotStress(stress="all")
-Logo.PlotDisplacement()
 Logo.PlotDisplacement()
 Logo.PlotMode()

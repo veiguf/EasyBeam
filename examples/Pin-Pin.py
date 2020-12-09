@@ -35,10 +35,11 @@ PinPin.rho = np.ones([PinPin.nEl, 1])*7.85e-9   # t/mm^3
 PinPin.StaticAnalysis()
 PinPin.Scale = 100
 PinPin.ComputeStress()
-PinPin.EigenvalueAnalysis(nEig=6)
+PinPin.EigenvalueAnalysis(nEig=len(PinPin.DoF))
 
 # Grafische Darstellung
 PinPin.PlotMesh()
 PinPin.PlotStress()
 PinPin.PlotDisplacement()
+PinPin.ScalePhi = 1
 PinPin.PlotMode()
