@@ -6,11 +6,11 @@ import numpy as np
 Cantilever = Beam2D()
 
 # Knoten [mm]
-Cantilever.N = np.array([[  0, 0],
-                         [300, 0]])
+Cantilever.N = [[  0, 0],
+                [300, 0]]
 
 # Elemente: verbindet die Knoten
-Cantilever.El = np.array([[0, 1]])
+Cantilever.El = [[0, 1]]
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 Cantilever.BC = [0, 1, 2]

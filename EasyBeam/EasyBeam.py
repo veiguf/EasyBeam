@@ -18,8 +18,12 @@ class Beam2D:
     Load = []
     nStep = 150
     Scale = 1
+    massMatType = "consistent"
+    stiffMatType = "Euler-Bernoulli"
 
     def Initialize(self):
+        self.N = np.array(self.N, dtype=float)
+        self.El = np.array(self.El, dtype=int)
         self.nEl = len(self.El[:, 0])     # number of elements
         self.nN = len(self.N[:, 0])       # number of nodes
 
@@ -41,21 +45,93 @@ class Beam2D:
             self.F[self.Load[i][0]] = self.Load[i][1]
 
     def StiffMatElem(self, i):
-        k = np.array([[ self.A[i]*self.E[i]/self.l[i],                                    0,                                   0, -self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
-                      [                             0,  12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2,                              0, -12*self.E[i]*self.I[i]/self.l[i]**3,  6*self.E[i]*self.I[i]/self.l[i]**2],
-                      [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i]],
-                      [-self.A[i]*self.E[i]/self.l[i],                                    0,                                   0,  self.A[i]*self.E[i]/self.l[i],                                    0,                                   0],
-                      [                             0, -12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2,                              0,  12*self.E[i]*self.I[i]/self.l[i]**3, -6*self.E[i]*self.I[i]/self.l[i]**2],
-                      [                             0,   6*self.E[i]*self.I[i]/self.l[i]**2,     2*self.E[i]*self.I[i]/self.l[i],                              0,  -6*self.E[i]*self.I[i]/self.l[i]**2,     4*self.E[i]*self.I[i]/self.l[i]]])
+        A = self.A[i]
+        E = self.E[i]
+        l = self.l[i]
+        I = self.I[i]
+        # bar (column) terms of stiffness matrix
+        k = E*A/l*np.array([[ 1, 0, 0, -1, 0, 0],
+                            [ 0, 0, 0,  0, 0, 0],
+                            [ 0, 0, 0,  0, 0, 0],
+                            [-1, 0, 0,  1, 0, 0],
+                            [ 0, 0, 0,  0, 0, 0],
+                            [ 0, 0, 0,  0, 0, 0]],
+                        dtype=float)
+        # Bending terms after Euler-Bernoulli
+        if self.stiffMatType[0].lower() == "e":
+            phi = 0
+        # Bending terms after Timoshenko-Ehrenfest
+        elif self.stiffMatType[0].lower() == "t":
+            nu = 0.3
+            G = E/(2*(1+nu))
+            AS = 5*A/6  # for think rechtangular cross-sectional geometry (needs to be calculated from geometry)
+            phi = 12*E*I/(G*AS*l**2)
+        c = E*I/(l**3*(1+phi))
+        k += c*np.array([[0,   0,            0, 0,    0,            0],
+                         [0,  12,          6*l, 0,  -12,          6*l],
+                         [0, 6*l, l**2*(4+phi), 0, -6*l, l**2*(2-phi)],
+                         [0,   0,            0, 0,    0,            0],
+                         [0, -12,         -6*l, 0,   12,         -6*l],
+                         [0, 6*l, l**2*(2-phi), 0, -6*l, l**2*(4+phi)]],
+                        dtype=float)
         return k
 
     def MassMatElem(self, i):
-        m = self.A[i]*self.l[i]*self.rho[i]/420*np.array([[140,             0,               0,  70,             0,                0],
-                                                          [  0,           156,    22*self.l[i],   0,            54,    -13*self.l[i]],
-                                                          [  0,  22*self.l[i],  4*self.l[i]**2,   0,  13*self.l[i],  -3*self.l[i]**2],
-                                                          [ 70,             0,               0, 140,             0,                0],
-                                                          [  0,            54,    13*self.l[i],   0,           156, -22*self.l[i]**2],
-                                                          [  0, -13*self.l[i], -3*self.l[i]**2,   0, -22*self.l[i],   4*self.l[i]**2]])
+        l = self.l[i]
+        rho = self.rho[i]
+        A = self.A[i]
+        if self.stiffMatType[0].lower() == "e":
+            if self.massMatrixType[0].lower() == "c":
+                c = A*rho*l/420
+                m = c*np.array([[140,     0,       0,  70,     0,        0],
+                                [  0,   156,    22*l,   0,    54,    -13*l],
+                                [  0,  22*l,  4*l**2,   0,  13*l,  -3*l**2],
+                                [ 70,     0,       0, 140,     0,        0],
+                                [  0,    54,    13*l,   0,   156, -22*l**2],
+                                [  0, -13*l, -3*l**2,   0, -22*l,   4*l**2]],
+                               dtype=float)
+            elif self.massMatrixType[0].lower() == "l":
+                alpha = 0
+                c = A*rho*l/2
+                m = c*np.array([[ 1, 0,            0, 1, 0,              0],
+                                [ 0, 1,            0, 0, 0,              0],
+                                [ 0, 0, 2*alpha*l**2, 0, 0,              0],
+                                [ 1, 0,            0, 1, 0,              0],
+                                [ 0, 0,            0, 0, 1,              0],
+                                [ 0, 0,            0, 0, 0, 2*alpha*l**2.]],
+                               dtype=float)
+        elif self.stiffMatType[0].lower() == "t":
+            IR = self.I[i]
+            nu = 0.3
+            G = self.E[i]/(2*(1+nu))
+            AS = 5*A/6  # for think rechtangular cross-sectional geometry (needs to be calculated from geometry)
+            phi = 12*self.E[i]*self.I[i]/(G*AS*l**2)
+            m = A*rho*l/420*np.array([[140, 0, 0,  70, 0, 0],
+                                      [  0, 0, 0,   0, 0, 0],
+                                      [  0, 0, 0,   0, 0, 0],
+                                      [ 70, 0, 0, 140, 0, 0],
+                                      [  0, 0, 0,   0, 0, 0],
+                                      [  0, 0, 0,   0, 0, 0]],
+                                     dtype=float)
+            # tranlational inertia
+            cT = A*rho*l/(1+phi)**2
+            m += cT*np.array([[0,                                 0,                                   0, 0,                                 0,                                   0],
+                              [0,         13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*l, 0,          9/70+3/10*phi+1/6*phi**2,    -(13/420+3/40*phi+1/24*phi**2)*l],
+                              [0, (11/210+11/120*phi+1/24*phi**2)*l,  (1/105+1/60*phi+1/120*phi**2)*l**2, 0,   (13/420+3/40*phi+1/24*phi**2)*l, -(1/140+1/60*phi+1/120*phi**2)*l**2],
+                              [0,                                 0,                                   0, 0,                                 0,                                   0],
+                              [0,          9/70+3/10*phi+1/6*phi**2,     (13/420+3/40*phi+1/24*phi**2)*l, 0,         13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*l],
+                              [0,  -(13/420+3/40*phi+1/24*phi**2)*l, -(1/140+1/60*phi+1/120*phi**2)*l**2, 0, (11/210+11/120*phi+1/24*phi**2)*l,  (1/105+1/60*phi+1/120*phi**2)*l**2]],
+                             dtype=float)
+            # rotary inertia
+            cR = rho*IR/(l*(1+phi)**2)
+            m += cR*np.array([[0,                0,                              0, 0,                 0,                              0],
+                              [0,              6/5,               (1/10-1/2*phi)*l, 0,              -6/5,               (1/10-1/2*phi)*l],
+                              [0, (1/10-1/2*phi)*l, (2/15+1/6*phi+1/3*phi**2)*l**2, 0, (-1/10+1/2*phi)*l, (1/30+1/6*phi-1/6*phi**2)*l**2],
+                              [0,                0,                              0, 0,                 0,                              0],
+                              [0,             -6/5,              (-1/10+1/2*phi)*l, 0,               6/5,              (-1/10+1/2*phi)*l],
+                              [0, (1/10-1/2*phi)*l, (1/30+1/6*phi-1/6*phi**2)*l**2, 0, (-1/10+1/2*phi)*l, (2/15+1/6*phi+1/3*phi**2)*l**2]],
+                             dtype=float)
+
         return m
 
     def Assemble(self, MatElem):
@@ -80,7 +156,8 @@ class Beam2D:
                                         [                0,                  0, 1,                 0,                  0, 0],
                                         [                0,                  0, 0, np.cos(self.θ[i]), -np.sin(self.θ[i]), 0],
                                         [                0,                  0, 0, np.sin(self.θ[i]),  np.cos(self.θ[i]), 0],
-                                        [                0,                  0, 0,                 0,                  0, 1]])
+                                        [                0,                  0, 0,                 0,                  0, 1]],
+                                       dtype=float)
             MatG[i, :, :] = self.T[i]@MatL[i]@self.T[i].T
             Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 0]:3*self.El[i, 0]+3] += MatG[i, 0:3, 0:3]
             Mat[3*self.El[i, 0]:3*self.El[i, 0]+3, 3*self.El[i, 1]:3*self.El[i, 1]+3] += MatG[i, 0:3, 3:6]
@@ -94,13 +171,17 @@ class Beam2D:
                                            self.F[self.DoF])
         self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
 
-    def EigenvalueAnalysis(self, nEig=2):
+    def EigenvalueAnalysis(self, nEig=2, massMatrixType="consistent"):
+        self.massMatrixType = massMatrixType
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
-        lambdaComplex, self.Phi = linalg.eigh(self.k[self.DoF, :][:, self.DoF],
-                                 self.m[self.DoF, :][:, self.DoF],
-                                 eigvals=(0, nEig-1))
-        #self.LRI, self.PhiRI = linalg.eig(self.k, self.m)
+        try:
+            lambdaComplex, self.Phi = linalg.eigh(self.k[self.DoF, :][:, self.DoF],
+                                                  self.m[self.DoF, :][:, self.DoF],
+                                                  eigvals=(0, nEig-1))
+        except:
+            lambdaComplex, self.Phi = linalg.eig(self.k[self.DoF, :][:, self.DoF],
+                                                 self.m[self.DoF, :][:, self.DoF])
         self.omega = np.sqrt(lambdaComplex.real)
         self.f0 = self.omega/2/np.pi
 
@@ -142,7 +223,8 @@ class Beam2D:
                                      1/self.l[i, 0]**2*6*self.eL[i, 0]*(2*ξ-1),
                                      1/self.l[i, 0]*2*self.eL[i, 0]*(1-3*ξ)])
                 self.sigmaL[i, j] = self.E[i, 0]*BL[i, :].T@(self.T[i].T@v[i, :])
-                self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]), abs(self.sigmaU[i, j]))
+                self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]),
+                                          abs(self.sigmaU[i, j]))
 
         # deformation
         self.q = self.r+self.w*self.Scale
@@ -181,10 +263,12 @@ class Beam2D:
 
     def PlotStress(self, stress="all"):
         if stress.lower() in ["all", "upper"]:
-            self._plotting(self.sigmaU, "upper fiber stress $\\sigma_U$\n[MPa]")
+            self._plotting(self.sigmaU,
+                           "upper fiber stress $\\sigma_U$\n[MPa]")
 
         if stress.lower() in ["all", "lower"]:
-            self._plotting(self.sigmaL, "lower fiber stress $\\sigma_U$\n[MPa]")
+            self._plotting(self.sigmaL,
+                           "lower fiber stress $\\sigma_U$\n[MPa]")
 
         if stress.lower() in ["all", "max"]:
             self._plotting(self.sigmaMax,
@@ -268,11 +352,12 @@ def make_segments(x, y):
 
 if __name__ == '__main__':
     Test = Beam2D()
-    Test.N = np.array([[  0,   0],
-                       [100,   0],
-                       [100, 100]])
-    Test.El = np.array([[0, 1],
-                        [1, 2]])
+    Test.stiffMatType = "Timoshenko-Ehrenfest"
+    Test.N = [[  0,   0],
+              [100,   0],
+              [100, 100]]
+    Test.El = [[0, 1],
+               [1, 2]]
     Test.BC = [0, 1, 2]
     Test.Load = [[6,  100],
                  [7, -100]]
@@ -290,6 +375,6 @@ if __name__ == '__main__':
     Test.Scale = 5
     Test.ComputeStress()
     Test.EigenvalueAnalysis(nEig=5)
+    #Test.PlotStress(stress="all")
+    #Test.PlotDisplacement()
     Test.PlotMode()
-    Test.PlotStress(stress="all")
-    Test.PlotDisplacement()
