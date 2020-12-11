@@ -175,6 +175,7 @@ Logo.El = np.array([[ 0,  1],
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 Logo.BC = [0, 1, 2]
 Logo.Load = [[229, -200]]
+Logo.nStep = 100
 Logo.Initialize()
 # Querschnitte
 b = 10      # mm
@@ -189,25 +190,8 @@ Logo.rho = np.ones([Logo.nEl, 1])*7.85e-9   # t/mm^3
 Logo.E = np.ones([Logo.nEl, 1])*210000      # MPa
 
 Logo.StaticAnalysis()
-Logo.nStep = 1
 Logo.Scale = 2
 Logo.ComputeStress()
 
 # Logo.PlotResults()
-
-# displacements
-Logo.d = np.sqrt(Logo.w[:, 0, :]**2+Logo.w[:, 1, :]**2)
-fig, ax = plt.subplots()
-ax.axis('off')
-ax.set_aspect('equal')
-c = np.linspace(Logo.d.min(), Logo.d.max(), 5)  # np.linspace(σ.min(), σ.max(), 3)
-norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-cmap.set_array([])
-# for i in range(Logo.nEl):
-#     plt.plot(Logo.r[i, 0, :], Logo.r[i, 1, :], c='gray', lw=1.5, ls='-', clip_on=False, marker='.', markersize=3)
-for i in range(Logo.nEl):
-    plt.plot(Logo.q[i, 0, :], Logo.q[i, 1, :], c='k', lw=1.5, ls='-', clip_on=False)
-    for j in range(Logo.nStep+1):
-        plt.plot(Logo.q[i, 0, j], Logo.q[i, 1, j], c=cmap.to_rgba(Logo.d[i,j]), ls='', marker='.', markersize=3, clip_on=False)
-
+Logo.PlotDisplacement()

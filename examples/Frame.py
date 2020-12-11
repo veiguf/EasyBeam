@@ -46,10 +46,11 @@ Frame.rho = np.ones([Frame.nEl, 1])*7.85e-9   # t/mm^3
 Frame.StaticAnalysis()
 Frame.Scale = 100
 Frame.ComputeStress()
-Frame.EigenvalueAnalysis(nEig=18)
+Frame.EigenvalueAnalysis(nEig=len(Frame.DoF))
 
 # Grafische Darstellung
 Frame.PlotMesh()
 Frame.PlotStress(stress="all")
 Frame.PlotDisplacement()
+Frame.ScalePhi = 30
 Frame.PlotMode()

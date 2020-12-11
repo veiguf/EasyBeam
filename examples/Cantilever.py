@@ -33,11 +33,11 @@ Cantilever.rho = np.ones([Cantilever.nEl, 1])*7.85e-9   # t/mm^3
 Cantilever.StaticAnalysis()
 Cantilever.Scale = 10
 Cantilever.ComputeStress()
-Cantilever.EigenvalueAnalysis(nEig=3)
-
+Cantilever.EigenvalueAnalysis(nEig=len(Cantilever.DoF))
 
 # Grafische Darstellung
 Cantilever.PlotMesh()
 Cantilever.PlotStress()
 Cantilever.PlotDisplacement()
+Cantilever.ScalePhi = 1
 Cantilever.PlotMode()
