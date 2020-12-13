@@ -1,10 +1,10 @@
 import numpy as np
+import scipy.linalg as spla
+import numpy.linalg as npla
 from scipy.constants import pi
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplcollect
-import scipy.linalg as spla
-import numpy.linalg as npla
 
 
 class Beam2D:

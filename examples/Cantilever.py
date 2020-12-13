@@ -5,6 +5,9 @@ import numpy as np
 # Initialisiern des Problems
 Cantilever = Beam2D()
 
+# Setze Elementenbeschreibung
+Cantilever.stiffMatType = "Timoshenko-Ehrenfest"
+
 # Knoten [mm]
 Cantilever.N = [[  0, 0],
                 [300, 0]]
