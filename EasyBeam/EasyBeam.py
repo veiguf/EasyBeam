@@ -3,7 +3,9 @@ from scipy.constants import pi
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplcollect
-import scipy.linalg as linalg
+import scipy.linalg as spla
+import numpy.linalg as npla
+
 
 class Beam2D:
     # # define the nodes
@@ -21,6 +23,7 @@ class Beam2D:
     ScalePhi = 1
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
+    lineStyleUndeformed = "--"
 
     def Initialize(self):
         self.N = np.array(self.N, dtype=float)
@@ -66,7 +69,8 @@ class Beam2D:
                                        dtype=float)
             for j in range(self.nStep+1):
                 ξ = j/(self.nStep)
-                self.r[i, :, j] = np.concatenate((self.N[self.El[i, 0], :], self.θ[i]), axis=0)+self.T[i, 0:3, 0:3]@np.array([ξ*self.l[i], 0, 0],dtype=float)
+                self.r[i, :, j] = np.concatenate((self.N[self.El[i, 0], :],
+                                                  self.θ[i]), axis=0)+self.T[i, 0:3, 0:3]@np.array([ξ*self.l[i], 0, 0],dtype=float)
 
     def StiffMatElem(self, i):
         A = self.A[i]
@@ -181,14 +185,20 @@ class Beam2D:
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
         try:
-            lambdaComplex, self.Phi = linalg.eigh(self.k[self.DoF, :][:, self.DoF],
-                                                  self.m[self.DoF, :][:, self.DoF],
-                                                  eigvals=(0, nEig-1))
+            lambdaComplex, self.Phi = npla.eigh(self.k[self.DoF, :][:, self.DoF],
+                                                self.m[self.DoF, :][:, self.DoF],
+                                                eigvals=(0, nEig-1))
+            self.EigenvalSolver = "numpy.linalg.eigh"
         except:
-            lambdaComplex, self.Phi = linalg.eig(self.k[self.DoF, :][:, self.DoF],
+            lambdaComplex, self.Phi = spla.eig(self.k[self.DoF, :][:, self.DoF],
                                                  self.m[self.DoF, :][:, self.DoF])
-        self.omega = np.sqrt(abs(lambdaComplex.real))
+            self.EigenvalSolver = "scipy.linalg.eig"
+        self.lambdaR = abs(lambdaComplex.real)
+        iSort = self.lambdaR.real.argsort()
+        self.lambdaR = self.lambdaR[iSort]
+        self.omega = np.sqrt(self.lambdaR)
         self.f0 = self.omega/2/np.pi
+        self.Phi = self.Phi[:, iSort]
 
     def ShapeMat(self, ξ, l):
         NL = np.array([[1-ξ,               0,            0, ξ,            0,            0],
@@ -208,7 +218,7 @@ class Beam2D:
         for i in range(self.nEl):
             v[i, :] = np.concatenate((self.u[3*self.El[i, 0]:3*self.El[i, 0]+3],
                                       self.u[3*self.El[i, 1]:3*self.El[i, 1]+3]),
-                                     axis=0)[:,0]
+                                     axis=0)[:, 0]
             for j in range(self.nStep+1):
                 ξ = j/(self.nStep)
                 NL = self.ShapeMat(ξ, self.l[i,0])
@@ -248,7 +258,7 @@ class Beam2D:
         for i in range(self.nEl):
             xEl = self.N[self.El[i, 0], 0], self.N[self.El[i, 1], 0]
             yEl = self.N[self.El[i, 0], 1], self.N[self.El[i, 1], 1]
-            plt.plot(xEl, yEl, c='gray', lw=1, ls='--')
+            plt.plot(xEl, yEl, c='gray', lw=1, ls=self.lineStyleUndeformed)
         for i in range(self.nEl):
             lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
                             cmap="jet", norm=lcAll.norm)
@@ -279,16 +289,19 @@ class Beam2D:
 
         if stress.lower() in ["all", "max"]:
             self._plotting(self.sigmaMax, self.q,
-                      "maximum stress $\\sigma_{max}$\n[MPa]")
+                           "maximum stress $\\sigma_{max}$\n[MPa]")
 
     def PlotDisplacement(self, component="all"):
         if component.lower() in ["mag", "all"]:
             self.d = np.sqrt(self.w[:, 0, :]**2+self.w[:, 1, :]**2)
-            self._plotting(self.d, self.q, "deformation\nmagnitude $|u|$\n[mm]")
+            self._plotting(self.d, self.q,
+                           "deformation\nmagnitude $|u|$\n[mm]")
         if component.lower() in ["x", "all"]:
-            self._plotting(self.w[:, 0, :], self.q, "$x$-deformation $u_x$\n[mm]")
+            self._plotting(self.w[:, 0, :], self.q,
+                           "$x$-deformation $u_x$\n[mm]")
         if component.lower() in ["y", "all"]:
-            self._plotting(self.w[:, 1, :], self.q, "$y$-deformation $u_y$\n[mm]")
+            self._plotting(self.w[:, 1, :], self.q,
+                           "$y$-deformation $u_y$\n[mm]")
 
     def PlotMode(self):
         Phii = np.zeros([3*self.nN, 1])
@@ -302,13 +315,13 @@ class Beam2D:
                                             axis=0)[:,0]
                 for j in range(self.nStep+1):
                     ξ = j/(self.nStep)
-                    NL = self.ShapeMat(ξ, self.l[i,0])
+                    NL = self.ShapeMat(ξ, self.l[i, 0])
                     wPhi[i, :, j] = self.T[i, 0:3, 0:3]@NL@self.T[i].T@vPhi[i, :]
             # deformation
             qPhi = self.r+wPhi*self.ScalePhi
             dPhi = np.sqrt(wPhi[:, 0, :]**2+wPhi[:, 1, :]**2)
             self._plotting(dPhi, qPhi, ("mode " + str(ii+1) + "\n" +
-                                    str(round(self.f0[ii], 4)) + " [Hz]"))
+                                        str(round(self.f0[ii], 4)) + " [Hz]"))
 
     def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
         fig, ax = plt.subplots()
@@ -347,6 +360,7 @@ class Beam2D:
         plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
         plt.show()
 
+
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
               plot=True, norm=None):
     x = x.flatten()
@@ -354,20 +368,23 @@ def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
     z = z.flatten()
     segments = make_segments(x, y)
     lc = mplcollect.LineCollection(segments, array=z, cmap=cmap, norm=norm,
-                              linewidth=linewidth, alpha=alpha)
+                                   linewidth=linewidth, alpha=alpha)
     if plot:
         ax = plt.gca()
         ax.add_collection(lc)
     return lc
+
 
 def make_segments(x, y):
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     return segments
 
+
 if __name__ == '__main__':
     Test = Beam2D()
     Test.stiffMatType = "Timoshenko-Ehrenfest"
+    Test.stiffMatType = "Euler-Bernoulli"
     Test.N = [[  0,   0],
               [100,   0],
               [100, 100]]
