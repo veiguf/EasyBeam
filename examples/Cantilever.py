@@ -58,15 +58,16 @@ Cantilever.EigenvalueAnalysis(nEig=len(Cantilever.DoF))
 Cantilever.PlotMode()
 
 # Analytical values, continuous beam theory for eigenfrequencies
-print("maximum stress")
+print('\033[1m'+"Analytical results")
+print("maximum stress [MPa]:")
 sigmaMax = np.abs(F*l/I*h/2)
 print(sigmaMax)
 
-print("maximum displacement")
+print("maximum displacement [mm]:")
 wMax = F*l**3/(3*E*I)
 print(wMax)
 
-print("first three bending modes")
+print("first three bending modes [Hz]:")
 fB1 = 1.875**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
 fB2 = 4.684**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
 fB3 = 7.069**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
@@ -74,7 +75,7 @@ print(fB1)
 print(fB2)
 print(fB3)
 
-print("first three longitudinal modes")
+print("first three longitudinal modes [Hz]:")
 fL1 = 1/(4*l)*(E/rho)**0.5
 fL2 = 3/(4*l)*(E/rho)**0.5
 fL3 = 5/(4*l)*(E/rho)**0.5
