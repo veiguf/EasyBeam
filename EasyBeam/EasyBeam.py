@@ -185,10 +185,10 @@ class Beam2D:
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
         try:
-            lambdaComplex, self.Phi = npla.eigh(self.k[self.DoF, :][:, self.DoF],
+            lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF, :][:, self.DoF],
                                                 self.m[self.DoF, :][:, self.DoF],
                                                 eigvals=(0, nEig-1))
-            self.EigenvalSolver = "numpy.linalg.eigh"
+            self.EigenvalSolver = "scipy.linalg.eigh"
         except:
             lambdaComplex, self.Phi = spla.eig(self.k[self.DoF, :][:, self.DoF],
                                                  self.m[self.DoF, :][:, self.DoF])
