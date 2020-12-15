@@ -49,7 +49,7 @@ Cantilever.EigenvalueAnalysis(nEig=len(Cantilever.DoF))
 Cantilever.PlotMesh()
 Cantilever.PlotStress()
 Cantilever.PlotDisplacement()
-Cantilever.ScalePhi = 1
+Cantilever.ScalePhi = 100
 Cantilever.PlotMode()
 
 # With Timoshenko beams
@@ -58,7 +58,7 @@ Cantilever.EigenvalueAnalysis(nEig=len(Cantilever.DoF))
 Cantilever.PlotMode()
 
 # Analytical values, continuous beam theory for eigenfrequencies
-print('\033[1m'+"Analytical results")
+print("Analytical results")
 print("maximum stress [MPa]:")
 sigmaMax = np.abs(F*l/I*h/2)
 print(sigmaMax)
