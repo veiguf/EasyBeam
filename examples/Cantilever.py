@@ -69,8 +69,8 @@ print(wMax)
 
 print("first three bending modes [Hz]:")
 fB1 = 1.875**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
-fB2 = 4.684**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
-fB3 = 7.069**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
+fB2 = 4.694**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
+fB3 = 7.855**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
 print(fB1)
 print(fB2)
 print(fB3)
