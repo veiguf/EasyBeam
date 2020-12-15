@@ -14,7 +14,7 @@ if __name__ == '__main__':
     setup(name='EasyBeam',
           version='0.1.1',
           description='Easy Application for Structural analYsis with BEAMs',
-          author='V. Gufler',
+          author='V. Gufler, E.J. Wehrle',
           author_email='veit.gufler@unibz.it',
           url='https://github.com/veiguf/EasyBeam',
           package_data={'': extra_files},
