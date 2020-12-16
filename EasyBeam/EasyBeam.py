@@ -92,7 +92,7 @@ class Beam2D:
         elif self.stiffMatType[0].lower() == "t":
             nu = 0.3
             G = E/(2*(1+nu))
-            AS = 5*A/6  # for think rechtangular cross-sectional geometry (needs to be calculated from geometry)
+            AS = A * 10*(1+nu)/(12+11*nu)  #Solid rectangular cross-sectional geometry after Cowper (1966)
             phi = 12*E*I/(G*AS*l**2)
         c = E*I/(l**3*(1+phi))
         k += c*np.array([[0,   0,            0, 0,    0,            0],
