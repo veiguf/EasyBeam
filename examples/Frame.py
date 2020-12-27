@@ -4,6 +4,10 @@ import numpy as np
 
 # Initialisiern des Problems
 Frame = Beam2D()
+Frame.Properties = [['Q12x12', 7.85e-9, 210000, 144, 12**4/12,  6,  -6],
+                    ['Q16x16', 7.85e-9, 210000, 256, 16**4/12,  8,  -8],
+                    ['Q20x20', 7.85e-9, 210000, 400, 20**4/12, 10, -10],
+                    ['QR40x3', 7.85e-9, 210000, 434,    97800, 20, -20]]
 
 # Knoten [mm]
 Frame.N = [[   0,    0],
@@ -15,32 +19,25 @@ Frame.N = [[   0,    0],
            [5000, 1000]]
 
 # Elemente: verbindet die Knoten
-Frame.El = [[0, 1],
-            [0, 4],
-            [1, 2],
-            [1, 4],
-            [1, 5],
-            [4, 5],
-            [2, 3],
-            [2, 5],
-            [2, 6],
-            [5, 6],
-            [3, 6]]
+Frame.El = [[0, 1, 'Q12x12'],
+            [0, 4, 'QR40x3'],
+            [1, 2, 'Q20x20'],
+            [1, 4, 'Q16x16'],
+            [1, 5, 'QR40x3'],
+            [4, 5, 'QR40x3'],
+            [2, 3, 'Q12x12'],
+            [2, 5, 'QR40x3'],
+            [2, 6, 'Q16x16'],
+            [5, 6, 'QR40x3'],
+            [3, 6, 'QR40x3']]
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
-Frame.BC = [0, 1, 10]
-Frame.Load = [[16, -20000]]
+Frame.Disp = [[0, [  0, 0, 'f']],
+              [3, ['f', 0, 'f']]]
+Frame.Load = [[5, [0, -20000, 0]]]
 
 # Initialisieren des Modells
 Frame.Initialize()
-
-# Querschnittgeometrie und Werkstoff
-Frame.eU = np.ones([Frame.nEl, 1])*20    # mm
-Frame.eL = np.ones([Frame.nEl, 1])*-20    # mm
-Frame.A = np.ones([Frame.nEl, 1])*550     # mm^2
-Frame.I = np.ones([Frame.nEl, 1])*85900   # mm^4
-Frame.E = np.ones([Frame.nEl, 1])*210000  # MPa
-Frame.rho = np.ones([Frame.nEl, 1])*7.85e-9   # t/mm^3
 
 # Lösen
 Frame.StaticAnalysis()

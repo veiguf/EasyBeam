@@ -5,35 +5,32 @@ import numpy as np
 # Initialisiern des Problems
 PinPin = Beam2D()
 
+# Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
+b = 10      # mm
+h = 20      # mm
+PinPin.Properties = [['Prop1', 7.85e-9, 210000, b*h, b*h**3/12, h/2, -h/2],
+                     ['Prop2', 2.70e-9,  70000, b*h, b*h**3/12, h/2, -h/2]]
+
 # Knoten [mm]
 PinPin.N = [[  0, 0],
             [150, 0],
             [300, 0]]
 
 # Elemente: verbindet die Knoten
-PinPin.El = [[0, 1],
-             [1, 2]]
+PinPin.El = [[0, 1, 'Prop1'],
+             [1, 2, 'Prop2']]
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
-PinPin.BC = [0, 1, 7]
-PinPin.Load = [[4, -1000]]
+PinPin.Disp = [[0, [0, 0, 'f']],
+               [2, [1, 0, 0.1]]]
+PinPin.Load = []
 
 # Initialisieren des Modells
 PinPin.Initialize()
 
-# Querschnittgeometrie und Werkstoff
-b = 10      # mm
-h = 20      # mm
-PinPin.eU = np.ones([PinPin.nEl, 1])*h/2    # mm
-PinPin.eL = np.ones([PinPin.nEl, 1])*-h/2   # mm
-PinPin.A = np.ones([PinPin.nEl, 1])*b*h     # mm^2
-PinPin.I = np.ones([PinPin.nEl, 1])*b*h**3/12   # mm^4
-PinPin.E = np.ones([PinPin.nEl, 1])*210000      # MPa
-PinPin.rho = np.ones([PinPin.nEl, 1])*7.85e-9   # t/mm^3
-
 # Lösen
 PinPin.StaticAnalysis()
-PinPin.Scale = 100
+PinPin.Scale = 10
 PinPin.ComputeStress()
 PinPin.EigenvalueAnalysis(nEig=len(PinPin.DoF))
 
