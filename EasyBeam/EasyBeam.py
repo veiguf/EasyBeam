@@ -426,12 +426,8 @@ if __name__ == '__main__':
     Test.massMatType = "consistent"        # lumped or consistent
     b = 10      # mm
     h = 20      # mm
-    rho = 7.85e-9   # t/mm^3
-    E = 210000      # MPa
-    A = b*h         # mm^2
-    I = b*h**3/12   # mm^4
-    Test.Properties = [['Prop1',   rho,   E, A, I, h/2, -h/2],
-                       ['Prop2', rho/3, E/3, A, I, h/2, -h/2]]
+    Test.Properties = [['Prop1', 7.85e-9, 210000, b*h, b*h**3/12, h/2, -h/2],
+                       ['Prop2', 2.70e-9,  70000, b*h, b*h**3/12, h/2, -h/2]]
     Test.N = [[  0,   0],
               [100,   0],
               [100, 100]]
