@@ -27,33 +27,71 @@ class Beam2D:
 
     def Initialize(self):
         self.N = np.array(self.N, dtype=float)
-        self.El = np.array(self.El, dtype=int)
+        El = np.array(self.El)
+        self.PropID = El[:, 2]
+        self.El = np.array(El[:, 0:2], dtype=int)
         self.nEl = len(self.El[:, 0])     # number of elements
         self.nN = len(self.N[:, 0])       # number of nodes
+
+        self.BC = []        # boundary conditions
+        self.BC_DL = []
+        self.DL = []        # displacement load
+        for i in range(len(self.Disp)):
+            for ii in range(3):
+                entry = self.Disp[i][1][ii]
+                if isinstance(entry, int) or isinstance(entry, float):
+                    self.BC_DL.append(3*self.Disp[i][0]+ii)
+                    if entry == 0:
+                        self.BC.append(3*self.Disp[i][0]+ii)
+                    else:
+                        self.DL.append(3*self.Disp[i][0]+ii)
+
+        self.DoF = []       # degrees-of-freedom
+        self.DoF_DL = []
+        for i in range(3*self.nN):
+            if i not in self.BC:
+                self.DoF.append(i)
+            if i not in self.BC_DL:
+                self.DoF_DL.append(i)
 
         # initial displacements
         self.u = np.empty([3*self.nN, 1])
         self.u[:] = np.nan
-        self.u[self.BC] = 0
-
-        self.DoF = []   # degrees-of-freedom
-        for i in range(3*self.nN):
-            if i not in self.BC:
-                self.DoF.append(i)
+        for i in range(len(self.Disp)):
+            for ii in range(3):
+                if isinstance(self.Disp[i][1][ii], int) or isinstance(self.Disp[i][1][ii], float):
+                    self.u[3*self.Disp[i][0]+ii] = self.Disp[i][1][ii]
 
         # initial forces
         self.F = np.empty([3*self.nN, 1])
         self.F[:] = np.nan
         self.F[self.DoF] = 0
         for i in range(len(self.Load)):
-            self.F[self.Load[i][0]] = self.Load[i][1]
+            for ii in range(3):
+                if isinstance(self.Load[i][1][ii], int) or isinstance(self.Load[i][1][ii], float):
+                    self.F[3*self.Load[i][0]+ii] = self.Load[i][1][ii]
 
+        self.rho = np.zeros([self.nEl, 1])
+        self.E = np.zeros([self.nEl, 1])
+        self.A = np.zeros([self.nEl, 1])
+        self.I = np.zeros([self.nEl, 1])
+        self.eU = np.zeros([self.nEl, 1])
+        self.eL = np.zeros([self.nEl, 1])
         # lengths and rotations
         self.l = np.zeros([self.nEl, 1])
         self.θ = np.zeros([self.nEl, 1])
         self.T = np.zeros([self.nEl, 6, 6])
         self.r = np.zeros([self.nEl, 3, self.nStep+1])
         for i in range(self.nEl):
+            for ii in range(len(self.Properties)):
+                if self.PropID[i] == self.Properties[ii][0]:
+                    self.rho[i] = self.Properties[ii][1]
+                    self.E[i] = self.Properties[ii][2]
+                    self.A[i] = self.Properties[ii][3]
+                    self.I[i] = self.Properties[ii][4]
+                    self.eU[i] = self.Properties[ii][5]
+                    self.eL[i] = self.Properties[ii][6]
+
             self.l[i] = np.linalg.norm(self.N[self.El[i, 1], :] -
                                        self.N[self.El[i, 0], :])
             if self.N[self.El[i, 1], 0] >= self.N[self.El[i, 0], 0]:
@@ -176,9 +214,10 @@ class Beam2D:
 
     def StaticAnalysis(self):
         self.k = self.Assemble(self.StiffMatElem)
-        self.u[self.DoF] = np.linalg.solve(self.k[self.DoF, :][:, self.DoF],
-                                           self.F[self.DoF])
-        self.F[self.BC] = self.k[self.BC, :][:, self.DoF]@self.u[self.DoF]
+        self.u[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                           self.F[self.DoF_DL]-
+                                           self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL])
+        self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF_DL]@self.u[self.DoF_DL]
 
     def EigenvalueAnalysis(self, nEig=2, massMatrixType="consistent"):
         self.massMatrixType = massMatrixType
@@ -191,7 +230,7 @@ class Beam2D:
             self.EigenvalSolver = "scipy.linalg.eigh"
         except:
             lambdaComplex, self.Phi = spla.eig(self.k[self.DoF, :][:, self.DoF],
-                                                 self.m[self.DoF, :][:, self.DoF])
+                                               self.m[self.DoF, :][:, self.DoF])
             self.EigenvalSolver = "scipy.linalg.eig"
         self.lambdaR = abs(lambdaComplex.real)
         iSort = self.lambdaR.real.argsort()
@@ -265,10 +304,10 @@ class Beam2D:
         cb = plt.colorbar(lcAll, ticks=c, shrink=0.5, ax=[ax], location="left",
                           aspect=10)
         #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
-        xmin = disp[:, 0, :].min()-0.1
-        xmax = disp[:, 0, :].max()+0.1
-        ymin = disp[:, 1, :].min()-0.1
-        ymax = disp[:, 1, :].max()+0.1
+        xmin = disp[:, 0, :].min()-1
+        xmax = disp[:, 0, :].max()+1
+        ymin = disp[:, 1, :].min()-1
+        ymax = disp[:, 1, :].max()+1
         xdelta = xmax - xmin
         ydelta = ymax - ymin
         buff = 0.1
@@ -337,13 +376,13 @@ class Beam2D:
         plt.plot(self.N[:, 0], self.N[:, 1], ".k")
         if NodeNumber:
             for i in range(len(self.N)):
-                ax.annotate("N"+str(i+1), (self.N[i, 0]+p, self.N[i, 1]+p),
+                ax.annotate("N"+str(i), (self.N[i, 0]+p, self.N[i, 1]+p),
                             fontsize=5*FontMag, clip_on=False)
         if ElementNumber:
             for i in range(self.nEl):
                 posx = (self.N[self.El[i, 0], 0]+self.N[self.El[i, 1], 0])/2
                 posy = (self.N[self.El[i, 0], 1]+self.N[self.El[i, 1], 1])/2
-                ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
+                ax.annotate("E"+str(i), (posx+p, posy+p), fontsize=5*FontMag,
                             c="gray", clip_on=False)
         xmin = self.N[:, 0].min()
         xmax = self.N[:, 0].max()
@@ -383,31 +422,27 @@ def make_segments(x, y):
 
 if __name__ == '__main__':
     Test = Beam2D()
-    Test.stiffMatType = "Timoshenko-Ehrenfest"
-    Test.stiffMatType = "Euler-Bernoulli"
+    Test.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
+    Test.massMatType = "consistent"        # lumped or consistent
+    b = 10      # mm
+    h = 20      # mm
+    Test.Properties = [['Prop1', 7.85e-9, 210000, b*h, b*h**3/12, h/2, -h/2],
+                       ['Prop2', 2.70e-9,  70000, b*h, b*h**3/12, h/2, -h/2]]
     Test.N = [[  0,   0],
               [100,   0],
               [100, 100]]
-    Test.El = [[0, 1],
-               [1, 2]]
-    Test.BC = [0, 1, 2]
-    Test.Load = [[6,  100],
-                 [7, -100]]
+    Test.El = [[0, 1, 'Prop1'],
+               [1, 2, 'Prop2']]
+    Test.Disp = [[0, [  0, 0, 'f']],
+                 [1, ['f', 0, 'f']]]
+    Test.Load = [[2, [100, 0, 'f']]]
     Test.Initialize()
     Test.PlotMesh()
-    b = 10      # mm
-    h = 10      # mm
-    Test.eU = np.ones([Test.nEl, 1])*h/2
-    Test.eL = np.ones([Test.nEl, 1])*-h/2
-    Test.A = np.ones([Test.nEl, 1])*b*h         # mm^2
-    Test.I = np.ones([Test.nEl, 1])*b*h**3/12   # mm^4
-    Test.E = np.ones([Test.nEl, 1])*210000      # MPa
-    Test.rho = np.ones([Test.nEl, 1])*7.85e-9   # t/mm^3
     Test.StaticAnalysis()
-    Test.Scale = 5
-    Test.ScalePhi = 10
+    Test.Scale = 200
+    Test.ScalePhi = 0.1
     Test.ComputeStress()
     Test.EigenvalueAnalysis(nEig=len(Test.DoF))
-    Test.PlotStress(stress="all")
     Test.PlotDisplacement()
+    Test.PlotStress(stress="all")
     Test.PlotMode()

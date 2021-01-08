@@ -4,6 +4,9 @@ import numpy as np
 
 # Initialisiern des Problems
 Logo = Beam2D()
+b = 10      # mm
+h = 20      # mm
+Logo.Properties = [['Prop1', 7.85e-9, 210000, b*h, b*h**3/12, h/2, -h/2]]
 
 # Knoten
 Logo.N = [[ 100, 100],  # 0 E
@@ -37,44 +40,41 @@ Logo.N = [[ 100, 100],  # 0 E
           [ 950,   0]]  # 28 M
 
 # Elemente: verbindet die Knoten
-Logo.El = [[0, 1],
-           [1, 2],
-           [2, 3],
-           [2, 4],
-           [4, 5],
-           [5, 6],
-           [6, 7],
-           [7, 8],
-           [8, 9],
-           [9, 10],
-           [10, 11],
-           [11, 12],
-           [12, 13],
-           [13, 14],
-           [14, 15],
-           [14,  9],
-           [15, 16],
-           [16, 17],
-           [17, 18],
-           [18, 19],
-           [16, 19],
-           [20, 19],
-           [15, 20],
-           [21, 20],
-           [22, 19],
-           [18, 23],
-           [23, 24],
-           [25, 24],
-           [24, 26],
-           [26, 27],
-           [27, 28]]
+Logo.El = [[ 0,  1, 'Prop1'],
+           [ 1,  2, 'Prop1'],
+           [ 2,  3, 'Prop1'],
+           [ 2,  4, 'Prop1'],
+           [ 4,  5, 'Prop1'],
+           [ 5,  6, 'Prop1'],
+           [ 6,  7, 'Prop1'],
+           [ 7,  8, 'Prop1'],
+           [ 8,  9, 'Prop1'],
+           [ 9, 10, 'Prop1'],
+           [10, 11, 'Prop1'],
+           [11, 12, 'Prop1'],
+           [12, 13, 'Prop1'],
+           [13, 14, 'Prop1'],
+           [14, 15, 'Prop1'],
+           [14,  9, 'Prop1'],
+           [15, 16, 'Prop1'],
+           [16, 17, 'Prop1'],
+           [17, 18, 'Prop1'],
+           [18, 19, 'Prop1'],
+           [16, 19, 'Prop1'],
+           [20, 19, 'Prop1'],
+           [15, 20, 'Prop1'],
+           [21, 20, 'Prop1'],
+           [22, 19, 'Prop1'],
+           [18, 23, 'Prop1'],
+           [23, 24, 'Prop1'],
+           [25, 24, 'Prop1'],
+           [24, 26, 'Prop1'],
+           [26, 27, 'Prop1'],
+           [27, 28, 'Prop1']]
 
 # Boundary conditions and loads
-Logo.BC = [12, 13, 14]
-Logo.Load = [[26, -10],
-             [27, -10],
-             [18, -10],
-             [19, -10]]
+Logo.Disp = [[ 4, [0, 0, 0]]]
+Logo.Load = [[28, [0, -10, 0]]]
 
 # Initialisieren des Modells
 Logo.Initialize()
@@ -91,7 +91,7 @@ Logo.rho = np.ones([Logo.nEl, 1])*7.85e-9   # t/mm^3
 
 # Lösen
 Logo.StaticAnalysis()
-Logo.Scale = 100
+Logo.Scale = 5
 Logo.ComputeStress()
 Logo.EigenvalueAnalysis(nEig=10)
 
