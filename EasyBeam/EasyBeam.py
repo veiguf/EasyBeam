@@ -5,6 +5,7 @@ from scipy.constants import pi
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplcollect
+from copy import deepcopy
 
 class Beam2D:
 
@@ -430,6 +431,59 @@ class Beam2D:
         plt.show()
 
 
+    def SensitivityAnalysis(self, rho=False, E=False, A=True, I=True,
+                            xDelta=1e-6):
+        def SensSolve():
+            new.Initialize()
+            kNew = new.Assemble(new.StiffMatElem)
+            FPseudo = ((new.F-self.F)/xPert -(kNew-self.k)/xPert@self.u)
+            return(np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                   FPseudo[self.DoF_DL]))
+
+        n = sum([rho, E, A, I, h])
+        nProperties = len(Test.Properties)
+        if rho:
+            self.uNablarho = [np.zeros_like(self.u)]*nProperties
+            for i in range(nProperties):
+                new = deepcopy(self)
+                xPert = xDelta*(1+new.Properties[i][4])
+                new.Properties[i][1] += xPert
+                self.uNablarho[i][self.DoF_DL] = SensSolve()
+        if E:
+            self.uNablaE = [np.zeros_like(self.u)]*nProperties
+            for i in range(nProperties):
+                new = deepcopy(self)
+                xPert = xDelta*(1+new.Properties[i][4])
+                new.Properties[i][2] += xPert
+                self.uNablaE[i][self.DoF_DL] = SensSolve()
+        if A:
+            self.uNablaA = [np.zeros_like(self.u)]*nProperties
+            for i in range(nProperties):
+                new = deepcopy(self)
+                xPert = xDelta*(1+new.Properties[i][3])
+                new.Properties[i][3] += xPert
+                self.uNablaA[i][self.DoF_DL] = SensSolve()
+        if I:
+            self.uNablaI = [np.zeros_like(self.u)]*nProperties
+            for i in range(nProperties):
+                new = deepcopy(self)
+                xPert = xDelta*(1+new.Properties[i][4])
+                new.Properties[i][4] += xPert
+                self.uNablaI[i][self.DoF_DL] = SensSolve()
+
+                #new.Initialize()
+                #kNew = new.Assemble(new.StiffMatElem)
+                #FPseudo = ((new.F-self.F)/xPert -(kNew-self.k)/xPert@self.u)
+                #self.uNablaI[i][self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                #                                               FPseudo)
+
+    def StressSensitivity(self):
+        pass
+
+    def EigenvalueSensitivity(self):
+        pass
+
+
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
               plot=True, norm=None):
     x = x.flatten()
@@ -514,3 +568,5 @@ if __name__ == '__main__':
     Test.EigenvalueAnalysis(nEig=len(Test.DoF))
 
     Test.PlotMode()
+
+    Test.SensitivityAnalysis()
