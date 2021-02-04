@@ -18,9 +18,11 @@ class Beam2D:
 
     def Initialize(self):
         self.N = np.array(self.N, dtype=float)
-        El = np.array(self.El)
-        self.PropID = El[:, 2]
-        self.El = np.array(El[:, 0:2], dtype=int)
+        # Hack!!! Repain and remove!!!
+        if isinstance(self.El, np.ndarray) == False:
+            El = np.array(self.El)
+            self.PropID = El[:, 2]
+            self.El = np.array(El[:, 0:2], dtype=int)
         self.nEl = len(self.El[:, 0])     # number of elements
         self.nN = len(self.N[:, 0])       # number of nodes
 
@@ -437,39 +439,45 @@ class Beam2D:
             new.Initialize()
             kNew = new.Assemble(new.StiffMatElem)
             FPseudo = ((new.F-self.F)/xPert -(kNew-self.k)/xPert@self.u)
-            return(np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
-                                   FPseudo[self.DoF_DL]))
+            uNabla = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                     FPseudo[self.DoF_DL])
+            mNabla = (new.mass-self.mass)/xPert
+            return(uNabla, mNabla)
 
         n = sum([rho, E, A, I, h])
         nProperties = len(Test.Properties)
         if rho:
             self.uNablarho = [np.zeros_like(self.u)]*nProperties
+            self.mNablarho = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
                 xPert = xDelta*(1+new.Properties[i][4])
                 new.Properties[i][1] += xPert
-                self.uNablarho[i][self.DoF_DL] = SensSolve()
+                self.uNablarho[i][self.DoF_DL], self.mNablarho[i] = SensSolve()
         if E:
             self.uNablaE = [np.zeros_like(self.u)]*nProperties
+            self.mNablaE = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
                 xPert = xDelta*(1+new.Properties[i][4])
                 new.Properties[i][2] += xPert
-                self.uNablaE[i][self.DoF_DL] = SensSolve()
+                self.uNablaE[i][self.DoF_DL], self.mNablaE[i] = SensSolve()
         if A:
             self.uNablaA = [np.zeros_like(self.u)]*nProperties
+            self.mNablaA = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
                 xPert = xDelta*(1+new.Properties[i][3])
                 new.Properties[i][3] += xPert
-                self.uNablaA[i][self.DoF_DL] = SensSolve()
+                self.uNablaA[i][self.DoF_DL], self.mNablaA[i] = SensSolve()
         if I:
             self.uNablaI = [np.zeros_like(self.u)]*nProperties
+            self.mNablaI = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
                 xPert = xDelta*(1+new.Properties[i][4])
                 new.Properties[i][4] += xPert
-                self.uNablaI[i][self.DoF_DL] = SensSolve()
+                self.uNablaI[i][self.DoF_DL], self.mNablaI[i] = SensSolve()
 
                 #new.Initialize()
                 #kNew = new.Assemble(new.StiffMatElem)
@@ -568,5 +576,27 @@ if __name__ == '__main__':
     Test.EigenvalueAnalysis(nEig=len(Test.DoF))
 
     Test.PlotMode()
-
     Test.SensitivityAnalysis()
+    uNablaAFD = [np.zeros_like(Test.u)]*2
+    xDelta = 1e-2
+    for i in range(2):
+        Test1 = deepcopy(Test)
+        Test1.Properties[i][3] += xDelta
+        Test1.Initialize()
+        Test1.StaticAnalysis()
+        Test1.ComputeStress()
+        uNablaAFD[i] = (Test1.u-Test.u)/xDelta
+
+    uNablaIFD = [np.zeros_like(Test.u)]*2
+    for i in range(2):
+        Test1 = deepcopy(Test)
+        Test1.Properties[i][4] += xDelta
+        Test1.Initialize()
+        Test1.StaticAnalysis()
+        Test1.ComputeStress()
+        uNablaIFD[i] = (Test1.u-Test.u)/xDelta
+    print(uNablaAFD)
+    print(Test.uNablaA)
+    print(uNablaIFD)
+    print(Test.uNablaI)
+
