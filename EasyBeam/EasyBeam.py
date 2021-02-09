@@ -8,7 +8,7 @@ import matplotlib.collections as mplcollect
 from copy import deepcopy
 
 class Beam2D:
-    nStep = 100
+    nSeg = 100
     Scale = 1
     ScalePhi = 1
     massMatType = "consistent"
@@ -16,10 +16,7 @@ class Beam2D:
     lineStyleUndeformed = "--"
 
     def Initialize(self):
-        """
-        # Not OK
-
-        """
+        # OK!
         self.Nodes = np.array(self.Nodes, dtype=float)
         self.El = np.array(self.El, dtype=int)
         self.nEl = len(self.El)     # number of elements
@@ -50,7 +47,8 @@ class Beam2D:
         self.u[:] = np.nan
         for i in range(len(self.Disp)):
             for ii in range(3):
-                if isinstance(self.Disp[i][1][ii], int) or isinstance(self.Disp[i][1][ii], float):
+                if (isinstance(self.Disp[i][1][ii], int) or
+                    isinstance(self.Disp[i][1][ii], float)):
                     self.u[3*self.Disp[i][0]+ii] = self.Disp[i][1][ii]
 
         # initial forces
@@ -59,7 +57,8 @@ class Beam2D:
         self.F[self.DoF] = 0
         for i in range(len(self.Load)):
             for ii in range(3):
-                if isinstance(self.Load[i][1][ii], int) or isinstance(self.Load[i][1][ii], float):
+                if (isinstance(self.Load[i][1][ii], int) or
+                    isinstance(self.Load[i][1][ii], float)):
                     self.F[3*self.Load[i][0]+ii] = self.Load[i][1][ii]
 
         self.rho = np.zeros([self.nEl])
@@ -73,13 +72,12 @@ class Beam2D:
         self.ell = np.zeros([self.nEl])
         self.β = np.zeros([self.nEl])
         self.T2 = np.zeros([self.nEl, 2, 2])
-        self.T3 = np.zeros([self.nEl, 3, 3])
-        self.T6 = np.zeros([self.nEl, 6, 6])
-        # self.r = np.zeros([self.nEl, 3, self.nStep+1])
+        self.T = np.zeros([self.nEl, 6, 6])
+        # self.r = np.zeros([self.nEl, 3, self.nSeg+1])
         self.mass = 0
         self.L = np.zeros([self.nEl, 6, 3*self.nN])
         self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
-        self.r0S = np.zeros([self.nEl, 3, self.nStep+1])
+        self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
         for i in range(self.nEl):
             for ii in range(len(self.Properties)):
                 if self.PropID[i] == self.Properties[ii][0]:
@@ -94,30 +92,28 @@ class Beam2D:
                                        self.Nodes[self.El[i, 0], :])
             self.mass += (self.A[i]*self.ell[i]*self.rho[i])
             if self.Nodes[self.El[i, 1], 0] >= self.Nodes[self.El[i, 0], 0]:
-                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/(self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))
+                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/
+                                      (self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))
             else:
-                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/(self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))+pi
-            self.T3[i] = np.array([[np.cos(self.β[i]), -np.sin(self.β[i]), 0],
-                                   [np.sin(self.β[i]),  np.cos(self.β[i]), 0],
-                                   [                0,                  0, 1]],
-                                  dtype=float)
-            self.T2[i] = self.T3[i, 0:2, 0:2]
-            self.T6[i] = np.block([[    self.T3[i].T, np.zeros([3, 3])],
-                                   [np.zeros([3, 3]),     self.T3[i].T]])
+                self.β[i] = pi + np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/
+                                           (self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))
+            self.T2[i] = np.array([[np.cos(self.β[i]), -np.sin(self.β[i])],
+                                  [np.sin(self.β[i]),  np.cos(self.β[i])]],
+                                 dtype=float)
+            self.T[i] = np.block([[    self.T2[i].T, np.zeros([2, 4])],
+                                  [0, 0, 1, 0, 0, 0],
+                                  [np.zeros([2, 3]), self.T2[i].T, np.zeros([2, 1])],
+                                  [0, 0, 0, 0, 0, 1]])
             self.L[i, 0:3, 3*self.El[i, 0]:3*self.El[i, 0]+3] = np.eye(3)
             self.L[i, 3:6, 3*self.El[i, 1]:3*self.El[i, 1]+3] = np.eye(3)
-            for j in range(self.nStep+1):
-                ξ = j/(self.nStep)
-                self.r0S[i, :, j] = self.T3[i]@self.ShapeMat(ξ, self.ell[i])@self.T6[i]@self.L[i]@self.r0
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
+                self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
 
     def ShapeMat(self, ξ, ell):
-        # NOK! new shape functions implemented below
-        return(np.array([[1-ξ,                 0,              0, ξ,             0,              0],
-                         [  0,   1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0,  ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)],
-                         [  0,     6*ξ/ell*(ξ-1),   1-4*ξ+3*ξ**2, 0, 6*ξ/ell*(1-ξ),      ξ*(3*ξ-2)]]))
-        # NEW VERSION, not yet working with initialize!
-        #return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
-        #                 [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
+        # OK!
+        return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
+                         [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
 
     def StrainDispMat(self, ξ, ell):
         # OK!
@@ -223,7 +219,7 @@ class Beam2D:
     def Assemble(self, MatElem):
         Matrix = np.zeros([3*self.nN, 3*self.nN])
         for i in range(self.nEl):
-            Matrix += self.L[i].T@self.T6[i].T@MatElem(i)@self.T6[i]@self.L[i]
+            Matrix += self.L[i].T@self.T[i].T@MatElem(i)@self.T[i]@self.L[i]
         return Matrix
 
 
@@ -258,23 +254,23 @@ class Beam2D:
     def ComputeStress(self):
         # deformation
         self.uE = np.zeros([self.nEl, 6])
-        self.uS = np.zeros([self.nEl, 3, self.nStep+1])
+        self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
         for i in range(self.nEl):
             self.uE[i, :] = self.L[i]@self.u
-            for j in range(self.nStep+1):
-                ξ = j/(self.nStep)
-                self.uS[i, :, j] = self.T3[i]@self.ShapeMat(ξ, self.ell[i])@self.T6[i]@self.uE[i, :]
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
+                self.uS[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.uE[i, :]
         self.rS = self.r0S+self.uS*self.Scale
 
         # stress
         BU = np.zeros([self.nEl, 6])
         BL = np.zeros([self.nEl, 6])
-        self.sigmaU = np.zeros([self.nEl, self.nStep+1])
-        self.sigmaL = np.zeros([self.nEl, self.nStep+1])
-        self.sigmaMax = np.zeros([self.nEl, self.nStep+1])
+        self.sigmaU = np.zeros([self.nEl, self.nSeg+1])
+        self.sigmaL = np.zeros([self.nEl, self.nSeg+1])
+        self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
         for i in range(self.nEl):
-            for j in range(self.nStep+1):
-                ξ = j/(self.nStep)
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
                 # upper Fiber
                 BU[i, :] = np.array([-1/self.ell[i],
                                      1/self.ell[i]**2*6*self.zU[i]*(1-2*ξ),
@@ -282,7 +278,7 @@ class Beam2D:
                                      1/self.ell[i],
                                      1/self.ell[i]**2*6*self.zU[i]*(2*ξ-1),
                                      1/self.ell[i]*2*self.zU[i]*(1-3*ξ)])
-                self.sigmaU[i, j] = self.E[i]*BU[i, :].T@(self.T6[i]@self.uE[i, :])
+                self.sigmaU[i, j] = self.E[i]*BU[i, :].T@(self.T[i]@self.uE[i, :])
                 # lower Fiber
                 BL[i, :] = np.array([-1/self.ell[i],
                                      1/self.ell[i]**2*6*self.zL[i]*(1-2*ξ),
@@ -290,13 +286,13 @@ class Beam2D:
                                      1/self.ell[i],
                                      1/self.ell[i]**2*6*self.zL[i]*(2*ξ-1),
                                      1/self.ell[i]*2*self.zL[i]*(1-3*ξ)])
-                self.sigmaL[i, j] = self.E[i]*BL[i, :].T@(self.T6[i]@self.uE[i, :])
+                self.sigmaL[i, j] = self.E[i]*BL[i, :].T@(self.T[i]@self.uE[i, :])
                 self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]),
                                           abs(self.sigmaU[i, j]))
 
     def ComputeStressNew(self):
         for i in range(self.nEl):
-            uE = T.T@L.T@self.u
+            uE = T[i].T@L.T@self.u
             epsilon = B@uE
             sigma = EMat@epsilon
 
@@ -327,7 +323,8 @@ class Beam2D:
         return Matrix
 
     def FFRF_Output(self):
-        if self.stiffMatType[0].lower() == "e" and self.massMatType[0].lower() == "c":
+        if (self.stiffMatType[0].lower() == "e" and
+            self.massMatType[0].lower() == "c"):
             kff = self.Assemble(self.StiffMatElem)
             Stf = self.Assemble2x6(self.StfElem)
             Srf = self.Assemble(self.SrfElem)
@@ -400,13 +397,13 @@ class Beam2D:
         for ii in range(len(self.omega)):
             Phii[self.DoF] = self.Phi[:, ii]
             uE_Phi = np.zeros([self.nEl, 6])
-            uS_Phi = np.zeros([self.nEl, 3, self.nStep+1])
+            uS_Phi = np.zeros([self.nEl, 2, self.nSeg+1])
             for i in range(self.nEl):
                 uE_Phi[i, :] = self.L[i]@Phii
-                for j in range(self.nStep+1):
-                    ξ = j/(self.nStep)
+                for j in range(self.nSeg+1):
+                    ξ = j/(self.nSeg)
                     S = self.ShapeMat(ξ, self.ell[i])
-                    uS_Phi[i, :, j] = self.T3[i]@S@self.T6[i]@uE_Phi[i, :]
+                    uS_Phi[i, :, j] = self.T2[i]@S@self.T[i]@uE_Phi[i, :]
             # deformation
             rPhi = self.r0S+uS_Phi*self.ScalePhi
             dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2)
@@ -566,7 +563,7 @@ if __name__ == '__main__':
     b = 10      # mm
     h = 20      # mm
     Test.Properties = [['Steel', 7.85e-9, 210000, 0.3, b*h, b*h**3/12, h/2, -h/2],
-                       ['Alu', 2.70e-9,  70000, 0.3, b*h, b*h**3/12, h/2, -h/2]]
+                       [  'Alu', 2.70e-9,  70000, 0.3, b*h, b*h**3/12, h/2, -h/2]]
 
     Test.Nodes = [[  0,   0],
                   [100,   0],
