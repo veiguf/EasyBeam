@@ -8,12 +8,13 @@ import matplotlib.collections as mplcollect
 from copy import deepcopy
 
 class Beam2D:
-    nSeg = 40
+    nSeg = 10
     Scale = 1
     ScalePhi = 1
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
-    lineStyleUndeformed = "--"
+    lineStyleUndeformed = "-"
+    colormap = "Blues"
 
     def Initialize(self):
         # OK!
@@ -331,7 +332,7 @@ class Beam2D:
                   \nand massMatType = "consistent"')
         return self.mass, kff, Stf, Srf, Sff, self.r0
 
-    def _plotting(self, val, disp, title):
+    def _plotting(self, val, disp, title, colormap):
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
@@ -339,15 +340,15 @@ class Beam2D:
         norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
         cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
         cmap.set_array([])
-        lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap="jet",
+        lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
                           plot=False)
         for i in range(self.nEl):
             xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
             yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
-            plt.plot(xEl, yEl, c='gray', lw=1, ls=self.lineStyleUndeformed)
+            plt.plot(xEl, yEl, c='gray', lw=0.5, ls=self.lineStyleUndeformed)
         for i in range(self.nEl):
             lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
-                            cmap="jet", norm=lcAll.norm)
+                            cmap=colormap, norm=lcAll.norm)
         cb = plt.colorbar(lcAll, ticks=c, shrink=0.5, ax=[ax], location="left",
                           aspect=10)
         #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
@@ -367,35 +368,40 @@ class Beam2D:
     def PlotStress(self, stress="all"):
         if stress.lower() in ["all", "upper"]:
             self._plotting(np.sum(self.sigmaU, 2), self.rS,
-                           "upper fiber stress $\\sigma_U$\n[MPa]")
+                           "upper fiber stress $\\sigma_U$\n[MPa]",
+                           self.colormap)
 
         if stress.lower() in ["all", "lower"]:
             self._plotting(np.sum(self.sigmaL, 2), self.rS,
-                           "lower fiber stress $\\sigma_L$\n[MPa]")
+                           "lower fiber stress $\\sigma_L$\n[MPa]",
+                           self.colormap+"_r")
 
         if stress.lower() in ["all", "max"]:
             self._plotting(self.sigmaMax, self.rS,
-                           "maximum stress $|\\sigma_{max}|$\n[MPa]")
+                           "maximum stress $|\\sigma_{max}|$\n[MPa]",
+                           self.colormap)
 
         if stress.lower() in ["all", "bending"]:
             self._plotting(self.sigmaU[:, :, 1], self.rS,
-                           "bending stress\n(upper fiber) $\\sigma_{bending}$\n[MPa]")
+                           "bending stress\n(upper fiber) $\\sigma_{bending}$\n[MPa]",
+                           self.colormap)
 
         if stress.lower() in ["all", "axial"]:
             self._plotting(self.sigmaU[:, :, 0], self.rS,
-                           "axial stress $\\sigma_{axial}$\n[MPa]")
+                           "axial stress $\\sigma_{axial}$\n[MPa]",
+                           self.colormap)
 
     def PlotDisplacement(self, component="all"):
         if component.lower() in ["mag", "all"]:
             self.dS = np.sqrt(self.uS[:, 0, :]**2+self.uS[:, 1, :]**2)
             self._plotting(self.dS, self.rS,
-                           "deformation magnitude $|u|$\n[mm]")
+                           "deformation magnitude $|u|$\n[mm]", self.colormap)
         if component.lower() in ["x", "all"]:
             self._plotting(self.uS[:, 0, :], self.rS,
-                           "$x$-deformation $u_x$\n[mm]")
+                           "$x$-deformation $u_x$\n[mm]", self.colormap)
         if component.lower() in ["y", "all"]:
             self._plotting(self.uS[:, 1, :], self.rS,
-                           "$y$-deformation $u_y$\n[mm]")
+                           "$y$-deformation $u_y$\n[mm]", self.colormap)
 
     def PlotMode(self):
         Phii = np.zeros([3*self.nN])
@@ -425,7 +431,7 @@ class Beam2D:
         for i in range(self.nEl):
             xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
             yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
-            plt.plot(xEl, yEl, c='gray', lw=1, ls='-')
+            plt.plot(xEl, yEl, c='gray', lw=self.A[i]/np.max(self.A), ls='-')
         plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
         if NodeNumber:
             for i in range(len(self.Nodes)):
@@ -471,7 +477,7 @@ class Beam2D:
             self.mNablarho = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
-                xPert = xDelta*(1+new.Properties[i][4])
+                xPert = xDelta*(1+new.Properties[i][1])
                 new.Properties[i][1] += xPert
                 self.uNablarho[i][self.DoF_DL], self.mNablarho[i] = SensSolve()
         if E:
@@ -479,7 +485,7 @@ class Beam2D:
             self.mNablaE = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
-                xPert = xDelta*(1+new.Properties[i][4])
+                xPert = xDelta*(1+new.Properties[i][2])
                 new.Properties[i][2] += xPert
                 self.uNablaE[i][self.DoF_DL], self.mNablaE[i] = SensSolve()
         if A:
@@ -487,26 +493,87 @@ class Beam2D:
             self.mNablaA = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
-                xPert = xDelta*(1+new.Properties[i][3])
-                new.Properties[i][3] += xPert
+                xPert = xDelta*(1+new.Properties[i][4])
+                new.Properties[i][4] += xPert
                 self.uNablaA[i][self.DoF_DL], self.mNablaA[i] = SensSolve()
         if I:
             self.uNablaI = [np.zeros_like(self.u)]*nProperties
             self.mNablaI = [[]]*nProperties
             for i in range(nProperties):
                 new = deepcopy(self)
-                xPert = xDelta*(1+new.Properties[i][4])
-                new.Properties[i][4] += xPert
+                xPert = xDelta*(1+new.Properties[i][5])
+                new.Properties[i][5] += xPert
                 self.uNablaI[i][self.DoF_DL], self.mNablaI[i] = SensSolve()
 
-                #new.Initialize()
-                #kNew = new.Assemble(new.StiffMatElem)
-                #FPseudo = ((new.F-self.F)/xPert -(kNew-self.k)/xPert@self.u)
-                #self.uNablaI[i][self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
-                #                                               FPseudo)
 
-    def StressSensitivity(self):
-        pass
+    def CalculateStressSensitivity(self, rho=False, E=False, A=True, I=True,
+                                   xDelta=1e-6):
+        """
+        d()/dh!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        """
+        n = sum([rho, E, A, I, h])
+        nProperties = len(Test.Properties)
+
+        if rho:
+            self.sigmaLNablarho = [np.zeros_like(self.sigmaL)]*nProperties
+            self.sigmaUNablarho = [np.zeros_like(self.sigmaU)]*nProperties
+            self.epsilonLNablarho = [np.zeros_like(self.epsilonL)]*nProperties
+            self.epsilonUNablarho = [np.zeros_like(self.epsilonU)]*nProperties
+            for k in range(nProperties):
+                for i in range(self.nEl):
+                    uENabla =  self.T[i]@self.L[i]@self.uNablarho[k]
+                    for j in range(self.nSeg+1):
+                        ξ = j/(self.nSeg)
+                        BL, BU = self.StrainDispMat(ξ, self.ell[i], i)
+                        self.epsilonLNablarho[k][i, j] = BL@uENabla
+                        self.epsilonUNablarho[k][i, j] = BU@uENabla
+                        self.sigmaLNablarho[k][i, j] = self.epsilonLNablarho[k][i, j]*self.E[i]
+                        self.sigmaUNablarho[k][i, j] = self.epsilonUNablarho[k][i, j]*self.E[i]
+        if E:
+            self.sigmaLNablaE = [np.zeros_like(self.sigmaL)]*nProperties
+            self.sigmaUNablaE = [np.zeros_like(self.sigmaU)]*nProperties
+            self.epsilonLNablaE = [np.zeros_like(self.epsilonL)]*nProperties
+            self.epsilonUNablaE = [np.zeros_like(self.epsilonU)]*nProperties
+            for k in range(nProperties):
+                for i in range(self.nEl):
+                    uENabla =  self.T[i]@self.L[i]@self.uNablaE[k]
+                    for j in range(self.nSeg+1):
+                        ξ = j/(self.nSeg)
+                        BL, BU = self.StrainDispMat(ξ, self.ell[i], i)
+                        self.epsilonLNablaE[k][i, j] = BL@uENabla
+                        self.epsilonUNablaE[k][i, j] = BU@uENabla
+                        self.sigmaLNablaE[k][i, j] = self.epsilonLNablaE[k][i, j]*self.E[i] + self.epsilonU[k][i, j]
+                        self.sigmaUNablaE[k][i, j] = self.epsilonUNablaE[k][i, j]*self.E[i] + self.epsilonU[k][i, j]
+        if A:
+            self.sigmaLNablaA = [np.zeros_like(self.sigmaL)]*nProperties
+            self.sigmaUNablaA = [np.zeros_like(self.sigmaU)]*nProperties
+            self.epsilonLNablaA = [np.zeros_like(self.epsilonL)]*nProperties
+            self.epsilonUNablaA = [np.zeros_like(self.epsilonU)]*nProperties
+            for k in range(nProperties):
+                for i in range(self.nEl):
+                    uENabla =  self.T[i]@self.L[i]@self.uNablaA[k]
+                    for j in range(self.nSeg+1):
+                        ξ = j/(self.nSeg)
+                        BL, BU = self.StrainDispMat(ξ, self.ell[i], i)
+                        self.epsilonLNablaA[k][i, j] = BL@uENabla
+                        self.epsilonUNablaA[k][i, j] = BU@uENabla
+                        self.sigmaLNablaA[k][i, j] = self.epsilonLNablaA[k][i, j]*self.E[i]
+                        self.sigmaUNablaA[k][i, j] = self.epsilonUNablaA[k][i, j]*self.E[i]
+        if I:
+            self.sigmaLNablaI = [np.zeros_like(self.sigmaL)]*nProperties
+            self.sigmaUNablaI = [np.zeros_like(self.sigmaU)]*nProperties
+            self.epsilonLNablaI = [np.zeros_like(self.epsilonL)]*nProperties
+            self.epsilonUNablaI = [np.zeros_like(self.epsilonU)]*nProperties
+            for k in range(nProperties):
+                for i in range(self.nEl):
+                    uENabla =  self.T[i]@self.L[i]@self.uNablaI[k]
+                    for j in range(self.nSeg+1):
+                        ξ = j/(self.nSeg)
+                        BL, BU = self.StrainDispMat(ξ, self.ell[i], i)
+                        self.epsilonLNablaI[k][i, j] = BL@uENabla
+                        self.epsilonUNablaI[k][i, j] = BU@uENabla
+                        self.sigmaLNablaI[k][i, j] = self.epsilonLNablaI[k][i, j]*self.E[i]
+                        self.sigmaUNablaI[k][i, j] = self.epsilonUNablaI[k][i, j]*self.E[i]
 
     def EigenvalueSensitivity(self):
         pass
@@ -597,27 +664,39 @@ if __name__ == '__main__':
     Test.ScalePhi = 0.1
     #Test.EigenvalueAnalysis(nEig=len(Test.DoF))
     #Test.PlotMode()
-    Test.SensitivityAnalysis()
-    uNablaAFD = [np.zeros_like(Test.u)]*2
-    xDelta = 1e-2
-    for i in range(2):
-        Test1 = deepcopy(Test)
-        Test1.Properties[i][3] += xDelta
-        Test1.Initialize()
-        Test1.StaticAnalysis()
-        Test1.ComputeStress()
-        uNablaAFD[i] = (Test1.u-Test.u)/xDelta
 
-    uNablaIFD = [np.zeros_like(Test.u)]*2
+    Test.SensitivityAnalysis()
+    Test.CalculateStressSensitivity()
+
+    uNablaAFD = [np.zeros_like(Test.u)]*2
+    xDelta = 1e-6
     for i in range(2):
         Test1 = deepcopy(Test)
         Test1.Properties[i][4] += xDelta
         Test1.Initialize()
         Test1.StaticAnalysis()
         Test1.ComputeStress()
-        uNablaIFD[i] = (Test1.u-Test.u)/xDelta
-    print(uNablaAFD)
-    print(Test.uNablaA)
-    print(uNablaIFD)
-    print(Test.uNablaI)
+        uNablaAFD[i] = (Test1.u-Test.u)/xDelta
 
+    uNablaIFD = [np.zeros_like(Test.u)]*2
+    sigmaLNablaIFD = [np.zeros_like(Test.sigmaL)]*2
+    for i in range(2):
+        Test1 = deepcopy(Test)
+        Test1.Properties[i][5] += xDelta
+        Test1.Initialize()
+        Test1.StaticAnalysis()
+        Test1.ComputeStress()
+        uNablaIFD[i] = (Test1.u-Test.u)/xDelta
+        sigmaLNablaIFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
+    print("displacement")
+    print("FD")
+    #print(uNablaAFD)
+    #print(Test.uNablaA)
+    print(uNablaIFD)
+    print("Analytical")
+    print(Test.uNablaI)
+    print("stress")
+    print("FD")
+    print(sigmaLNablaIFD)
+    print("Analytical")
+    print(Test.sigmaLNablaI)
