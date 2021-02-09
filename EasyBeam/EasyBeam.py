@@ -8,7 +8,7 @@ import matplotlib.collections as mplcollect
 from copy import deepcopy
 
 class Beam2D:
-    nSeg = 100
+    nSeg = 40
     Scale = 1
     ScalePhi = 1
     massMatType = "consistent"
@@ -115,10 +115,15 @@ class Beam2D:
         return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
                          [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
 
-    def StrainDispMat(self, ξ, ell):
-        # OK!
-        return(np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
-                         [     0, (6-12*ξ)/ell**2,  (4-6*ξ)/ell,     0, (-6+12*ξ)/ell**2, (-6*ξ+2)/ell]]))
+    def StrainDispMat(self, ξ, ell, i):
+        # # OK!
+        # return(np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
+        #                  [     0, (6-12*ξ)/ell**2,  (4-6*ξ)/ell,     0, (-6+12*ξ)/ell**2, (-6*ξ+2)/ell]]))
+        BL = np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
+                       [     0, self.zL[i]*(6-12*ξ)/ell**2,  self.zL[i]*(4-6*ξ)/ell,     0, self.zL[i]*(-6+12*ξ)/ell**2, self.zL[i]*(-6*ξ+2)/ell]])
+        BU = np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
+                       [     0, self.zU[i]*(6-12*ξ)/ell**2,  self.zU[i]*(4-6*ξ)/ell,     0, self.zU[i]*(-6+12*ξ)/ell**2, self.zU[i]*(-6*ξ+2)/ell]])
+        return(BL, BU)
 
     def StiffMatElem(self, i):
         # OK!
@@ -154,10 +159,10 @@ class Beam2D:
                         dtype=float)
         return k
 
-    def MatMat(self):
+    def MatMat(self, i):
         # OK!
-        return(np.array([[self.E*self.A,             0],
-                         [            0, self.E*self.I]]))
+        return(np.array([[self.E[i]*self.A[i],                   0],
+                         [                  0, self.E[i]*self.I[i]]]))
 
     def MassMatElem(self, i):
         # OK!
@@ -251,50 +256,42 @@ class Beam2D:
         self.f0 = self.omega/2/np.pi
         self.Phi = self.Phi[:, iSort]
 
-    def ComputeStress(self):
-        # deformation
+    def ComputeStress(self):        # deformation
         self.uE = np.zeros([self.nEl, 6])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
+        self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.epsilonL = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
+        self.epsilon = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigma = np.zeros([self.nEl, self.nSeg+1, 2])
         for i in range(self.nEl):
-            self.uE[i, :] = self.L[i]@self.u
+            ell = self.ell[i]
+            self.uE[i, :]  = self.T[i]@self.L[i]@self.u
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
-                self.uS[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.uE[i, :]
+                self.uS[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.uE[i, :]
+                BL, BU = self.StrainDispMat(ξ, ell, i)
+                self.epsilonL[i,j] = BL@self.uE[i, :]
+                self.epsilonU[i,j] = BU@self.uE[i, :]
+                self.sigmaL[i, j] = self.epsilonL[i, j]*self.E[i]
+                self.sigmaU[i, j] = self.epsilonU[i, j]*self.E[i]
+                #self.sigmaMax[i, j] = np.sqrt(np.sum(self.sigmaU[i,j]**2,2))
+                #epsA, epsB_h = self.StrainDispMat(ξ, ell)@self.uE[i, :]
+                #self.epsilonL[i,j] = epsA+epsB_h*self.zL[i]
+                #self.epsilonU[i,j] = epsA+epsB_h*self.zU[i]
+                #self.epsilon[i, j, :] = np.array([epsA, epsB_h*self.zU[i]])
+                #N, M = self.MatMat(i)@self.epsilon[i,j,:]
+                #self.sigma[i, j, 0] = N/self.A[i]
+                #self.sigma[i, j, 1] =  M/self.I[i]
+                #self.sigmaU[i, j] = self.epsilonU[i, j]*self.E[i]
+                #self.sigmaL[i, j] = self.epsilonL[i, j]*self.E[i]
+                #self.sigmaMax[i, j] = max(np.abs([self.sigmaU[i,j], self.sigmaL[i,j]]))
+        #TODO this needs to be continuous for the sensitivities...
+        self.sigmaMax = np.max((np.abs(np.sum(self.sigmaL,2)), np.abs(np.sum(self.sigmaU, 2))),1)
         self.rS = self.r0S+self.uS*self.Scale
 
-        # stress
-        BU = np.zeros([self.nEl, 6])
-        BL = np.zeros([self.nEl, 6])
-        self.sigmaU = np.zeros([self.nEl, self.nSeg+1])
-        self.sigmaL = np.zeros([self.nEl, self.nSeg+1])
-        self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
-        for i in range(self.nEl):
-            for j in range(self.nSeg+1):
-                ξ = j/(self.nSeg)
-                # upper Fiber
-                BU[i, :] = np.array([-1/self.ell[i],
-                                     1/self.ell[i]**2*6*self.zU[i]*(1-2*ξ),
-                                     1/self.ell[i]*2*self.zU[i]*(2-3*ξ),
-                                     1/self.ell[i],
-                                     1/self.ell[i]**2*6*self.zU[i]*(2*ξ-1),
-                                     1/self.ell[i]*2*self.zU[i]*(1-3*ξ)])
-                self.sigmaU[i, j] = self.E[i]*BU[i, :].T@(self.T[i]@self.uE[i, :])
-                # lower Fiber
-                BL[i, :] = np.array([-1/self.ell[i],
-                                     1/self.ell[i]**2*6*self.zL[i]*(1-2*ξ),
-                                     1/self.ell[i]*2*self.zL[i]*(2-3*ξ),
-                                     1/self.ell[i],
-                                     1/self.ell[i]**2*6*self.zL[i]*(2*ξ-1),
-                                     1/self.ell[i]*2*self.zL[i]*(1-3*ξ)])
-                self.sigmaL[i, j] = self.E[i]*BL[i, :].T@(self.T[i]@self.uE[i, :])
-                self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]),
-                                          abs(self.sigmaU[i, j]))
-
-    def ComputeStressNew(self):
-        for i in range(self.nEl):
-            uE = T[i].T@L.T@self.u
-            epsilon = B@uE
-            sigma = EMat@epsilon
 
     # Functions for FFR
     def StfElem(self, i):
@@ -369,22 +366,30 @@ class Beam2D:
 
     def PlotStress(self, stress="all"):
         if stress.lower() in ["all", "upper"]:
-            self._plotting(self.sigmaU, self.rS,
+            self._plotting(np.sum(self.sigmaU, 2), self.rS,
                            "upper fiber stress $\\sigma_U$\n[MPa]")
 
         if stress.lower() in ["all", "lower"]:
-            self._plotting(self.sigmaL, self.rS,
+            self._plotting(np.sum(self.sigmaL, 2), self.rS,
                            "lower fiber stress $\\sigma_L$\n[MPa]")
 
         if stress.lower() in ["all", "max"]:
             self._plotting(self.sigmaMax, self.rS,
-                           "maximum stress $\\sigma_{max}$\n[MPa]")
+                           "maximum stress $|\\sigma_{max}|$\n[MPa]")
+
+        if stress.lower() in ["all", "bending"]:
+            self._plotting(self.sigmaU[:, :, 1], self.rS,
+                           "bending stress\n(upper fiber) $\\sigma_{bending}$\n[MPa]")
+
+        if stress.lower() in ["all", "axial"]:
+            self._plotting(self.sigmaU[:, :, 0], self.rS,
+                           "axial stress $\\sigma_{axial}$\n[MPa]")
 
     def PlotDisplacement(self, component="all"):
         if component.lower() in ["mag", "all"]:
             self.dS = np.sqrt(self.uS[:, 0, :]**2+self.uS[:, 1, :]**2)
             self._plotting(self.dS, self.rS,
-                           "deformation\nmagnitude $|u|$\n[mm]")
+                           "deformation magnitude $|u|$\n[mm]")
         if component.lower() in ["x", "all"]:
             self._plotting(self.uS[:, 0, :], self.rS,
                            "$x$-deformation $u_x$\n[mm]")
@@ -424,13 +429,13 @@ class Beam2D:
         plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
         if NodeNumber:
             for i in range(len(self.Nodes)):
-                ax.annotate("N"+str(i), (self.Nodes[i, 0]+p, self.Nodes[i, 1]+p),
+                ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p, self.Nodes[i, 1]+p),
                             fontsize=5*FontMag, clip_on=False)
         if ElementNumber:
             for i in range(self.nEl):
                 posx = (self.Nodes[self.El[i, 0], 0]+self.Nodes[self.El[i, 1], 0])/2
                 posy = (self.Nodes[self.El[i, 0], 1]+self.Nodes[self.El[i, 1], 1])/2
-                ax.annotate("E"+str(i), (posx+p, posy+p), fontsize=5*FontMag,
+                ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
                             c="gray", clip_on=False)
         xmin = self.Nodes[:, 0].min()
         xmax = self.Nodes[:, 0].max()
@@ -590,9 +595,8 @@ if __name__ == '__main__':
     Test.PlotStress('all')
 
     Test.ScalePhi = 0.1
-    Test.EigenvalueAnalysis(nEig=len(Test.DoF))
-
-    Test.PlotMode()
+    #Test.EigenvalueAnalysis(nEig=len(Test.DoF))
+    #Test.PlotMode()
     Test.SensitivityAnalysis()
     uNablaAFD = [np.zeros_like(Test.u)]*2
     xDelta = 1e-2
