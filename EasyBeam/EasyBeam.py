@@ -8,7 +8,6 @@ import matplotlib.collections as mplcollect
 from copy import deepcopy
 
 class Beam2D:
-
     nStep = 100
     Scale = 1
     ScalePhi = 1
@@ -17,15 +16,14 @@ class Beam2D:
     lineStyleUndeformed = "--"
 
     def Initialize(self):
-        self.N = np.array(self.N, dtype=float)
-        # Hack!!! Repain and remove!!!
-        if isinstance(self.El, np.ndarray) == False:
-            El = np.array(self.El)
-            self.PropID = El[:, 2]
-            self.El = np.array(El[:, 0:2], dtype=int)
-        self.nEl = len(self.El[:, 0])     # number of elements
-        self.nN = len(self.N[:, 0])       # number of nodes
+        """
+        # Not OK
 
+        """
+        self.Nodes = np.array(self.Nodes, dtype=float)
+        self.El = np.array(self.El, dtype=int)
+        self.nEl = len(self.El)     # number of elements
+        self.nN = len(self.Nodes[:, 0])       # number of nodes
         self.BC = []        # boundary conditions
         self.BC_DL = []
         self.DL = []        # displacement load
@@ -66,179 +64,168 @@ class Beam2D:
 
         self.rho = np.zeros([self.nEl])
         self.E = np.zeros([self.nEl])
+        self.nu = np.zeros([self.nEl])
         self.A = np.zeros([self.nEl])
         self.I = np.zeros([self.nEl])
-        self.eU = np.zeros([self.nEl])
-        self.eL = np.zeros([self.nEl])
+        self.zU = np.zeros([self.nEl])
+        self.zL = np.zeros([self.nEl])
         # lengths and rotations
-        self.l = np.zeros([self.nEl])
+        self.ell = np.zeros([self.nEl])
         self.β = np.zeros([self.nEl])
         self.T2 = np.zeros([self.nEl, 2, 2])
         self.T3 = np.zeros([self.nEl, 3, 3])
         self.T6 = np.zeros([self.nEl, 6, 6])
         # self.r = np.zeros([self.nEl, 3, self.nStep+1])
         self.mass = 0
-        self.B1 = np.zeros([self.nEl, 6, 3*self.nN])
-        self.r0 = np.insert(self.N, 2, 0, axis=1).flatten('C')
+        self.L = np.zeros([self.nEl, 6, 3*self.nN])
+        self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
         self.r0S = np.zeros([self.nEl, 3, self.nStep+1])
         for i in range(self.nEl):
             for ii in range(len(self.Properties)):
                 if self.PropID[i] == self.Properties[ii][0]:
                     self.rho[i] = self.Properties[ii][1]
                     self.E[i] = self.Properties[ii][2]
-                    self.A[i] = self.Properties[ii][3]
-                    self.I[i] = self.Properties[ii][4]
-                    self.eU[i] = self.Properties[ii][5]
-                    self.eL[i] = self.Properties[ii][6]
-            self.l[i] = np.linalg.norm(self.N[self.El[i, 1], :] -
-                                       self.N[self.El[i, 0], :])
-            self.mass += (self.A[i]*self.l[i]*self.rho[i])
-            if self.N[self.El[i, 1], 0] >= self.N[self.El[i, 0], 0]:
-                self.β[i] = np.arctan((self.N[self.El[i, 1], 1]-self.N[self.El[i, 0], 1])/(self.N[self.El[i, 1], 0]-self.N[self.El[i, 0], 0]))
+                    self.nu[i] = self.Properties[ii][3]
+                    self.A[i] = self.Properties[ii][4]
+                    self.I[i] = self.Properties[ii][5]
+                    self.zU[i] = self.Properties[ii][6]
+                    self.zL[i] = self.Properties[ii][7]
+            self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
+                                       self.Nodes[self.El[i, 0], :])
+            self.mass += (self.A[i]*self.ell[i]*self.rho[i])
+            if self.Nodes[self.El[i, 1], 0] >= self.Nodes[self.El[i, 0], 0]:
+                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/(self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))
             else:
-                self.β[i] = np.arctan((self.N[self.El[i, 1], 1]-self.N[self.El[i, 0], 1])/(self.N[self.El[i, 1], 0]-self.N[self.El[i, 0], 0]))+pi
+                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/(self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))+pi
             self.T3[i] = np.array([[np.cos(self.β[i]), -np.sin(self.β[i]), 0],
                                    [np.sin(self.β[i]),  np.cos(self.β[i]), 0],
                                    [                0,                  0, 1]],
-                                        dtype=float)
+                                  dtype=float)
             self.T2[i] = self.T3[i, 0:2, 0:2]
             self.T6[i] = np.block([[    self.T3[i].T, np.zeros([3, 3])],
                                    [np.zeros([3, 3]),     self.T3[i].T]])
-            self.B1[i, 0:3, 3*self.El[i, 0]:3*self.El[i, 0]+3] = np.eye(3)
-            self.B1[i, 3:6, 3*self.El[i, 1]:3*self.El[i, 1]+3] = np.eye(3)
+            self.L[i, 0:3, 3*self.El[i, 0]:3*self.El[i, 0]+3] = np.eye(3)
+            self.L[i, 3:6, 3*self.El[i, 1]:3*self.El[i, 1]+3] = np.eye(3)
             for j in range(self.nStep+1):
                 ξ = j/(self.nStep)
-                S = self.ShapeMat(ξ, self.l[i])
-                self.r0S[i, :, j] = self.T3[i]@S@self.T6[i]@self.B1[i]@self.r0
+                self.r0S[i, :, j] = self.T3[i]@self.ShapeMat(ξ, self.ell[i])@self.T6[i]@self.L[i]@self.r0
 
-    def ShapeMat(self, ξ, l):
-        NL = np.array([[1-ξ,               0,            0, ξ,            0,            0],
-                       [  0, 1-3*ξ**2+2*ξ**3, ξ*l*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*l*(ξ-1)],
-                       [  0,     6*ξ/l*(ξ-1), 1-4*ξ+3*ξ**2, 0,  6*ξ/l*(1-ξ),    ξ*(3*ξ-2)]])
-        return NL
+    def ShapeMat(self, ξ, ell):
+        # NOK! new shape functions implemented below
+        return(np.array([[1-ξ,                 0,              0, ξ,             0,              0],
+                         [  0,   1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0,  ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)],
+                         [  0,     6*ξ/ell*(ξ-1),   1-4*ξ+3*ξ**2, 0, 6*ξ/ell*(1-ξ),      ξ*(3*ξ-2)]]))
+        # NEW VERSION, not yet working with initialize!
+        #return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
+        #                 [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
+
+    def StrainDispMat(self, ξ, ell):
+        # OK!
+        return(np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
+                         [     0, (6-12*ξ)/ell**2,  (4-6*ξ)/ell,     0, (-6+12*ξ)/ell**2, (-6*ξ+2)/ell]]))
 
     def StiffMatElem(self, i):
+        # OK!
         A = self.A[i]
         E = self.E[i]
-        l = self.l[i]
+        ell = self.ell[i]
         I = self.I[i]
+        nu = self.nu[i]
+
         # bar (column) terms of stiffness matrix
-        k = E*A/l*np.array([[ 1, 0, 0, -1, 0, 0],
-                            [ 0, 0, 0,  0, 0, 0],
-                            [ 0, 0, 0,  0, 0, 0],
-                            [-1, 0, 0,  1, 0, 0],
-                            [ 0, 0, 0,  0, 0, 0],
-                            [ 0, 0, 0,  0, 0, 0]],
-                        dtype=float)
+        k = E*A/ell*np.array([[ 1, 0, 0, -1, 0, 0],
+                              [ 0, 0, 0,  0, 0, 0],
+                              [ 0, 0, 0,  0, 0, 0],
+                              [-1, 0, 0,  1, 0, 0],
+                              [ 0, 0, 0,  0, 0, 0],
+                              [ 0, 0, 0,  0, 0, 0]], dtype=float)
+
         # Bending terms after Euler-Bernoulli
         if self.stiffMatType[0].lower() == "e":
             phi = 0
         # Bending terms after Timoshenko-Ehrenfest
         elif self.stiffMatType[0].lower() == "t":
-            nu = 0.3
             G = E/(2*(1+nu))
             AS = A * 10*(1+nu)/(12+11*nu)  #Solid rectangular cross-sectional geometry after Cowper (1966)
             phi = 12*E*I/(G*AS*l**2)
-        c = E*I/(l**3*(1+phi))
-        k += c*np.array([[0,   0,            0, 0,    0,            0],
-                         [0,  12,          6*l, 0,  -12,          6*l],
-                         [0, 6*l, l**2*(4+phi), 0, -6*l, l**2*(2-phi)],
-                         [0,   0,            0, 0,    0,            0],
-                         [0, -12,         -6*l, 0,   12,         -6*l],
-                         [0, 6*l, l**2*(2-phi), 0, -6*l, l**2*(4+phi)]],
+        c = E*I/(ell**3*(1+phi))
+        k += c*np.array([[0,     0,              0, 0,      0,                0],
+                         [0,    12,          6*ell, 0,    -12,            6*ell],
+                         [0, 6*ell, ell**2*(4+phi), 0, -6*ell,   ell**2*(2-phi)],
+                         [0,     0,              0, 0,      0,                0],
+                         [0,   -12,         -6*ell, 0,     12,           -6*ell],
+                         [0, 6*ell, ell**2*(2-phi), 0, -6*ell,   ell**2*(4+phi)]],
                         dtype=float)
         return k
 
+    def MatMat(self):
+        # OK!
+        return(np.array([[self.E*self.A,             0],
+                         [            0, self.E*self.I]]))
+
     def MassMatElem(self, i):
-        l = self.l[i]
+        # OK!
+        ell = self.ell[i]
         rho = self.rho[i]
         A = self.A[i]
         if self.stiffMatType[0].lower() == "e":
             if self.massMatType[0].lower() == "c":
-                c = A*rho*l/420
-                m = c*np.array([[140,     0,       0,  70,     0,       0],
-                                [  0,   156,    22*l,   0,    54,   -13*l],
-                                [  0,  22*l,  4*l**2,   0,  13*l, -3*l**2],
-                                [ 70,     0,       0, 140,     0,       0],
-                                [  0,    54,    13*l,   0,   156,   -22*l],
-                                [  0, -13*l, -3*l**2,   0, -22*l,  4*l**2]],
+                c = A*rho*ell/420
+                m = c*np.array([[140,       0,         0,  70,       0,         0],
+                                [  0,     156,    22*ell,   0,      54,   -13*ell],
+                                [  0,  22*ell,  4*ell**2,   0,  13*ell, -3*ell**2],
+                                [ 70,       0,         0, 140,       0,         0],
+                                [  0,      54,    13*ell,   0,     156,   -22*ell],
+                                [  0, -13*ell, -3*ell**2,   0, -22*ell,  4*ell**2]],
                                dtype=float)
             elif self.massMatType[0].lower() == "l":
                 alpha = 0
-                c = A*rho*l/2
-                m = c*np.array([[ 1, 0,            0, 1, 0,              0],
-                                [ 0, 1,            0, 0, 0,              0],
-                                [ 0, 0, 2*alpha*l**2, 0, 0,              0],
-                                [ 1, 0,            0, 1, 0,              0],
-                                [ 0, 0,            0, 0, 1,              0],
-                                [ 0, 0,            0, 0, 0, 2*alpha*l**2.]],
+                c = A*rho*ell/2
+                m = c*np.array([[ 1, 0,              0, 1, 0,                0],
+                                [ 0, 1,              0, 0, 0,                0],
+                                [ 0, 0, 2*alpha*ell**2, 0, 0,                0],
+                                [ 1, 0,              0, 1, 0,                0],
+                                [ 0, 0,              0, 0, 1,                0],
+                                [ 0, 0,              0, 0, 0, 2*alpha*ell**2.]],
                                dtype=float)
         elif self.stiffMatType[0].lower() == "t":
             IR = self.I[i]
             nu = 0.3
             G = self.E[i]/(2*(1+nu))
             AS = 5*A/6  # for think rechtangular cross-sectional geometry (needs to be calculated from geometry)
-            phi = 12*self.E[i]*self.I[i]/(G*AS*l**2)
-            m = A*rho*l/420*np.array([[140, 0, 0,  70, 0, 0],
-                                      [  0, 0, 0,   0, 0, 0],
-                                      [  0, 0, 0,   0, 0, 0],
-                                      [ 70, 0, 0, 140, 0, 0],
-                                      [  0, 0, 0,   0, 0, 0],
-                                      [  0, 0, 0,   0, 0, 0]],
-                                     dtype=float)
+            phi = 12*self.E[i]*self.I[i]/(G*AS*ell**2)
+            m = A*rho*ell/420*np.array([[140, 0, 0,  70, 0, 0],
+                                        [  0, 0, 0,   0, 0, 0],
+                                        [  0, 0, 0,   0, 0, 0],
+                                        [ 70, 0, 0, 140, 0, 0],
+                                        [  0, 0, 0,   0, 0, 0],
+                                        [  0, 0, 0,   0, 0, 0]], dtype=float)
             # tranlational inertia
-            cT = A*rho*l/(1+phi)**2
-            m += cT*np.array([[0,                                 0,                                   0, 0,                                 0,                                   0],
-                              [0,         13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*l, 0,          9/70+3/10*phi+1/6*phi**2,    -(13/420+3/40*phi+1/24*phi**2)*l],
-                              [0, (11/210+11/120*phi+1/24*phi**2)*l,  (1/105+1/60*phi+1/120*phi**2)*l**2, 0,   (13/420+3/40*phi+1/24*phi**2)*l, -(1/140+1/60*phi+1/120*phi**2)*l**2],
-                              [0,                                 0,                                   0, 0,                                 0,                                   0],
-                              [0,          9/70+3/10*phi+1/6*phi**2,     (13/420+3/40*phi+1/24*phi**2)*l, 0,         13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*l],
-                              [0,  -(13/420+3/40*phi+1/24*phi**2)*l, -(1/140+1/60*phi+1/120*phi**2)*l**2, 0, (11/210+11/120*phi+1/24*phi**2)*l,  (1/105+1/60*phi+1/120*phi**2)*l**2]],
+            cT = A*rho*ell/(1+phi)**2
+            m += cT*np.array([[0,                                   0,                                     0, 0,                                   0,                                     0],
+                              [0,           13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*ell, 0,            9/70+3/10*phi+1/6*phi**2,    -(13/420+3/40*phi+1/24*phi**2)*ell],
+                              [0, (11/210+11/120*phi+1/24*phi**2)*ell,  (1/105+1/60*phi+1/120*phi**2)*ell**2, 0,   (13/420+3/40*phi+1/24*phi**2)*ell, -(1/140+1/60*phi+1/120*phi**2)*ell**2],
+                              [0,                                   0,                                     0, 0,                                   0,                                     0],
+                              [0,            9/70+3/10*phi+1/6*phi**2,     (13/420+3/40*phi+1/24*phi**2)*ell, 0,           13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*ell],
+                              [0,  -(13/420+3/40*phi+1/24*phi**2)*ell, -(1/140+1/60*phi+1/120*phi**2)*ell**2, 0, (11/210+11/120*phi+1/24*phi**2)*ell,  (1/105+1/60*phi+1/120*phi**2)*ell**2]],
                              dtype=float)
             # rotary inertia
-            cR = rho*IR/(l*(1+phi)**2)
-            m += cR*np.array([[0,                0,                              0, 0,                 0,                              0],
-                              [0,              6/5,               (1/10-1/2*phi)*l, 0,              -6/5,               (1/10-1/2*phi)*l],
-                              [0, (1/10-1/2*phi)*l, (2/15+1/6*phi+1/3*phi**2)*l**2, 0, (-1/10+1/2*phi)*l, (1/30+1/6*phi-1/6*phi**2)*l**2],
-                              [0,                0,                              0, 0,                 0,                              0],
-                              [0,             -6/5,              (-1/10+1/2*phi)*l, 0,               6/5,              (-1/10+1/2*phi)*l],
-                              [0, (1/10-1/2*phi)*l, (1/30+1/6*phi-1/6*phi**2)*l**2, 0, (-1/10+1/2*phi)*l, (2/15+1/6*phi+1/3*phi**2)*l**2]],
+            cR = rho*IR/(ell*(1+phi)**2)
+            m += cR*np.array([[0,                  0,                                0, 0,                   0,                                0],
+                              [0,                6/5,               (1/10-1/2*phi)*ell, 0,                -6/5,               (1/10-1/2*phi)*ell],
+                              [0, (1/10-1/2*phi)*ell, (2/15+1/6*phi+1/3*phi**2)*ell**2, 0, (-1/10+1/2*phi)*ell, (1/30+1/6*phi-1/6*phi**2)*ell**2],
+                              [0,                  0,                                0, 0,                   0,                                0],
+                              [0,               -6/5,              (-1/10+1/2*phi)*ell, 0,                 6/5,              (-1/10+1/2*phi)*ell],
+                              [0, (1/10-1/2*phi)*ell, (1/30+1/6*phi-1/6*phi**2)*ell**2, 0, (-1/10+1/2*phi)*ell, (2/15+1/6*phi+1/3*phi**2)*ell**2]],
                              dtype=float)
         return m
-
-    def StfElem(self, i):
-        l = self.l[i]
-        rho = self.rho[i]
-        A = self.A[i]
-        S = A*rho*l/12*np.array([[6, 0, 0, 6, 0,  0],
-                                 [0, 6, l, 0, 6, -l]],
-                                 dtype=float)
-        return S
-
-    def SrfElem(self, i):
-        l = self.l[i]
-        rho = self.rho[i]
-        A = self.A[i]
-        S = A*rho*l/60*np.array([[   0, 21, 3*l,    0,  9, -2*l],
-                                 [ -21,  0,   0,   -9,  0,    0],
-                                 [-3*l,  0,   0, -2*l,  0,    0],
-                                 [   0,  9, 2*l,    0, 21, -3*l],
-                                 [  -9,  0,   0,  -21,  0,    0],
-                                 [ 2*l,  0,   0,  3*l,  0,    0]],
-                                dtype=float)
-        return S
 
     def Assemble(self, MatElem):
         Matrix = np.zeros([3*self.nN, 3*self.nN])
         for i in range(self.nEl):
-            Matrix += self.B1[i].T@self.T6[i].T@MatElem(i)@self.T6[i]@self.B1[i]
+            Matrix += self.L[i].T@self.T6[i].T@MatElem(i)@self.T6[i]@self.L[i]
         return Matrix
 
-    def Assemble2x6(self, MatElem):
-        Matrix = np.zeros([2, 3*self.nN])
-        for i in range(self.nEl):
-            Matrix += self.T2[i]@MatElem(i)@self.T6[i]@self.B1[i]
-        return Matrix
 
     def StaticAnalysis(self):
         self.k = self.Assemble(self.StiffMatElem)
@@ -273,11 +260,10 @@ class Beam2D:
         self.uE = np.zeros([self.nEl, 6])
         self.uS = np.zeros([self.nEl, 3, self.nStep+1])
         for i in range(self.nEl):
-            self.uE[i, :] = self.B1[i]@self.u
+            self.uE[i, :] = self.L[i]@self.u
             for j in range(self.nStep+1):
                 ξ = j/(self.nStep)
-                S = self.ShapeMat(ξ, self.l[i])
-                self.uS[i, :, j] = self.T3[i]@S@self.T6[i]@self.uE[i, :]
+                self.uS[i, :, j] = self.T3[i]@self.ShapeMat(ξ, self.ell[i])@self.T6[i]@self.uE[i, :]
         self.rS = self.r0S+self.uS*self.Scale
 
         # stress
@@ -290,23 +276,55 @@ class Beam2D:
             for j in range(self.nStep+1):
                 ξ = j/(self.nStep)
                 # upper Fiber
-                BU[i, :] = np.array([-1/self.l[i],
-                                     1/self.l[i]**2*6*self.eU[i]*(1-2*ξ),
-                                     1/self.l[i]*2*self.eU[i]*(2-3*ξ),
-                                     1/self.l[i],
-                                     1/self.l[i]**2*6*self.eU[i]*(2*ξ-1),
-                                     1/self.l[i]*2*self.eU[i]*(1-3*ξ)])
+                BU[i, :] = np.array([-1/self.ell[i],
+                                     1/self.ell[i]**2*6*self.zU[i]*(1-2*ξ),
+                                     1/self.ell[i]*2*self.zU[i]*(2-3*ξ),
+                                     1/self.ell[i],
+                                     1/self.ell[i]**2*6*self.zU[i]*(2*ξ-1),
+                                     1/self.ell[i]*2*self.zU[i]*(1-3*ξ)])
                 self.sigmaU[i, j] = self.E[i]*BU[i, :].T@(self.T6[i]@self.uE[i, :])
                 # lower Fiber
-                BL[i, :] = np.array([-1/self.l[i],
-                                     1/self.l[i]**2*6*self.eL[i]*(1-2*ξ),
-                                     1/self.l[i]*2*self.eL[i]*(2-3*ξ),
-                                     1/self.l[i],
-                                     1/self.l[i]**2*6*self.eL[i]*(2*ξ-1),
-                                     1/self.l[i]*2*self.eL[i]*(1-3*ξ)])
+                BL[i, :] = np.array([-1/self.ell[i],
+                                     1/self.ell[i]**2*6*self.zL[i]*(1-2*ξ),
+                                     1/self.ell[i]*2*self.zL[i]*(2-3*ξ),
+                                     1/self.ell[i],
+                                     1/self.ell[i]**2*6*self.zL[i]*(2*ξ-1),
+                                     1/self.ell[i]*2*self.zL[i]*(1-3*ξ)])
                 self.sigmaL[i, j] = self.E[i]*BL[i, :].T@(self.T6[i]@self.uE[i, :])
                 self.sigmaMax[i, j] = max(abs(self.sigmaL[i, j]),
                                           abs(self.sigmaU[i, j]))
+
+    def ComputeStressNew(self):
+        for i in range(self.nEl):
+            uE = T.T@L.T@self.u
+            epsilon = B@uE
+            sigma = EMat@epsilon
+
+    # Functions for FFR
+    def StfElem(self, i):
+        ell = self.ell[i]
+        rho = self.rho[i]
+        A = self.A[i]
+        return(A*rho*ell/12*np.array([[6, 0,   0, 6, 0,    0],
+                                      [0, 6, ell, 0, 6, -ell]], dtype=float))
+
+    def SrfElem(self, i):
+        ell = self.ell[i]
+        rho = self.rho[i]
+        A = self.A[i]
+        return(A*rho*ell/60*np.array([[     0, 21, 3*ell,      0,  9, -2*ell],
+                                      [   -21,  0,     0,     -9,  0,      0],
+                                      [-3*ell,  0,     0, -2*ell,  0,      0],
+                                      [     0,  9, 2*ell,      0, 21, -3*ell],
+                                      [    -9,  0,     0,    -21,  0,      0],
+                                      [ 2*ell,  0,     0,  3*ell,  0,      0]],
+                                     dtype=float))
+
+    def Assemble2x6(self, MatElem):
+        Matrix = np.zeros([2, 3*self.nN])
+        for i in range(self.nEl):
+            Matrix += self.T2[i]@MatElem(i)@self.T6[i]@self.L[i]
+        return Matrix
 
     def FFRF_Output(self):
         if self.stiffMatType[0].lower() == "e" and self.massMatType[0].lower() == "c":
@@ -330,8 +348,8 @@ class Beam2D:
         lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap="jet",
                           plot=False)
         for i in range(self.nEl):
-            xEl = self.N[self.El[i, 0], 0], self.N[self.El[i, 1], 0]
-            yEl = self.N[self.El[i, 0], 1], self.N[self.El[i, 1], 1]
+            xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
+            yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
             plt.plot(xEl, yEl, c='gray', lw=1, ls=self.lineStyleUndeformed)
         for i in range(self.nEl):
             lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
@@ -384,10 +402,10 @@ class Beam2D:
             uE_Phi = np.zeros([self.nEl, 6])
             uS_Phi = np.zeros([self.nEl, 3, self.nStep+1])
             for i in range(self.nEl):
-                uE_Phi[i, :] = self.B1[i]@Phii
+                uE_Phi[i, :] = self.L[i]@Phii
                 for j in range(self.nStep+1):
                     ξ = j/(self.nStep)
-                    S = self.ShapeMat(ξ, self.l[i])
+                    S = self.ShapeMat(ξ, self.ell[i])
                     uS_Phi[i, :, j] = self.T3[i]@S@self.T6[i]@uE_Phi[i, :]
             # deformation
             rPhi = self.r0S+uS_Phi*self.ScalePhi
@@ -399,32 +417,32 @@ class Beam2D:
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
-        deltaMax = max(self.N[:, 0].max()-self.N[:, 0].min(),
-                       self.N[:, 1].max()-self.N[:, 1].min())
+        deltaMax = max(self.Nodes[:, 0].max()-self.Nodes[:, 0].min(),
+                       self.Nodes[:, 1].max()-self.Nodes[:, 1].min())
         p = deltaMax*0.0075
         for i in range(self.nEl):
-            xEl = self.N[self.El[i, 0], 0], self.N[self.El[i, 1], 0]
-            yEl = self.N[self.El[i, 0], 1], self.N[self.El[i, 1], 1]
+            xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
+            yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
             plt.plot(xEl, yEl, c='gray', lw=1, ls='-')
-        plt.plot(self.N[:, 0], self.N[:, 1], ".k")
+        plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
         if NodeNumber:
-            for i in range(len(self.N)):
-                ax.annotate("N"+str(i), (self.N[i, 0]+p, self.N[i, 1]+p),
+            for i in range(len(self.Nodes)):
+                ax.annotate("N"+str(i), (self.Nodes[i, 0]+p, self.Nodes[i, 1]+p),
                             fontsize=5*FontMag, clip_on=False)
         if ElementNumber:
             for i in range(self.nEl):
-                posx = (self.N[self.El[i, 0], 0]+self.N[self.El[i, 1], 0])/2
-                posy = (self.N[self.El[i, 0], 1]+self.N[self.El[i, 1], 1])/2
+                posx = (self.Nodes[self.El[i, 0], 0]+self.Nodes[self.El[i, 1], 0])/2
+                posy = (self.Nodes[self.El[i, 0], 1]+self.Nodes[self.El[i, 1], 1])/2
                 ax.annotate("E"+str(i), (posx+p, posy+p), fontsize=5*FontMag,
                             c="gray", clip_on=False)
-        xmin = self.N[:, 0].min()
-        xmax = self.N[:, 0].max()
-        if self.N[:,1].max()-self.N[:,1].min() < 0.1:
+        xmin = self.Nodes[:, 0].min()
+        xmax = self.Nodes[:, 0].max()
+        if self.Nodes[:,1].max()-self.Nodes[:,1].min() < 0.1:
             ymin = -10
             ymax = 10
         else:
-            ymin = self.N[:, 1].min()
-            ymax = self.N[:, 1].max()
+            ymin = self.Nodes[:, 1].min()
+            ymax = self.Nodes[:, 1].max()
         xdelta = xmax - xmin
         ydelta = ymax - ymin
         buff = 0.1
@@ -519,9 +537,9 @@ class CrossSections():
             return b*h
         elif Output == 'I':
             return b*h**3/12
-        elif Output == 'eU':
+        elif Output == 'zU':
             return h/2
-        elif Output == 'eL':
+        elif Output == 'zL':
             return -h/2
 
     # C-Profile
@@ -533,9 +551,9 @@ class CrossSections():
             return b*h-(b-t)*(h-2*t)
         elif Output == 'I':
             return b*h**3/12-(b-t)*(h-2*t)**3/12
-        elif Output == 'eU':
+        elif Output == 'zU':
             return h/2
-        elif Output == 'eL':
+        elif Output == 'zL':
             return -h/2
 
 if __name__ == '__main__':
@@ -547,15 +565,17 @@ if __name__ == '__main__':
 
     b = 10      # mm
     h = 20      # mm
-    Test.Properties = [['Steel', 7.85e-9, 210000, b*h, b*h**3/12, h/2, -h/2],
-                       ['Alu', 2.70e-9,  70000, b*h, b*h**3/12, h/2, -h/2]]
+    Test.Properties = [['Steel', 7.85e-9, 210000, 0.3, b*h, b*h**3/12, h/2, -h/2],
+                       ['Alu', 2.70e-9,  70000, 0.3, b*h, b*h**3/12, h/2, -h/2]]
 
-    Test.N = [[  0,   0],
-              [100,   0],
-              [100, 100]]
+    Test.Nodes = [[  0,   0],
+                  [100,   0],
+                  [100, 100]]
 
-    Test.El = [[0, 1, 'Alu'],
-               [1, 2, 'Steel']]
+    Test.El = [[0, 1],
+               [1, 2]]
+
+    Test.PropID = ["Alu", "Steel"]
 
     Test.Disp = [[0, [  0, 0, 'f']],
                  [1, ['f', 0, 'f']]]
