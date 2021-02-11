@@ -8,7 +8,7 @@ import matplotlib.collections as mplcollect
 from copy import deepcopy
 
 class Beam2D:
-    nSeg = 2
+    nSeg = 10
     Scale = 1
     ScalePhi = 1
     massMatType = "consistent"
@@ -237,8 +237,8 @@ class Beam2D:
     def StaticAnalysis(self):
         self.k = self.Assemble(self.StiffMatElem)
         self.u[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
-                                           self.F[self.DoF_DL]-
-                                           self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL])
+                                              self.F[self.DoF_DL]-
+                                              self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL])
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF_DL]@self.u[self.DoF_DL]
         self.r = self.r0+self.u
 
@@ -464,71 +464,37 @@ class Beam2D:
         plt.show()
 
 
-    def SensitivityAnalysis(self, rho=False, E=False, A=True, I=True,
-                            xDelta=1e-1):
-        iName, irho, iE, inu, iA, iI = np.linspace(0, 5, 6, dtype=int)
-        def SensSolve():
-            new.Initialize()
-            kNew = new.Assemble(new.StiffMatElem)
-            FPseudo = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
-            uNabla = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
-                                     FPseudo[self.DoF_DL])
-            mNabla = (new.mass-self.mass)/xPert
-            print(uNabla)
-            return(uNabla, mNabla)
-
-
-
-
-
-
-
-
-        n = sum([rho, E, A, I, h])
-        nProperties = len(self.Properties)
-
-
-
-
-        if rho:
-            self.uNablarho = [np.zeros_like(self.u)]*nProperties
-            self.mNablarho = [[]]*nProperties
-            for i in range(nProperties):
+    def SensitivityAnalysis(self, xDelta=1e-6):
+        self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
+        self.mNabla = np.zeros((np.size(self.SizingVariables,)))
+        k = 0
+        for i in range(len(self.SizingVariables)):
+            for j in self.SizingVariables[i]:
                 new = deepcopy(self)
-                xPert = xDelta*(1+new.Properties[i][irho])
-                new.Properties[i][irho] += xPert
-                self.uNablarho[i][self.DoF_DL], self.mNablarho[i] = SensSolve()
-        if E:
-            self.uNablaE = [np.zeros_like(self.u)]*nProperties
-            self.mNablaE = [[]]*nProperties
-            for i in range(nProperties):
-                new = deepcopy(self)
-                xPert = xDelta*(1+new.Properties[i][iE])
-                new.Properties[i][iE] += xPert
-                self.uNablaE[i][self.DoF_DL], self.mNablaE[i] = SensSolve()
-        if A:
-            self.uNablaA = np.zeros((len(self.u), nProperties))
-            self.mNablaA = [[]]*nProperties
-            for i in range(nProperties):
-                new = deepcopy(self)
-                xPert = xDelta*(1+self.Properties[i][iA])
-                new.Properties[i][iA] = self.Properties[i][iA] + xPert
-                self.uNablaA[self.DoF_DL, i], self.mNablaA[i] = SensSolve()
-        if I:
-            self.uNablaI = np.zeros((len(self.u), nProperties))
-            self.mNablaI = [[]]*nProperties
-            for ii in range(nProperties):
-                new = deepcopy(self)
-                xPert = xDelta*(1+self.Properties[i][iI])
-                new.Properties[i][iI] = self.Properties[i][iI] + xPert
-                self.uNablaI[self.DoF_DL, i], self.mNablaI[i] = SensSolve()
-
+                if j =="h":
+                    xPert = xDelta*(1+new.Properties[i][5])
+                    new.Properties[i][5] += xPert
+                elif j =="b":
+                    xPert = xDelta*(1+new.Properties[i][6])
+                    new.Properties[i][6] += xPert
+                new.Initialize()
+                kNew = new.Assemble(new.StiffMatElem)
+                FPseudo = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
+                self.uNabla[self.DoF_DL, k] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                                              FPseudo[self.DoF_DL])
+                self.mNabla[k] = (new.mass-self.mass)/xPert
+                k += 1
 
 
     def CalculateStressSensitivity(self):
-        """
-        d()/dh!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        """
+        for i in range(self.nEl):
+            for ii in range(len(self.Properties)):
+                if self.PropID[i] == self.Properties[ii][0]:
+                    pass
+
+
+
+
         n = sum([rho, E, A, I, h])
         nProperties = len(self.Properties)
 
@@ -662,13 +628,25 @@ if __name__ == '__main__':
     Test.SizingVariables = [["h", "b"],
                             ["h", "b"]]
 
+
+
+
+    # Test.Nodes = [[  0,   0],
+    #               [ 50,   0],
+    #               [100,   0],
+    #               [100,  50],
+    #               [100, 100]]
+    # Test.El = [[0, 1],
+    #            [1, 2],
+    #            [2, 3],
+    #            [3, 4]]
+    # Test.PropID = ["Alu", "Alu", "Steel", "Steel"]
+
     Test.Nodes = [[  0,   0],
                   [100,   0],
-                  [100, 50]]
-
+                  [100, 100]]
     Test.El = [[0, 1],
                [1, 2]]
-
     Test.PropID = ["Alu", "Steel"]
 
     Test.Disp = [[0, [  0, 0, 'f']],
@@ -697,60 +675,43 @@ if __name__ == '__main__':
     if CheckStress:
         Test.CalculateStressSensitivity()
 
-    uNablaAFD = [np.zeros_like(Test.u)]*2
-    sigmaLNablaAFD = [np.zeros_like(Test.sigmaL)]*2
+    uNablahFD = [np.zeros_like(Test.u)]*2
+    sigmaLNablahFD = [np.zeros_like(Test.sigmaL)]*2
     xDelta = 1
-    for i in range(2):
-        Test1 = deepcopy(Test)
-        Test1.Properties[i][4] += xDelta
-        Test1.Initialize()
-        Test1.StaticAnalysis()
-        uNablaAFD[i] = (Test1.u-Test.u)/xDelta
-        if CheckStress:
-            Test1.ComputeStress()
-            sigmaLNablaAFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
-
-    uNablaIFD = [np.zeros_like(Test.u)]*2
-    sigmaLNablaIFD = [np.zeros_like(Test.sigmaL)]*2
     for i in range(2):
         Test1 = deepcopy(Test)
         Test1.Properties[i][5] += xDelta
         Test1.Initialize()
         Test1.StaticAnalysis()
-        uNablaIFD[i] = (Test1.u-Test.u)/xDelta
+        uNablahFD[i] = (Test1.u-Test.u)/xDelta
+        if CheckStress:
+            Test1.ComputeStress()
+            sigmaLNablahFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
+
+    uNablabFD = [np.zeros_like(Test.u)]*2
+    sigmaLNablabFD = [np.zeros_like(Test.sigmaL)]*2
+    for i in range(2):
+        Test1 = deepcopy(Test)
+        Test1.Properties[i][6] += xDelta
+        Test1.Initialize()
+        Test1.StaticAnalysis()
+        uNablabFD[i] = (Test1.u-Test.u)/xDelta
 
         if CheckStress:
             Test1.ComputeStress()
-            sigmaLNablaIFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
+            sigmaLNablabFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
 
-    print("area moment of inertia sensitivities:")
+    print("sensitivities:")
     print("displacement")
     print("FD")
-    #print(uNablaAFD)
-    #print(Test.uNablaA)
-    print(uNablaIFD)
+    print(uNablahFD)
+    print(uNablabFD)
     print("Analytical")
-    print(Test.uNablaI)
+    print(Test.uNabla)
     if CheckStress:
         print("stress")
         print("FD")
-        print(sigmaLNablaIFD)
+        print(sigmaLNablahFD)
         print("Analytical")
-        print(Test.sigmaLNablaI)
-
-    print("area sensitivities:")
-    print("displacement")
-    print("FD")
-    #print(uNablaAFD)
-    #print(Test.uNablaA)
-    print(uNablaAFD)
-    print("Analytical")
-    print(Test.uNablaA)
-    if CheckStress:
-        print("stress")
-        print("FD")
-        print(sigmaLNablaAFD)
-        print("Analytical")
-        print(Test.sigmaLNablaA)
-
+        print(Test.sigmaLNablah)
 
