@@ -131,6 +131,10 @@ class Beam2D:
         return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
                          [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
 
+    def NMat(self, i, ξ):
+        NMat = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
+        return NMat
+
     def StrainDispMat(self, ξ, ell, zU, zL):
         BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
                        [     0, zL*(6-12*ξ)/ell**2,  zL*(4-6*ξ)/ell,     0, zL*(-6+12*ξ)/ell**2, zL*(-6*ξ+2)/ell]])
@@ -333,20 +337,19 @@ class Beam2D:
     def Assemble2x6(self, MatElem):
         Matrix = np.zeros([2, 3*self.nN])
         for i in range(self.nEl):
-            Matrix += self.T2[i]@MatElem(i)@self.T6[i]@self.L[i]
+            Matrix += self.T2[i]@MatElem(i)@self.T[i]@self.L[i]
         return Matrix
 
     def FFRF_Output(self):
         if (self.stiffMatType[0].lower() == "e" and
             self.massMatType[0].lower() == "c"):
-            kff = self.Assemble(self.StiffMatElem)
-            Stf = self.Assemble2x6(self.StfElem)
-            Srf = self.Assemble(self.SrfElem)
-            Sff = self.Assemble(self.MassMatElem)
+            self.kff = self.Assemble(self.StiffMatElem)
+            self.Stf = self.Assemble2x6(self.StfElem)
+            self.Srf = self.Assemble(self.SrfElem)
+            self.Sff = self.Assemble(self.MassMatElem)
         else:
             print('Use stiffMatType = "Euler-Bernoulli"\
                   \nand massMatType = "consistent"')
-        return self.mass, kff, Stf, Srf, Sff, self.r0
 
     def _plotting(self, val, disp, title, colormap):
         fig, ax = plt.subplots()
@@ -589,13 +592,9 @@ if __name__ == '__main__':
     Test.Properties = [['Steel', 7.85e-9, 210000, 0.3, 1, h, b],
                        [  'Alu', 2.70e-9,  70000, 0.3, 1, h, b]]
 
-
     # one list per element property set: possibilities: None, "matertial", E, nu, A, I, h, b
     Test.SizingVariables = [["h", "b"],
                             ["h", "b"]]
-
-
-
 
     # Test.Nodes = [[  0,   0],
     #               [ 50,   0],
