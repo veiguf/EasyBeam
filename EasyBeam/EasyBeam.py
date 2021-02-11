@@ -17,7 +17,6 @@ class Beam2D:
     colormap = "Blues"
 
     def Initialize(self):
-        # OK!
         self.Nodes = np.array(self.Nodes, dtype=float)
         self.El = np.array(self.El, dtype=int)
         self.nEl = len(self.El)     # number of elements
@@ -69,6 +68,7 @@ class Beam2D:
         self.I = np.zeros([self.nEl])
         self.zU = np.zeros([self.nEl])
         self.zL = np.zeros([self.nEl])
+        self.ϰ = np.zeros([self.nEl])
         # lengths and rotations
         self.ell = np.zeros([self.nEl])
         self.β = np.zeros([self.nEl])
@@ -92,12 +92,14 @@ class Beam2D:
                         self.I[i] = b*h**3/12
                         self.zU[i] = h/2
                         self.zL[i] = -h/2
+                        self.ϰ[i] = 10*(1+self.nu[i])/(12+11*self.nu[i])  #Solid rectangular cross-sectional geometry after Cowper (1966)
                     elif self.Properties[ii][4] in [2, "round"]:
                         r = self.Properties[ii][5]
                         self.A[i] = pi*r**2
                         self.I[i] = pi*r**4/4
                         self.zU[i] = r/2
                         self.zL[i] = -r/2
+                        self.ϰ[i] = 0.847
                     else:
                         print("oops nothing more programmed!!!")
             self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
@@ -126,14 +128,10 @@ class Beam2D:
                 self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
 
     def ShapeMat(self, ξ, ell):
-        # OK!
         return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
                          [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
 
     def StrainDispMat(self, ξ, ell, zU, zL):
-        # # OK!
-        # return(np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
-        #                  [     0, (6-12*ξ)/ell**2,  (4-6*ξ)/ell,     0, (-6+12*ξ)/ell**2, (-6*ξ+2)/ell]]))
         BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
                        [     0, zL*(6-12*ξ)/ell**2,  zL*(4-6*ξ)/ell,     0, zL*(-6+12*ξ)/ell**2, zL*(-6*ξ+2)/ell]])
         BU = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
@@ -141,9 +139,6 @@ class Beam2D:
         return(BL, BU)
 
     def StrainDispNablah(self, ξ, ell):
-        # # OK!
-        # return(np.array([[-1/ell,               0,            0, 1/ell,                0,            0],
-        #                  [     0, (6-12*ξ)/ell**2,  (4-6*ξ)/ell,     0, (-6+12*ξ)/ell**2, (-6*ξ+2)/ell]]))
         BLNablah = np.array([[0,                0,            0, 0,                 0,             0],
                              [0, -(6-12*ξ)/ell**2, -(4-6*ξ)/ell, 0, -(-6+12*ξ)/ell**2, -(-6*ξ+2)/ell]])
         BUNablah = np.array([[0,               0,           0, 0,                0,            0],
@@ -151,13 +146,12 @@ class Beam2D:
         return(BLNablah, BUNablah)
 
     def StiffMatElem(self, i):
-        # OK!
         A = self.A[i]
         E = self.E[i]
         ell = self.ell[i]
         I = self.I[i]
         nu = self.nu[i]
-
+        ϰ = self.ϰ[i]
         # bar (column) terms of stiffness matrix
         k = E*A/ell*np.array([[ 1, 0, 0, -1, 0, 0],
                               [ 0, 0, 0,  0, 0, 0],
@@ -167,13 +161,13 @@ class Beam2D:
                               [ 0, 0, 0,  0, 0, 0]], dtype=float)
 
         # Bending terms after Euler-Bernoulli
-        if self.stiffMatType[0].lower() == "e":
+        if self.stiffMatType[0].lower() in ["e", "b"]:
             phi = 0
         # Bending terms after Timoshenko-Ehrenfest
         elif self.stiffMatType[0].lower() == "t":
             G = E/(2*(1+nu))
-            AS = A * 10*(1+nu)/(12+11*nu)  #Solid rectangular cross-sectional geometry after Cowper (1966)
-            phi = 12*E*I/(G*AS*l**2)
+            AS = A * ϰ
+            phi = 12*E*I/(ϰ*A*G*l**2)
         c = E*I/(ell**3*(1+phi))
         k += c*np.array([[0,     0,              0, 0,      0,                0],
                          [0,    12,          6*ell, 0,    -12,            6*ell],
@@ -185,16 +179,14 @@ class Beam2D:
         return k
 
     def MatMat(self, i):
-        # OK!
         return(np.array([[self.E[i]*self.A[i],                   0],
                          [                  0, self.E[i]*self.I[i]]]))
 
     def MassMatElem(self, i):
-        # OK!
         ell = self.ell[i]
         rho = self.rho[i]
         A = self.A[i]
-        if self.stiffMatType[0].lower() == "e":
+        if self.stiffMatType[0].lower() in ["e", "b"]:
             if self.massMatType[0].lower() == "c":
                 c = A*rho*ell/420
                 m = c*np.array([[140,       0,         0,  70,       0,         0],
@@ -218,8 +210,8 @@ class Beam2D:
             IR = self.I[i]
             nu = 0.3
             G = self.E[i]/(2*(1+nu))
-            AS = 5*A/6  # for think rechtangular cross-sectional geometry (needs to be calculated from geometry)
-            phi = 12*self.E[i]*self.I[i]/(G*AS*ell**2)
+            AS = A * ϰ
+            phi = 12*self.E[i]*self.I[i]/(ϰ*A*G*ell**2)
             m = A*rho*ell/420*np.array([[140, 0, 0,  70, 0, 0],
                                         [  0, 0, 0,   0, 0, 0],
                                         [  0, 0, 0,   0, 0, 0],
