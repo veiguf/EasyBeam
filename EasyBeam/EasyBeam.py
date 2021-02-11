@@ -92,6 +92,12 @@ class Beam2D:
                         self.I[i] = b*h**3/12
                         self.zU[i] = h/2
                         self.zL[i] = -h/2
+                    elif self.Properties[ii][4] in [2, "round"]:
+                        r = self.Properties[ii][5]
+                        self.A[i] = pi*r**2
+                        self.I[i] = pi*r**4/4
+                        self.zU[i] = r/2
+                        self.zL[i] = -r/2
                     else:
                         print("oops nothing more programmed!!!")
             self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
