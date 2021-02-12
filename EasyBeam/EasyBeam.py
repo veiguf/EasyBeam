@@ -14,7 +14,7 @@ class Beam2D:
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
-    colormap = "Blues"
+    colormap = "RdBu" #"coolwarm_r" #"Blues"
 
     def Initialize(self):
         self.Nodes = np.array(self.Nodes, dtype=float)
@@ -100,6 +100,14 @@ class Beam2D:
                         self.zU[i] = r/2
                         self.zL[i] = -r/2
                         self.ϰ[i] = 0.847
+                    elif self.Properties[ii][4] in [3, "roundtube"]:
+                        r = self.Properties[ii][5]
+                        t = self.Properties[ii][6]
+                        self.A[i] = pi*((r+t)**2-(r)**2)
+                        self.I[i] = pi*((r+t)**4-r**4)/4
+                        self.zU[i] = r/2
+                        self.zL[i] = -r/2
+                        self.ϰ[i] = 0.847 # needs to be corrected!!!!
                     else:
                         print("oops nothing more programmed!!!")
             self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
@@ -310,7 +318,8 @@ class Beam2D:
                 #self.sigmaL[i, j] = self.epsilonL[i, j]*self.E[i]
                 #self.sigmaMax[i, j] = max(np.abs([self.sigmaU[i,j], self.sigmaL[i,j]]))
         #TODO this needs to be continuous for the sensitivities...
-        self.sigmaMax = np.max((np.abs(np.sum(self.sigmaL,2)), np.abs(np.sum(self.sigmaU, 2))),1)
+                self.sigmaMax[i, j] = np.max((np.abs(np.sum(self.sigmaL[i, j])),
+                                              np.abs(np.sum(self.sigmaU[i, j]))))
         self.rS = self.r0S+self.uS*self.Scale
 
 
@@ -356,11 +365,12 @@ class Beam2D:
         ax.axis('off')
         ax.set_aspect('equal')
         c = np.linspace(val.min(), val.max(), 5)
-        norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
-        cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-        cmap.set_array([])
+        #norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
+        norm = mpl.colors.Normalize(vmin=-val.max(), vmax=val.max())
+        #cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
+        #cmap.set_array([])
         lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
-                          plot=False)
+                          plot=False, norm=MidpointNormalize(midpoint=0.))
         for i in range(self.nEl):
             xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
             yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
@@ -393,7 +403,7 @@ class Beam2D:
         if stress.lower() in ["all", "lower"]:
             self._plotting(np.sum(self.sigmaL, 2), self.rS,
                            "lower fiber stress $\\sigma_L$\n[MPa]",
-                           self.colormap+"_r")
+                           self.colormap)
 
         if stress.lower() in ["all", "max"]:
             self._plotting(self.sigmaMax, self.rS,
@@ -531,6 +541,18 @@ class Beam2D:
 
     def EigenvalueSensitivity(self):
         pass
+
+import matplotlib.colors as colors
+class MidpointNormalize(colors.Normalize):
+    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+        self.midpoint = midpoint
+        colors.Normalize.__init__(self, vmin, vmax, clip)
+
+    def __call__(self, value, clip=None):
+        # I'm ignoring masked values and all kinds of edge cases to make a
+        # simple example...
+        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+        return np.ma.masked_array(np.interp(value, x, y))
 
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
               plot=True, norm=None):
