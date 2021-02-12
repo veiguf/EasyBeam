@@ -494,7 +494,7 @@ class Beam2D:
         assemble FPseudo then solve once???
         """
         self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
-        self.mNabla = np.zeros((np.size(self.SizingVariables,)))
+        self.massNabla = np.zeros((np.size(self.SizingVariables,)))
         k = 0
         for i in range(len(self.SizingVariables)):
             for j in self.SizingVariables[i]:
@@ -510,7 +510,7 @@ class Beam2D:
                 FPseudo = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
                 self.uNabla[self.DoF_DL, k] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
                                                               FPseudo[self.DoF_DL])
-                self.mNabla[k] = (new.mass-self.mass)/xPert
+                self.massNabla[k] = (new.mass-self.mass)/xPert
                 k += 1
 
 
