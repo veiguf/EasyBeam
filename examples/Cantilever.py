@@ -11,6 +11,7 @@ rho = 7.85e-9   # t/mm^3
 I = b*h**3/12   # mm^4
 A = b*h         # mm^2
 nEl = 5
+nu = 0.3
 
 # Initialisiern des Problems
 Cantilever = Beam2D()
@@ -20,17 +21,19 @@ Cantilever.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehr
 Cantilever.massMatType = "consistent"        # lumped or consistent
 
 # Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
-Cantilever.Properties = [['Prop1', rho, E, A, I, h/2, -h/2]]
+Cantilever.Properties = [['Prop1', rho, E, nu, 1, h, b]]
 
 # Knoten [mm]
-Cantilever.N = [[]]*(nEl+1)
+Cantilever.Nodes = [[]]*(nEl+1)
 for i in range(nEl+1):
-    Cantilever.N[i] = [l*i/nEl, 0.0]
+    Cantilever.Nodes[i] = [l*i/nEl, 0.0]
 
 # Elemente: verbindet die Knoten
 Cantilever.El = [[]]*(nEl)
 for i in range(nEl):
-    Cantilever.El[i] = [i, i+1, 'Prop1']
+    Cantilever.El[i] = [i, i+1]
+
+Cantilever.PropID = ["Prop1"]*nEl
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 Cantilever.Disp = [[  0, [0, 0, 0]]]
