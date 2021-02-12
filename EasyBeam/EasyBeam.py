@@ -306,7 +306,8 @@ class Beam2D:
                 #self.sigmaL[i, j] = self.epsilonL[i, j]*self.E[i]
                 #self.sigmaMax[i, j] = max(np.abs([self.sigmaU[i,j], self.sigmaL[i,j]]))
         #TODO this needs to be continuous for the sensitivities...
-        self.sigmaMax = np.max((np.abs(np.sum(self.sigmaL,2)), np.abs(np.sum(self.sigmaU, 2))),1)
+                self.sigmaMax[i, j] = np.max((np.abs(np.sum(self.sigmaL[i, j])),
+                                              np.abs(np.sum(self.sigmaU[i, j]))))
         self.rS = self.r0S+self.uS*self.Scale
 
 
