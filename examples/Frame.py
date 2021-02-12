@@ -7,7 +7,7 @@ Frame = Beam2D()
 Frame.Properties = [['Q12x12', 7.85e-9, 210000, 0.3, 1, 12, 12],
                     ['Q16x16', 7.85e-9, 210000, 0.3, 1, 16, 16],
                     ['Q20x20', 7.85e-9, 210000, 0.3, 1, 20, 10],
-                    ['QR40x3', 7.85e-9, 210000, 0.3, 3, 20,  3]]
+                    ['QR20x3', 7.85e-9, 210000, 0.3, 3, 20,  3]]
 
 # Knoten [mm]
 Frame.Nodes= [[   0,    0],
@@ -31,8 +31,8 @@ Frame.El = [[0, 1],
             [5, 6],
             [3, 6]]
 
-Frame.PropID = ['Q12x12', 'QR40x3', 'Q20x20', 'Q16x16', 'QR40x3', 'QR40x3',
-                'Q12x12', 'QR40x3', 'Q16x16', 'QR40x3', 'QR40x3']
+Frame.PropID = ['Q12x12', 'QR20x3', 'Q20x20', 'Q16x16', 'QR20x3', 'QR20x3',
+                'Q12x12', 'QR20x3', 'Q16x16', 'QR20x3', 'QR20x3']
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 Frame.Disp = [[0, [  0, 0, 'f']],
