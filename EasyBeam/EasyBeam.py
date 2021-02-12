@@ -15,6 +15,7 @@ class Beam2D:
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
     colormap = "RdBu" #"coolwarm_r" #"Blues"
+    SizingVariables = []
 
     def Initialize(self):
         self.Nodes = np.array(self.Nodes, dtype=float)
@@ -117,11 +118,15 @@ class Beam2D:
                 """
                 HERE is a division by zero...needs to be checked
                 """
-                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/
-                                      (self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))
+                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1] -
+                                       self.Nodes[self.El[i, 0], 1])/
+                                      (self.Nodes[self.El[i, 1], 0] -
+                                       self.Nodes[self.El[i, 0], 0]))
             else:
-                self.β[i] = pi + np.arctan((self.Nodes[self.El[i, 1], 1]-self.Nodes[self.El[i, 0], 1])/
-                                           (self.Nodes[self.El[i, 1], 0]-self.Nodes[self.El[i, 0], 0]))
+                self.β[i] = pi + np.arctan((self.Nodes[self.El[i, 1], 1] -
+                                            self.Nodes[self.El[i, 0], 1])/
+                                           (self.Nodes[self.El[i, 1], 0] -
+                                            self.Nodes[self.El[i, 0], 0]))
             self.T2[i] = np.array([[np.cos(self.β[i]), -np.sin(self.β[i])],
                                   [np.sin(self.β[i]),  np.cos(self.β[i])]],
                                  dtype=float)
@@ -152,9 +157,9 @@ class Beam2D:
 
     def StrainDispNablah(self, ξ, ell):
         BLNablah = np.array([[0,                0,            0, 0,                 0,             0],
-                             [0, -(6-12*ξ)/ell**2, -(4-6*ξ)/ell, 0, -(-6+12*ξ)/ell**2, -(-6*ξ+2)/ell]])
+                             [0, -1/2*(6-12*ξ)/ell**2, -1/2*(4-6*ξ)/ell, 0, -1/2*(-6+12*ξ)/ell**2, -1/2*(-6*ξ+2)/ell]])
         BUNablah = np.array([[0,               0,           0, 0,                0,            0],
-                             [0, (6-12*ξ)/ell**2, (4-6*ξ)/ell, 0, (-6+12*ξ)/ell**2, (-6*ξ+2)/ell]])
+                             [0, 1/2*(6-12*ξ)/ell**2, 1/2*(4-6*ξ)/ell, 0, 1/2*(-6+12*ξ)/ell**2, 1/2*(-6*ξ+2)/ell]])
         return(BLNablah, BUNablah)
 
     def StiffMatElem(self, i):
@@ -265,6 +270,81 @@ class Beam2D:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF_DL]@self.u[self.DoF_DL]
         self.r = self.r0+self.u
 
+    def SensitivityAnalysis(self, xDelta=1e-6):
+        nx = np.size(self.SizingVariables)
+        self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
+        self.massNabla = np.zeros((np.size(self.SizingVariables,)))
+        FPseudo = np.zeros((len(self.F), nx))
+        ix = 0
+        for i in range(len(self.SizingVariables)):
+            for j in self.SizingVariables[i]:
+                new = deepcopy(self)
+                if j =="h":
+                    xPert = xDelta*(1+new.Properties[i][5])
+                    new.Properties[i][5] += xPert
+                elif j =="b":
+                    xPert = xDelta*(1+new.Properties[i][6])
+                    new.Properties[i][6] += xPert
+                new.Initialize()
+                kNew = new.Assemble(new.StiffMatElem)
+                FPseudo[:, ix] = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
+                self.massNabla[ix] = (new.mass-self.mass)/xPert
+                ix += 1
+        self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
+                                                   FPseudo[self.DoF_DL])
+
+    def ComputeStress(self):
+        self.uE = np.zeros([self.nEl, 6])
+        self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
+        self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.epsilonL = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
+        self.epsilon = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigma = np.zeros([self.nEl, self.nSeg+1, 2])
+        for iEl in range(self.nEl):
+            self.uE[iEl]  = self.T[iEl]@self.L[iEl]@self.u
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
+                self.uS[iEl, :, j] = self.T2[iEl]@self.ShapeMat(ξ, self.ell[iEl])@self.uE[iEl]
+                BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
+                                            self.zL[iEl])
+                self.epsilonL[iEl, j] = BL@self.uE[iEl]
+                self.epsilonU[iEl, j] = BU@self.uE[iEl]
+                self.sigmaL[iEl, j] = self.epsilonL[iEl, j]*self.E[iEl]
+                self.sigmaU[iEl, j] = self.epsilonU[iEl, j]*self.E[iEl]
+                self.sigmaMax[iEl, j] = np.max((np.abs(np.sum(self.sigmaL[iEl, j])),
+                                                np.abs(np.sum(self.sigmaU[iEl, j]))))
+        self.rS = self.r0S+self.uS*self.Scale
+
+    def CalculateStressSensitivity(self):
+        # not general enough for shape
+        nx = np.size(self.SizingVariables)
+        self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
+        self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
+        self.sigmaLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
+        self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
+        for iEl in range(self.nEl):
+            uENabla = self.T[iEl]@self.L[iEl]@self.uNabla
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
+                BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
+                                            self.zL[iEl])
+                BLNabla = np.zeros((2, 6, nx))
+                BUNabla = np.zeros((2, 6, nx))
+                ix = 0
+                for ii in range(len(self.SizingVariables)):
+                    for iVar in self.SizingVariables[ii]:
+                        if iVar == "h":
+                            BLNabla[:, :, ix], BUNabla[:, :, ix] = \
+                                self.StrainDispNablah(ξ, self.ell[iEl])
+                        ix += 1
+                self.epsilonLNabla[iEl, j] = BLNabla.transpose(0, 2, 1)@self.uE[iEl] + BL@uENabla
+                self.epsilonUNabla[iEl, j] = BUNabla.transpose(0, 2, 1)@self.uE[iEl] + BU@uENabla
+                self.sigmaLNabla[iEl, j] = self.E[iEl]*self.epsilonLNabla[iEl, j]
+                self.sigmaUNabla[iEl, j] = self.E[iEl]*self.epsilonUNabla[iEl, j]
+
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
         self.massMatType = massMatType
         self.k = self.Assemble(self.StiffMatElem)
@@ -285,43 +365,8 @@ class Beam2D:
         self.f0 = self.omega/2/np.pi
         self.Phi = self.Phi[:, iSort]
 
-    def ComputeStress(self):        # deformation
-        self.uE = np.zeros([self.nEl, 6])
-        self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
-        self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.epsilonL = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
-        self.epsilon = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.sigma = np.zeros([self.nEl, self.nSeg+1, 2])
-        for i in range(self.nEl):
-            self.uE[i, :]  = self.T[i]@self.L[i]@self.u
-            for j in range(self.nSeg+1):
-                ξ = j/(self.nSeg)
-                self.uS[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.uE[i, :]
-                BL, BU = self.StrainDispMat(ξ, self.ell[i], self.zU[i],
-                                            self.zL[i])
-                self.epsilonL[i,j] = BL@self.uE[i, :]
-                self.epsilonU[i,j] = BU@self.uE[i, :]
-                self.sigmaL[i, j] = self.epsilonL[i, j]*self.E[i]
-                self.sigmaU[i, j] = self.epsilonU[i, j]*self.E[i]
-                #self.sigmaMax[i, j] = np.sqrt(np.sum(self.sigmaU[i,j]**2,2))
-                #epsA, epsB_h = self.StrainDispMat(ξ, ell)@self.uE[i, :]
-                #self.epsilonL[i,j] = epsA+epsB_h*self.zL[i]
-                #self.epsilonU[i,j] = epsA+epsB_h*self.zU[i]
-                #self.epsilon[i, j, :] = np.array([epsA, epsB_h*self.zU[i]])
-                #N, M = self.MatMat(i)@self.epsilon[i,j,:]
-                #self.sigma[i, j, 0] = N/self.A[i]
-                #self.sigma[i, j, 1] =  M/self.I[i]
-                #self.sigmaU[i, j] = self.epsilonU[i, j]*self.E[i]
-                #self.sigmaL[i, j] = self.epsilonL[i, j]*self.E[i]
-                #self.sigmaMax[i, j] = max(np.abs([self.sigmaU[i,j], self.sigmaL[i,j]]))
-        #TODO this needs to be continuous for the sensitivities...
-                self.sigmaMax[i, j] = np.max((np.abs(np.sum(self.sigmaL[i, j])),
-                                              np.abs(np.sum(self.sigmaU[i, j]))))
-        self.rS = self.r0S+self.uS*self.Scale
-
+    def EigenvalueSensitivity(self):
+        pass
 
     # Functions for FFR
     def StfElem(self, i):
@@ -365,10 +410,7 @@ class Beam2D:
         ax.axis('off')
         ax.set_aspect('equal')
         c = np.linspace(val.min(), val.max(), 5)
-        #norm = mpl.colors.Normalize(vmin=c.min(), vmax=c.max())
         norm = mpl.colors.Normalize(vmin=-val.max(), vmax=val.max())
-        #cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.jet)
-        #cmap.set_array([])
         lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
                           plot=False, norm=MidpointNormalize(midpoint=0.))
         for i in range(self.nEl):
@@ -465,12 +507,15 @@ class Beam2D:
         plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
         if NodeNumber:
             for i in range(len(self.Nodes)):
-                ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p, self.Nodes[i, 1]+p),
+                ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p,
+                                           self.Nodes[i, 1]+p),
                             fontsize=5*FontMag, clip_on=False)
         if ElementNumber:
             for i in range(self.nEl):
-                posx = (self.Nodes[self.El[i, 0], 0]+self.Nodes[self.El[i, 1], 0])/2
-                posy = (self.Nodes[self.El[i, 0], 1]+self.Nodes[self.El[i, 1], 1])/2
+                posx = (self.Nodes[self.El[i, 0], 0] +
+                        self.Nodes[self.El[i, 1], 0])/2
+                posy = (self.Nodes[self.El[i, 0], 1] +
+                        self.Nodes[self.El[i, 1], 1])/2
                 ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
                             c="gray", clip_on=False)
         xmin = self.Nodes[:, 0].min()
@@ -488,59 +533,6 @@ class Beam2D:
         plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
         plt.show()
 
-
-    def SensitivityAnalysis(self, xDelta=1e-6):
-        """
-        assemble FPseudo then solve once???
-        """
-        self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
-        self.massNabla = np.zeros((np.size(self.SizingVariables,)))
-        k = 0
-        for i in range(len(self.SizingVariables)):
-            for j in self.SizingVariables[i]:
-                new = deepcopy(self)
-                if j =="h":
-                    xPert = xDelta*(1+new.Properties[i][5])
-                    new.Properties[i][5] += xPert
-                elif j =="b":
-                    xPert = xDelta*(1+new.Properties[i][6])
-                    new.Properties[i][6] += xPert
-                new.Initialize()
-                kNew = new.Assemble(new.StiffMatElem)
-                FPseudo = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
-                self.uNabla[self.DoF_DL, k] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
-                                                              FPseudo[self.DoF_DL])
-                self.massNabla[k] = (new.mass-self.mass)/xPert
-                k += 1
-
-
-    def CalculateStressSensitivity(self):
-        # not general enough for shape
-        nx = np.size(self.SizingVariables)
-        self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.sigmaLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        for iEl in range(self.nEl):
-            uENabla = self.T[iEl]@self.L[iEl]@self.uNabla
-            for j in range(self.nSeg+1):
-                ξ = j/(self.nSeg)
-                BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
-                                            self.zL[iEl])
-                ix = 0
-                BLNabla, BUNabla = [np.zeros((2, 6, nx))]*2
-                for ii in range(len(self.SizingVariables)):
-                    for iVar in self.SizingVariables[ii]:
-                        if iVar =="h":
-                            BLNabla[:, :, ix], BUNabla[:, :, ix] = self.StrainDispNablah(ξ, self.ell[iEl])
-                self.epsilonLNabla[iEl, j] = BLNabla.transpose(0, 2, 1)@self.uE[iEl] + BL@uENabla
-                self.epsilonUNabla[iEl, j, :, :] = BUNabla.transpose(0, 2, 1)@self.uE[iEl] + BU@uENabla
-                self.sigmaLNabla[iEl, j, :, :] = self.E[iEl]*self.epsilonLNabla[iEl, j, :, :]
-                self.sigmaUNabla[iEl, j, :, :] = self.E[iEl]*self.epsilonUNabla[iEl, j, :, :]
-            ix += 1
-
-    def EigenvalueSensitivity(self):
-        pass
 
 import matplotlib.colors as colors
 class MidpointNormalize(colors.Normalize):
