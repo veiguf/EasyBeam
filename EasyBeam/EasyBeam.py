@@ -100,6 +100,14 @@ class Beam2D:
                         self.zU[i] = r/2
                         self.zL[i] = -r/2
                         self.ϰ[i] = 0.847
+                    elif self.Properties[ii][4] in [3, "roundtube"]:
+                        r = self.Properties[ii][5]
+                        t = self.Properties[ii][6]
+                        self.A[i] = pi*((r+t)**2-(r)**2)
+                        self.I[i] = pi*((r+t)**4-r**4)/4
+                        self.zU[i] = r/2
+                        self.zL[i] = -r/2
+                        self.ϰ[i] = 0.847 # needs to be corrected!!!!
                     else:
                         print("oops nothing more programmed!!!")
             self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
