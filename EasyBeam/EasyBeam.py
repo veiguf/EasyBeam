@@ -270,7 +270,7 @@ class Beam2D:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF_DL]@self.u[self.DoF_DL]
         self.r = self.r0+self.u
 
-    def SensitivityAnalysis(self, xDelta=1e-6):
+    def SensitivityAnalysis(self, xDelta=1e-3):
         nx = np.size(self.SizingVariables)
         self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
         self.massNabla = np.zeros((np.size(self.SizingVariables,)))
@@ -318,7 +318,7 @@ class Beam2D:
                                                 np.abs(np.sum(self.sigmaU[iEl, j]))))
         self.rS = self.r0S+self.uS*self.Scale
 
-    def CalculateStressSensitivity(self):
+    def ComputeStressSensitivity(self):
         # not general enough for shape
         nx = np.size(self.SizingVariables)
         self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
@@ -654,7 +654,7 @@ if __name__ == '__main__':
     if CheckSens:
         CheckStress = 1
         if CheckStress:
-            Test.CalculateStressSensitivity()
+            Test.ComputeStressSensitivity()
 
         uNablahFD = [np.zeros_like(Test.u)]*2
         sigmaLNablahFD = [np.zeros_like(Test.sigmaL)]*2
