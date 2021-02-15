@@ -8,17 +8,19 @@ PinPin = Beam2D()
 # Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
 b = 10      # mm
 h = 20      # mm
-PinPin.Properties = [['Prop1', 7.85e-9, 210000, b*h, b*h**3/12, h/2, -h/2],
-                     ['Prop2', 2.70e-9,  70000, b*h, b*h**3/12, h/2, -h/2]]
+PinPin.Properties = [['Prop1', 7.85e-9, 210000, 0.3, 1, b, h],
+                     ['Prop2', 2.70e-9,  70000, 0.3, 1, b, h]]
 
 # Knoten [mm]
-PinPin.N = [[  0, 0],
-            [150, 0],
-            [300, 0]]
+PinPin.Nodes = [[  0, 0],
+                [150, 0],
+                [300, 0]]
 
 # Elemente: verbindet die Knoten
-PinPin.El = [[0, 1, 'Prop1'],
-             [1, 2, 'Prop2']]
+PinPin.El = [[0, 1],
+             [1, 2]]
+
+PinPin.PropID = ['Prop1', 'Prop2']
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 PinPin.Disp = [[0, [0, 0, 'f']],
