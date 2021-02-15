@@ -56,6 +56,12 @@ for i in range(2):
                           (Fy, FyVal), (ell, ellVal)]))
     print(sigmaU[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
                           (Fy, FyVal), (ell, ellVal)]))
+print("summed stress")
+for i in range(2):
+    print(sum(sigmaL[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
+                          (Fy, FyVal), (ell, ellVal)])))
+    print(sum(sigmaU[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
+                          (Fy, FyVal), (ell, ellVal)])))
 
 # Sensitivity analysis
 kConNablah = kCon.diff(h)
@@ -117,4 +123,14 @@ for i in range(2):
                         (Fy, FyVal), (ell, ellVal)]))
     print(sigmaUNablab[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
                         (Fy, FyVal), (ell, ellVal)]))
+print("summed stress sensitivities")
+for i in range(2):
+    print(sum(sigmaLNablah[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
+                        (Fy, FyVal), (ell, ellVal)])))
+    print(sum(sigmaLNablab[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
+                        (Fy, FyVal), (ell, ellVal)])))
+    print(sum(sigmaUNablah[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
+                        (Fy, FyVal), (ell, ellVal)])))
+    print(sum(sigmaUNablab[i].subs([(h, hVal), (b, bVal), (E, EVal), (rho, rhoVal),
+                        (Fy, FyVal), (ell, ellVal)])))
 

@@ -56,8 +56,6 @@ print(Cantilever.epsilonUNabla)
 print("stress sensitivity")
 print(Cantilever.sigmaLNabla)
 print(Cantilever.sigmaUNabla)
-
-
 #Cantilever.EigenvalueAnalysis(nEig=3)
 
 # Grafische Darstellung
