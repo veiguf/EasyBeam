@@ -331,11 +331,11 @@ class Beam2D:
                 ξ = j/(self.nSeg)
                 BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
                                             self.zL[iEl])
+                BLNabla = np.zeros((2, 6, nx))
+                BUNabla = np.zeros((2, 6, nx))
                 ix = 0
                 for ii in range(len(self.SizingVariables)):
                     for iVar in self.SizingVariables[ii]:
-                        BLNabla = np.zeros((2, 6, nx))
-                        BUNabla = np.zeros((2, 6, nx))
                         if iVar == "h":
                             BLNabla[:, :, ix], BUNabla[:, :, ix] = \
                                 self.StrainDispNablah(ξ, self.ell[iEl])
