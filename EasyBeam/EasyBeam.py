@@ -16,6 +16,7 @@ class Beam2D:
     lineStyleUndeformed = "-"
     colormap = "RdBu" #"coolwarm_r" #"Blues"
     SizingVariables = []
+    plotting = True
 
     def Initialize(self):
         self.Nodes = np.array(self.Nodes, dtype=float)
@@ -136,9 +137,10 @@ class Beam2D:
                                   [0, 0, 0, 0, 0, 1]])
             self.L[i, 0:3, 3*self.El[i, 0]:3*self.El[i, 0]+3] = np.eye(3)
             self.L[i, 3:6, 3*self.El[i, 1]:3*self.El[i, 1]+3] = np.eye(3)
-            for j in range(self.nSeg+1):
-                ξ = j/(self.nSeg)
-                self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
+            if self.plotting:
+                for j in range(self.nSeg+1):
+                    ξ = j/(self.nSeg)
+                    self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
 
     def ShapeMat(self, ξ, ell):
         return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
