@@ -2,12 +2,12 @@ import numpy as np
 import scipy.linalg as spla
 import numpy.linalg as npla
 from scipy.constants import pi
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.collections as mplcollect
 from copy import deepcopy
 
-class Beam2D:
+
+class Beam:
+    from BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
+                              PlotStress, PlotMode)
     nSeg = 100
     Scale = 1
     ScalePhi = 1
@@ -27,38 +27,38 @@ class Beam2D:
         self.BC_DL = []
         self.DL = []        # displacement load
         for i in range(len(self.Disp)):
-            for ii in range(3):
+            for ii in range(self.nNDoF):
                 entry = self.Disp[i][1][ii]
                 if isinstance(entry, int) or isinstance(entry, float):
-                    self.BC_DL.append(3*self.Disp[i][0]+ii)
+                    self.BC_DL.append(self.nNDoF*self.Disp[i][0]+ii)
                     if entry == 0:
-                        self.BC.append(3*self.Disp[i][0]+ii)
+                        self.BC.append(self.nNDoF*self.Disp[i][0]+ii)
                     else:
-                        self.DL.append(3*self.Disp[i][0]+ii)
+                        self.DL.append(self.nNDoF*self.Disp[i][0]+ii)
 
         self.DoF = []       # degrees-of-freedom
         self.DoF_DL = []
-        for i in range(3*self.nN):
+        for i in range(self.nNDoF*self.nN):
             if i not in self.BC:
                 self.DoF.append(i)
             if i not in self.BC_DL:
                 self.DoF_DL.append(i)
 
         # initial displacements
-        self.u = np.empty([3*self.nN])
+        self.u = np.empty([self.nNDoF*self.nN])
         self.u[:] = np.nan
         for i in range(len(self.Disp)):
-            for ii in range(3):
+            for ii in range(self.nNDoF):
                 if (isinstance(self.Disp[i][1][ii], int) or
                     isinstance(self.Disp[i][1][ii], float)):
                     self.u[3*self.Disp[i][0]+ii] = self.Disp[i][1][ii]
 
         # initial forces
-        self.F = np.empty([3*self.nN])
+        self.F = np.empty([self.nNDoF*self.nN])
         self.F[:] = np.nan
         self.F[self.DoF] = 0
         for i in range(len(self.Load)):
-            for ii in range(3):
+            for ii in range(self.nNDoF):
                 if (isinstance(self.Load[i][1][ii], int) or
                     isinstance(self.Load[i][1][ii], float)):
                     self.F[3*self.Load[i][0]+ii] = self.Load[i][1][ii]
@@ -78,7 +78,7 @@ class Beam2D:
         self.T = np.zeros([self.nEl, 6, 6])
         # self.r = np.zeros([self.nEl, 3, self.nSeg+1])
         self.mass = 0
-        self.L = np.zeros([self.nEl, 6, 3*self.nN])
+        self.L = np.zeros([self.nEl, 6, self.nNDoF*self.nN])
         self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
         self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
         for i in range(self.nEl):
@@ -142,127 +142,11 @@ class Beam2D:
                     ξ = j/(self.nSeg)
                     self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
 
-    def ShapeMat(self, ξ, ell):
-        return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
-                         [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
-
-    def NMat(self, i, ξ):
-        NMat = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
-        return NMat
-
-    def StrainDispMat(self, ξ, ell, zU, zL):
-        BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
-                       [     0, zL*(6-12*ξ)/ell**2,  zL*(4-6*ξ)/ell,     0, zL*(-6+12*ξ)/ell**2, zL*(-6*ξ+2)/ell]])
-        BU = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
-                       [     0, zU*(6-12*ξ)/ell**2,  zU*(4-6*ξ)/ell,     0, zU*(-6+12*ξ)/ell**2, zU*(-6*ξ+2)/ell]])
-        return(BL, BU)
-
-    def StrainDispNablah(self, ξ, ell):
-        BLNablah = np.array([[0,                0,            0, 0,                 0,             0],
-                             [0, -1/2*(6-12*ξ)/ell**2, -1/2*(4-6*ξ)/ell, 0, -1/2*(-6+12*ξ)/ell**2, -1/2*(-6*ξ+2)/ell]])
-        BUNablah = np.array([[0,               0,           0, 0,                0,            0],
-                             [0, 1/2*(6-12*ξ)/ell**2, 1/2*(4-6*ξ)/ell, 0, 1/2*(-6+12*ξ)/ell**2, 1/2*(-6*ξ+2)/ell]])
-        return(BLNablah, BUNablah)
-
-    def StiffMatElem(self, i):
-        A = self.A[i]
-        E = self.E[i]
-        ell = self.ell[i]
-        I = self.I[i]
-        nu = self.nu[i]
-        ϰ = self.ϰ[i]
-        # bar (column) terms of stiffness matrix
-        k = E*A/ell*np.array([[ 1, 0, 0, -1, 0, 0],
-                              [ 0, 0, 0,  0, 0, 0],
-                              [ 0, 0, 0,  0, 0, 0],
-                              [-1, 0, 0,  1, 0, 0],
-                              [ 0, 0, 0,  0, 0, 0],
-                              [ 0, 0, 0,  0, 0, 0]], dtype=float)
-
-        # Bending terms after Euler-Bernoulli
-        if self.stiffMatType[0].lower() in ["e", "b"]:
-            phi = 0
-        # Bending terms after Timoshenko-Ehrenfest
-        elif self.stiffMatType[0].lower() == "t":
-            G = E/(2*(1+nu))
-            AS = A * ϰ
-            phi = 12*E*I/(ϰ*A*G*l**2)
-        c = E*I/(ell**3*(1+phi))
-        k += c*np.array([[0,     0,              0, 0,      0,                0],
-                         [0,    12,          6*ell, 0,    -12,            6*ell],
-                         [0, 6*ell, ell**2*(4+phi), 0, -6*ell,   ell**2*(2-phi)],
-                         [0,     0,              0, 0,      0,                0],
-                         [0,   -12,         -6*ell, 0,     12,           -6*ell],
-                         [0, 6*ell, ell**2*(2-phi), 0, -6*ell,   ell**2*(4+phi)]],
-                        dtype=float)
-        return k
-
-    def MatMat(self, i):
-        return(np.array([[self.E[i]*self.A[i],                   0],
-                         [                  0, self.E[i]*self.I[i]]]))
-
-    def MassMatElem(self, i):
-        ell = self.ell[i]
-        rho = self.rho[i]
-        A = self.A[i]
-        if self.stiffMatType[0].lower() in ["e", "b"]:
-            if self.massMatType[0].lower() == "c":
-                c = A*rho*ell/420
-                m = c*np.array([[140,       0,         0,  70,       0,         0],
-                                [  0,     156,    22*ell,   0,      54,   -13*ell],
-                                [  0,  22*ell,  4*ell**2,   0,  13*ell, -3*ell**2],
-                                [ 70,       0,         0, 140,       0,         0],
-                                [  0,      54,    13*ell,   0,     156,   -22*ell],
-                                [  0, -13*ell, -3*ell**2,   0, -22*ell,  4*ell**2]],
-                               dtype=float)
-            elif self.massMatType[0].lower() == "l":
-                alpha = 0
-                c = A*rho*ell/2
-                m = c*np.array([[ 1, 0,              0, 1, 0,                0],
-                                [ 0, 1,              0, 0, 0,                0],
-                                [ 0, 0, 2*alpha*ell**2, 0, 0,                0],
-                                [ 1, 0,              0, 1, 0,                0],
-                                [ 0, 0,              0, 0, 1,                0],
-                                [ 0, 0,              0, 0, 0, 2*alpha*ell**2.]],
-                               dtype=float)
-        elif self.stiffMatType[0].lower() == "t":
-            IR = self.I[i]
-            nu = 0.3
-            G = self.E[i]/(2*(1+nu))
-            AS = A * ϰ
-            phi = 12*self.E[i]*self.I[i]/(ϰ*A*G*ell**2)
-            m = A*rho*ell/420*np.array([[140, 0, 0,  70, 0, 0],
-                                        [  0, 0, 0,   0, 0, 0],
-                                        [  0, 0, 0,   0, 0, 0],
-                                        [ 70, 0, 0, 140, 0, 0],
-                                        [  0, 0, 0,   0, 0, 0],
-                                        [  0, 0, 0,   0, 0, 0]], dtype=float)
-            # tranlational inertia
-            cT = A*rho*ell/(1+phi)**2
-            m += cT*np.array([[0,                                   0,                                     0, 0,                                   0,                                     0],
-                              [0,           13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*ell, 0,            9/70+3/10*phi+1/6*phi**2,    -(13/420+3/40*phi+1/24*phi**2)*ell],
-                              [0, (11/210+11/120*phi+1/24*phi**2)*ell,  (1/105+1/60*phi+1/120*phi**2)*ell**2, 0,   (13/420+3/40*phi+1/24*phi**2)*ell, -(1/140+1/60*phi+1/120*phi**2)*ell**2],
-                              [0,                                   0,                                     0, 0,                                   0,                                     0],
-                              [0,            9/70+3/10*phi+1/6*phi**2,     (13/420+3/40*phi+1/24*phi**2)*ell, 0,           13/35+7/10*phi+1/3*phi**2,   (11/210+11/120*phi+1/24*phi**2)*ell],
-                              [0,  -(13/420+3/40*phi+1/24*phi**2)*ell, -(1/140+1/60*phi+1/120*phi**2)*ell**2, 0, (11/210+11/120*phi+1/24*phi**2)*ell,  (1/105+1/60*phi+1/120*phi**2)*ell**2]],
-                             dtype=float)
-            # rotary inertia
-            cR = rho*IR/(ell*(1+phi)**2)
-            m += cR*np.array([[0,                  0,                                0, 0,                   0,                                0],
-                              [0,                6/5,               (1/10-1/2*phi)*ell, 0,                -6/5,               (1/10-1/2*phi)*ell],
-                              [0, (1/10-1/2*phi)*ell, (2/15+1/6*phi+1/3*phi**2)*ell**2, 0, (-1/10+1/2*phi)*ell, (1/30+1/6*phi-1/6*phi**2)*ell**2],
-                              [0,                  0,                                0, 0,                   0,                                0],
-                              [0,               -6/5,              (-1/10+1/2*phi)*ell, 0,                 6/5,              (-1/10+1/2*phi)*ell],
-                              [0, (1/10-1/2*phi)*ell, (1/30+1/6*phi-1/6*phi**2)*ell**2, 0, (-1/10+1/2*phi)*ell, (2/15+1/6*phi+1/3*phi**2)*ell**2]],
-                             dtype=float)
-        return m
-
     def Assemble(self, MatElem):
         Matrix = np.zeros([3*self.nN, 3*self.nN])
         for i in range(self.nEl):
             Matrix += self.L[i].T@self.T[i].T@MatElem(i)@self.T[i]@self.L[i]
         return Matrix
-
 
     def StaticAnalysis(self):
         self.k = self.Assemble(self.StiffMatElem)
@@ -370,229 +254,23 @@ class Beam2D:
     def EigenvalueSensitivity(self):
         pass
 
-    # Functions for FFR
-    def StfElem(self, i):
-        ell = self.ell[i]
-        rho = self.rho[i]
-        A = self.A[i]
-        return(A*rho*ell/12*np.array([[6, 0,   0, 6, 0,    0],
-                                      [0, 6, ell, 0, 6, -ell]], dtype=float))
 
-    def SrfElem(self, i):
-        ell = self.ell[i]
-        rho = self.rho[i]
-        A = self.A[i]
-        return(A*rho*ell/60*np.array([[     0, 21, 3*ell,      0,  9, -2*ell],
-                                      [   -21,  0,     0,     -9,  0,      0],
-                                      [-3*ell,  0,     0, -2*ell,  0,      0],
-                                      [     0,  9, 2*ell,      0, 21, -3*ell],
-                                      [    -9,  0,     0,    -21,  0,      0],
-                                      [ 2*ell,  0,     0,  3*ell,  0,      0]],
-                                     dtype=float))
+class Beam2D(Beam):
+    from Beam2D import (StiffMatElem, ShapeMat, StrainDispMat, MassMatElem,
+                        StrainDispNablah)
+    nNDoF = 3
 
-    def Assemble2x6(self, MatElem):
-        Matrix = np.zeros([2, 3*self.nN])
-        for i in range(self.nEl):
-            Matrix += self.T2[i]@MatElem(i)@self.T[i]@self.L[i]
-        return Matrix
+class Beam3D(Beam):
+    """
+    I need Ix, Iy, Iz...
+    """
+    from Beam3D import (StiffMatElem, ShapeMat, StrainDispMat, MassMatElem,
+                        StrainDispNablah)
+    nNDoF = 6
 
-    def FFRF_Output(self):
-        if (self.stiffMatType[0].lower() == "e" and
-            self.massMatType[0].lower() == "c"):
-            self.kff = self.Assemble(self.StiffMatElem)
-            self.Stf = self.Assemble2x6(self.StfElem)
-            self.Srf = self.Assemble(self.SrfElem)
-            self.Sff = self.Assemble(self.MassMatElem)
-        else:
-            print('Use stiffMatType = "Euler-Bernoulli"\
-                  \nand massMatType = "consistent"')
+class BeamFFR2D(Beam2D):
+    from BeamFFR2D import(StfElem, SrfElem, Assemble2x6, FFRF_Output)
 
-    def _plotting(self, val, disp, title, colormap):
-        fig, ax = plt.subplots()
-        ax.axis('off')
-        ax.set_aspect('equal')
-        c = np.linspace(val.min(), val.max(), 5)
-        norm = mpl.colors.Normalize(vmin=-val.max(), vmax=val.max())
-        lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
-                          plot=False, norm=MidpointNormalize(midpoint=0.))
-        for i in range(self.nEl):
-            xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
-            yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
-            plt.plot(xEl, yEl, c='gray', lw=0.5, ls=self.lineStyleUndeformed)
-        for i in range(self.nEl):
-            lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
-                            cmap=colormap, norm=lcAll.norm)
-        cb = plt.colorbar(lcAll, ticks=c, shrink=0.5, ax=[ax], location="left",
-                          aspect=10)
-        #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
-        xmin = disp[:, 0, :].min()-1
-        xmax = disp[:, 0, :].max()+1
-        ymin = disp[:, 1, :].min()-1
-        ymax = disp[:, 1, :].max()+1
-        xdelta = xmax - xmin
-        ydelta = ymax - ymin
-        buff = 0.1
-        plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
-        plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-        #cb.ax.set_title(title)
-        cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
-        plt.show()
-
-    def PlotStress(self, stress="all"):
-        if stress.lower() in ["all", "upper"]:
-            self._plotting(np.sum(self.sigmaU, 2), self.rS,
-                           "upper fiber stress $\\sigma_U$\n[MPa]",
-                           self.colormap)
-
-        if stress.lower() in ["all", "lower"]:
-            self._plotting(np.sum(self.sigmaL, 2), self.rS,
-                           "lower fiber stress $\\sigma_L$\n[MPa]",
-                           self.colormap)
-
-        if stress.lower() in ["all", "max"]:
-            self._plotting(self.sigmaMax, self.rS,
-                           "maximum stress $|\\sigma_{max}|$\n[MPa]",
-                           self.colormap)
-
-        if stress.lower() in ["all", "bending"]:
-            self._plotting(self.sigmaU[:, :, 1], self.rS,
-                           "bending stress\n(upper fiber) $\\sigma_{bending}$\n[MPa]",
-                           self.colormap)
-
-        if stress.lower() in ["all", "axial"]:
-            self._plotting(self.sigmaU[:, :, 0], self.rS,
-                           "axial stress $\\sigma_{axial}$\n[MPa]",
-                           self.colormap)
-
-    def PlotDisplacement(self, component="all"):
-        if component.lower() in ["mag", "all"]:
-            self.dS = np.sqrt(self.uS[:, 0, :]**2+self.uS[:, 1, :]**2)
-            self._plotting(self.dS, self.rS,
-                           "deformation magnitude $|u|$\n[mm]", self.colormap)
-        if component.lower() in ["x", "all"]:
-            self._plotting(self.uS[:, 0, :], self.rS,
-                           "$x$-deformation $u_x$\n[mm]", self.colormap)
-        if component.lower() in ["y", "all"]:
-            self._plotting(self.uS[:, 1, :], self.rS,
-                           "$y$-deformation $u_y$\n[mm]", self.colormap)
-
-    def PlotMode(self):
-        Phii = np.zeros([3*self.nN])
-        for ii in range(len(self.omega)):
-            Phii[self.DoF] = self.Phi[:, ii]
-            uE_Phi = np.zeros([self.nEl, 6])
-            uS_Phi = np.zeros([self.nEl, 2, self.nSeg+1])
-            for i in range(self.nEl):
-                uE_Phi[i, :] = self.L[i]@Phii
-                for j in range(self.nSeg+1):
-                    ξ = j/(self.nSeg)
-                    S = self.ShapeMat(ξ, self.ell[i])
-                    uS_Phi[i, :, j] = self.T2[i]@S@self.T[i]@uE_Phi[i, :]
-            # deformation
-            rPhi = self.r0S+uS_Phi*self.ScalePhi
-            dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2)
-            self._plotting(dPhi, rPhi, ("mode " + str(ii+1) + "\n" +
-                                        str(round(self.f0[ii], 4)) + " [Hz]"),
-                                        self.colormap)
-
-    def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
-        fig, ax = plt.subplots()
-        ax.axis('off')
-        ax.set_aspect('equal')
-        deltaMax = max(self.Nodes[:, 0].max()-self.Nodes[:, 0].min(),
-                       self.Nodes[:, 1].max()-self.Nodes[:, 1].min())
-        p = deltaMax*0.0075
-        for i in range(self.nEl):
-            xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
-            yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
-            plt.plot(xEl, yEl, c='gray', lw=self.A[i]/np.max(self.A), ls='-')
-        plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
-        if NodeNumber:
-            for i in range(len(self.Nodes)):
-                ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p,
-                                           self.Nodes[i, 1]+p),
-                            fontsize=5*FontMag, clip_on=False)
-        if ElementNumber:
-            for i in range(self.nEl):
-                posx = (self.Nodes[self.El[i, 0], 0] +
-                        self.Nodes[self.El[i, 1], 0])/2
-                posy = (self.Nodes[self.El[i, 0], 1] +
-                        self.Nodes[self.El[i, 1], 1])/2
-                ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
-                            c="gray", clip_on=False)
-        xmin = self.Nodes[:, 0].min()
-        xmax = self.Nodes[:, 0].max()
-        if self.Nodes[:,1].max()-self.Nodes[:,1].min() < 0.1:
-            ymin = -10
-            ymax = 10
-        else:
-            ymin = self.Nodes[:, 1].min()
-            ymax = self.Nodes[:, 1].max()
-        xdelta = xmax - xmin
-        ydelta = ymax - ymin
-        buff = 0.1
-        plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
-        plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
-        plt.show()
-
-
-import matplotlib.colors as colors
-class MidpointNormalize(colors.Normalize):
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        self.midpoint = midpoint
-        colors.Normalize.__init__(self, vmin, vmax, clip)
-
-    def __call__(self, value, clip=None):
-        # I'm ignoring masked values and all kinds of edge cases to make a
-        # simple example...
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-        return np.ma.masked_array(np.interp(value, x, y))
-
-def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
-              plot=True, norm=None):
-    x = x.flatten()
-    y = y.flatten()
-    z = z.flatten()
-    segments = make_segments(x, y)
-    lc = mplcollect.LineCollection(segments, array=z, cmap=cmap, norm=norm,
-                                   linewidth=linewidth, alpha=alpha)
-    if plot:
-        ax = plt.gca()
-        ax.add_collection(lc)
-    return lc
-
-def make_segments(x, y):
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    return segments
-
-class CrossSections():
-    # rectangle
-    def R(self, Output, dim):
-        b = dim[0]
-        h = dim[1]
-        if Output == 'A':
-            return b*h
-        elif Output == 'I':
-            return b*h**3/12
-        elif Output == 'zU':
-            return h/2
-        elif Output == 'zL':
-            return -h/2
-
-    # C-Profile
-    def C(self, Output, dim):
-        b = dim[0]
-        h = dim[1]
-        t = dim[2]
-        if Output == 'A':
-            return b*h-(b-t)*(h-2*t)
-        elif Output == 'I':
-            return b*h**3/12-(b-t)*(h-2*t)**3/12
-        elif Output == 'zU':
-            return h/2
-        elif Output == 'zL':
-            return -h/2
 
 if __name__ == '__main__':
 
@@ -634,7 +312,7 @@ if __name__ == '__main__':
                  [1, ['f', 0, 'f']]]
     Test.Load = [[2, [800, 0, 'f']]]
 
-    Test.nSeg = 1
+    Test.nSeg = 100
     Test.Initialize()
     Test.PlotMesh(FontMag=2)
 
