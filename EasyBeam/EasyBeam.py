@@ -110,6 +110,15 @@ class Beam2D:
                         self.zU[i] = r/2
                         self.zL[i] = -r/2
                         self.ϰ[i] = 0.847 # needs to be corrected!!!!
+                    #elif self.Properties[ii][4] in [5, 'I', 'DoubleT']
+                    elif self.Properties[ii][4] in [6, "C"]:
+                        h = self.Properties[ii][5]
+                        b = self.Properties[ii][6]
+                        t = self.Properties[ii][7]
+                        self.A[i] = b*h-(b-t)*(h-2*t)
+                        self.I[i] = b*h**3/12-(b-t)*(h-2*t)**3/12
+                        self.zU[i] = h/2
+                        self.zL[i] = -h/2
                     else:
                         print("oops nothing more programmed!!!")
             self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
