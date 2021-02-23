@@ -6,7 +6,7 @@ from copy import deepcopy
 
 
 class Beam:
-    from BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
+    from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
                               PlotStress, PlotMode)
     nSeg = 100
     Scale = 1
@@ -265,7 +265,7 @@ class Beam:
 
 
 class Beam2D(Beam):
-    from Beam2D import (StiffMatElem, ShapeMat, StrainDispMat, MassMatElem,
+    from EasyBeam.Beam2D import (StiffMatElem, ShapeMat, StrainDispMat, MassMatElem,
                         StrainDispNablah)
     nNDoF = 3
 
@@ -273,13 +273,40 @@ class Beam3D(Beam):
     """
     I need Ix, Iy, Iz...
     """
-    from Beam3D import (StiffMatElem, ShapeMat, StrainDispMat, MassMatElem,
+    from EasyBeam.Beam3D import (StiffMatElem, ShapeMat, StrainDispMat, MassMatElem,
                         StrainDispNablah)
     nNDoF = 6
 
 class BeamFFR2D(Beam2D):
-    from BeamFFR2D import(StfElem, SrfElem, Assemble2x6, FFRF_Output)
+    from EasyBeam.BeamFFR2D import(StfElem, SrfElem, Assemble2x6, FFRF_Output)
 
+class CrossSections():
+    # rectangle
+    def R(self, Output, dim):
+        b = dim[0]
+        h = dim[1]
+        if Output == 'A':
+            return b*h
+        elif Output == 'I':
+            return b*h**3/12
+        elif Output == 'zU':
+            return h/2
+        elif Output == 'zL':
+            return -h/2
+
+    # C-Profile
+    def C(self, Output, dim):
+        b = dim[0]
+        h = dim[1]
+        t = dim[2]
+        if Output == 'A':
+            return b*h-(b-t)*(h-2*t)
+        elif Output == 'I':
+            return b*h**3/12-(b-t)*(h-2*t)**3/12
+        elif Output == 'zU':
+            return h/2
+        elif Output == 'zL':
+            return -h/2
 
 if __name__ == '__main__':
 

@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplcollect
+import matplotlib.colors as colors
 import numpy as np
 
 
@@ -132,7 +133,7 @@ def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
     plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
     plt.show()
 
-import matplotlib.colors as colors
+
 class MidpointNormalize(colors.Normalize):
     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
         self.midpoint = midpoint
@@ -162,30 +163,3 @@ def make_segments(x, y):
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     return segments
 
-class CrossSections():
-    # rectangle
-    def R(self, Output, dim):
-        b = dim[0]
-        h = dim[1]
-        if Output == 'A':
-            return b*h
-        elif Output == 'I':
-            return b*h**3/12
-        elif Output == 'zU':
-            return h/2
-        elif Output == 'zL':
-            return -h/2
-
-    # C-Profile
-    def C(self, Output, dim):
-        b = dim[0]
-        h = dim[1]
-        t = dim[2]
-        if Output == 'A':
-            return b*h-(b-t)*(h-2*t)
-        elif Output == 'I':
-            return b*h**3/12-(b-t)*(h-2*t)**3/12
-        elif Output == 'zU':
-            return h/2
-        elif Output == 'zL':
-            return -h/2
