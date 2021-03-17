@@ -504,7 +504,7 @@ class Beam2D:
                                         str(round(self.f0[ii], 4)) + " [Hz]"),
                                         self.colormap)
 
-    def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
+    def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
         fig, ax = plt.subplots()
         ax.axis('off')
         ax.set_aspect('equal')
@@ -517,7 +517,7 @@ class Beam2D:
             plt.plot(xEl, yEl, c='gray', lw=self.A[i]/np.max(self.A), ls='-')
         plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
         if NodeNumber:
-            for i in range(len(self.Nodes)):
+            for i in range(self.nN):
                 ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p,
                                            self.Nodes[i, 1]+p),
                             fontsize=5*FontMag, clip_on=False)
@@ -529,6 +529,40 @@ class Beam2D:
                         self.Nodes[self.El[i, 1]-1, 1])/2
                 ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
                             c="gray", clip_on=False)
+        if Loads:
+            note = [r'$F_x$', r'$F_y$', r'$M$']
+            for i in range(len(self.Load)):
+                comment = ''
+                for ii in range(3):
+                    if (isinstance(self.Load[i][1][ii], int) or
+                        isinstance(self.Load[i][1][ii], float)):
+                        if self.Load[i][1][ii] != 0:
+                            comment += note[ii]
+                ax.annotate(comment, (self.Nodes[self.Load[i][0]-1, 0]+p,
+                                      self.Nodes[self.Load[i][0]-1, 1]-p),
+                            fontsize=5*FontMag, c="red", clip_on=False,
+                            ha='left', va='top')
+        if BC:
+            noteBC = [r'$x_{fix}$', r'$y_{fix}$', r'$\theta_{fix}$']
+            noteDL = [r'$x_{disp}$', r'$y_{disp}$', r'$\theta_{disp}$']
+            for i in range(len(self.Disp)):
+                commentBC = ''
+                commentDL = ''
+                for ii in range(3):
+                    if (isinstance(self.Disp[i][1][ii], int) or
+                        isinstance(self.Disp[i][1][ii], float)):
+                        if self.Disp[i][1][ii] == 0:
+                            commentBC += noteBC[ii]
+                        else:
+                            commentDL += noteDL[ii]
+                ax.annotate(commentBC, (self.Nodes[self.Disp[i][0]-1, 0]-p,
+                                        self.Nodes[self.Disp[i][0]-1, 1]-p),
+                            fontsize=5*FontMag, c="green", clip_on=False,
+                            ha='right', va='top')
+                ax.annotate(commentDL, (self.Nodes[self.Disp[i][0]-1, 0]-p,
+                                        self.Nodes[self.Disp[i][0]-1, 1]+p),
+                            fontsize=5*FontMag, c="blue", clip_on=False,
+                            ha='right', va='bottom')
         xmin = self.Nodes[:, 0].min()
         xmax = self.Nodes[:, 0].max()
         if self.Nodes[:,1].max()-self.Nodes[:,1].min() < 0.1:
@@ -639,11 +673,11 @@ if __name__ == '__main__':
                [2, 3]]
     Test.PropID = ["Alu", "Steel"]
 
-    Test.Disp = [[1, [  0, 0, 'f']],
-                 [2, ['f', 0, 'f']]]
-    Test.Load = [[3, [800, 0, 'f']]]
+    Test.Disp = [[1, [  0,   0, 'f']],
+                 [2, [  1,   0, 'f']]]
+    Test.Load = [[3, [800, 'f', 'f']]]
 
-    Test.nSeg = 1
+    # Test.nSeg = 1
     Test.Initialize()
     Test.PlotMesh(FontMag=2)
 
