@@ -17,14 +17,14 @@ PinPin.Nodes = [[  0, 0],
                 [300, 0]]
 
 # Elemente: verbindet die Knoten
-PinPin.El = [[0, 1],
-             [1, 2]]
+PinPin.El = [[1, 2],
+             [2, 3]]
 
 PinPin.PropID = ['Prop1', 'Prop2']
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
-PinPin.Disp = [[0, [0, 0, 'f']],
-               [2, [1, 0, 0.1]]]
+PinPin.Disp = [[1, [0, 0, 'f']],
+               [3, [1, 0, 0.1]]]
 PinPin.Load = []
 
 # Initialisieren des Modells

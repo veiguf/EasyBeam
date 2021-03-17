@@ -30,11 +30,11 @@ class Beam2D:
             for ii in range(3):
                 entry = self.Disp[i][1][ii]
                 if isinstance(entry, int) or isinstance(entry, float):
-                    self.BC_DL.append(3*self.Disp[i][0]+ii)
+                    self.BC_DL.append(3*(self.Disp[i][0]-1)+ii)
                     if entry == 0:
-                        self.BC.append(3*self.Disp[i][0]+ii)
+                        self.BC.append(3*(self.Disp[i][0]-1)+ii)
                     else:
-                        self.DL.append(3*self.Disp[i][0]+ii)
+                        self.DL.append(3*(self.Disp[i][0]-1)+ii)
 
         self.DoF = []       # degrees-of-freedom
         self.DoF_DL = []
@@ -51,7 +51,7 @@ class Beam2D:
             for ii in range(3):
                 if (isinstance(self.Disp[i][1][ii], int) or
                     isinstance(self.Disp[i][1][ii], float)):
-                    self.u[3*self.Disp[i][0]+ii] = self.Disp[i][1][ii]
+                    self.u[3*(self.Disp[i][0]-1)+ii] = self.Disp[i][1][ii]
 
         # initial forces
         self.F = np.empty([3*self.nN])
@@ -61,7 +61,7 @@ class Beam2D:
             for ii in range(3):
                 if (isinstance(self.Load[i][1][ii], int) or
                     isinstance(self.Load[i][1][ii], float)):
-                    self.F[3*self.Load[i][0]+ii] = self.Load[i][1][ii]
+                    self.F[3*(self.Load[i][0]-1)+ii] = self.Load[i][1][ii]
 
         self.rho = np.zeros([self.nEl])
         self.E = np.zeros([self.nEl])
@@ -121,22 +121,22 @@ class Beam2D:
                         self.zL[i] = -h/2
                     else:
                         print("oops nothing more programmed!!!")
-            self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1], :] -
-                                       self.Nodes[self.El[i, 0], :])
+            self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1]-1, :] -
+                                       self.Nodes[self.El[i, 0]-1, :])
             self.mass += (self.A[i]*self.ell[i]*self.rho[i])
-            if self.Nodes[self.El[i, 1], 0] >= self.Nodes[self.El[i, 0], 0]:
+            if self.Nodes[self.El[i, 1]-1, 0] >= self.Nodes[self.El[i, 0]-1, 0]:
                 """
                 HERE is a division by zero...needs to be checked
                 """
-                self.β[i] = np.arctan((self.Nodes[self.El[i, 1], 1] -
-                                       self.Nodes[self.El[i, 0], 1])/
-                                      (self.Nodes[self.El[i, 1], 0] -
-                                       self.Nodes[self.El[i, 0], 0]))
+                self.β[i] = np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
+                                       self.Nodes[self.El[i, 0]-1, 1])/
+                                      (self.Nodes[self.El[i, 1]-1, 0] -
+                                       self.Nodes[self.El[i, 0]-1, 0]))
             else:
-                self.β[i] = pi + np.arctan((self.Nodes[self.El[i, 1], 1] -
-                                            self.Nodes[self.El[i, 0], 1])/
-                                           (self.Nodes[self.El[i, 1], 0] -
-                                            self.Nodes[self.El[i, 0], 0]))
+                self.β[i] = pi + np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
+                                            self.Nodes[self.El[i, 0]-1, 1])/
+                                           (self.Nodes[self.El[i, 1]-1, 0] -
+                                            self.Nodes[self.El[i, 0]-1, 0]))
             self.T2[i] = np.array([[np.cos(self.β[i]), -np.sin(self.β[i])],
                                   [np.sin(self.β[i]),  np.cos(self.β[i])]],
                                  dtype=float)
@@ -144,8 +144,8 @@ class Beam2D:
                                   [0, 0, 1, 0, 0, 0],
                                   [np.zeros([2, 3]), self.T2[i].T, np.zeros([2, 1])],
                                   [0, 0, 0, 0, 0, 1]])
-            self.L[i, 0:3, 3*self.El[i, 0]:3*self.El[i, 0]+3] = np.eye(3)
-            self.L[i, 3:6, 3*self.El[i, 1]:3*self.El[i, 1]+3] = np.eye(3)
+            self.L[i, 0:3, 3*(self.El[i, 0]-1):3*(self.El[i, 0]-1)+3] = np.eye(3)
+            self.L[i, 3:6, 3*(self.El[i, 1]-1):3*(self.El[i, 1]-1)+3] = np.eye(3)
             if self.plotting:
                 for j in range(self.nSeg+1):
                     ξ = j/(self.nSeg)
@@ -425,8 +425,8 @@ class Beam2D:
         lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
                           plot=False, norm=MidpointNormalize(midpoint=0.))
         for i in range(self.nEl):
-            xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
-            yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
+            xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
+            yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
             plt.plot(xEl, yEl, c='gray', lw=0.5, ls=self.lineStyleUndeformed)
         for i in range(self.nEl):
             lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
@@ -512,8 +512,8 @@ class Beam2D:
                        self.Nodes[:, 1].max()-self.Nodes[:, 1].min())
         p = deltaMax*0.0075
         for i in range(self.nEl):
-            xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
-            yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
+            xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
+            yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
             plt.plot(xEl, yEl, c='gray', lw=self.A[i]/np.max(self.A), ls='-')
         plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
         if NodeNumber:
@@ -523,10 +523,10 @@ class Beam2D:
                             fontsize=5*FontMag, clip_on=False)
         if ElementNumber:
             for i in range(self.nEl):
-                posx = (self.Nodes[self.El[i, 0], 0] +
-                        self.Nodes[self.El[i, 1], 0])/2
-                posy = (self.Nodes[self.El[i, 0], 1] +
-                        self.Nodes[self.El[i, 1], 1])/2
+                posx = (self.Nodes[self.El[i, 0]-1, 0] +
+                        self.Nodes[self.El[i, 1]-1, 0])/2
+                posy = (self.Nodes[self.El[i, 0]-1, 1] +
+                        self.Nodes[self.El[i, 1]-1, 1])/2
                 ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
                             c="gray", clip_on=False)
         xmin = self.Nodes[:, 0].min()
@@ -635,13 +635,13 @@ if __name__ == '__main__':
     Test.Nodes = [[  0,   0],
                   [100,   0],
                   [100, 100]]
-    Test.El = [[0, 1],
-               [1, 2]]
+    Test.El = [[1, 2],
+               [2, 3]]
     Test.PropID = ["Alu", "Steel"]
 
-    Test.Disp = [[0, [  0, 0, 'f']],
-                 [1, ['f', 0, 'f']]]
-    Test.Load = [[2, [800, 0, 'f']]]
+    Test.Disp = [[1, [  0, 0, 'f']],
+                 [2, ['f', 0, 'f']]]
+    Test.Load = [[3, [800, 0, 'f']]]
 
     Test.nSeg = 1
     Test.Initialize()
