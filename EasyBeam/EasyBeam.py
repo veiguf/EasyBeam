@@ -543,8 +543,8 @@ class Beam2D:
                             fontsize=5*FontMag, c="red", clip_on=False,
                             ha='left', va='top')
         if BC:
-            noteBC = [r'$x_{fix}$', r'$y_{fix}$', r'$\theta_{fix}$']
-            noteDL = [r'$x_{disp}$', r'$y_{disp}$', r'$\theta_{disp}$']
+            noteBC = [r'$x_f$', r'$y_f$', r'$\theta_f$']
+            noteDL = [r'$x_d$', r'$y_d$', r'$\theta_d$']
             for i in range(len(self.Disp)):
                 commentBC = ''
                 commentDL = ''
