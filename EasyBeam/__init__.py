@@ -1,1 +1,1 @@
-from EasyBeam.EasyBeam import *
+from EasyBeam.BeamAnalysis import *
