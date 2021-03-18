@@ -31,13 +31,13 @@ for i in range(nEl+1):
 # Elemente: verbindet die Knoten
 Cantilever.El = [[]]*(nEl)
 for i in range(nEl):
-    Cantilever.El[i] = [i, i+1]
+    Cantilever.El[i] = [i+1, i+2]
 
 Cantilever.PropID = ["Prop1"]*nEl
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
-Cantilever.Disp = [[  0, [0, 0, 0]]]
-Cantilever.Load = [[nEl, [0, F, 0]]]
+Cantilever.Disp = [[    1, [0, 0, 0]]]
+Cantilever.Load = [[nEl+1, [0, F, 0]]]
 
 # Initialisieren des Modells
 Cantilever.Initialize()

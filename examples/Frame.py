@@ -19,25 +19,25 @@ Frame.Nodes= [[   0,    0],
               [5000, 1000]]
 
 # Elemente: verbindet die Knoten
-Frame.El = [[0, 1],
-            [0, 4],
-            [1, 2],
-            [1, 4],
+Frame.El = [[1, 2],
             [1, 5],
-            [4, 5],
             [2, 3],
             [2, 5],
             [2, 6],
             [5, 6],
-            [3, 6]]
+            [3, 4],
+            [3, 6],
+            [3, 7],
+            [6, 7],
+            [4, 7]]
 
 Frame.PropID = ['Q12x12', 'QR20x3', 'Q20x20', 'Q16x16', 'QR20x3', 'QR20x3',
                 'Q12x12', 'QR20x3', 'Q16x16', 'QR20x3', 'QR20x3']
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
-Frame.Disp = [[0, [  0, 0, 'f']],
-              [3, ['f', 0, 'f']]]
-Frame.Load = [[5, [0, -20000, 0]]]
+Frame.Disp = [[1, [  0, 0, 'f']],
+              [4, ['f', 0, 'f']]]
+Frame.Load = [[6, [0, -20000, 0]]]
 
 # Initialisieren des Modells
 Frame.Initialize()
