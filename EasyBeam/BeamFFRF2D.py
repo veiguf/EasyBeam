@@ -1,4 +1,9 @@
-# Functions for FFR
+import numpy as np
+
+def NMat(self, i, ξ):
+    NMat = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
+    return NMat
+
 def StfElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]

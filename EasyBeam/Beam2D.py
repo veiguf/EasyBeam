@@ -4,10 +4,6 @@ def ShapeMat(self, ξ, ell):
     return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
                      [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
 
-def NMat(self, i, ξ):
-    NMat = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
-    return NMat
-
 def StrainDispMat(self, ξ, ell, zU, zL):
     BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
                    [     0, zL*(6-12*ξ)/ell**2,  zL*(4-6*ξ)/ell,     0, zL*(-6+12*ξ)/ell**2, zL*(-6*ξ+2)/ell]])

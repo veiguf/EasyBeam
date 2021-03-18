@@ -14,8 +14,8 @@ def _plotting(self, val, disp, title, colormap):
     lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
                       plot=False, norm=MidpointNormalize(midpoint=0.))
     for i in range(self.nEl):
-        xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
-        yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
+        xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
+        yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
         plt.plot(xEl, yEl, c='gray', lw=0.5, ls=self.lineStyleUndeformed)
     for i in range(self.nEl):
         lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
@@ -93,7 +93,7 @@ def PlotMode(self):
                                     str(round(self.f0[ii], 4)) + " [Hz]"),
                                     self.colormap)
 
-def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
+def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
     fig, ax = plt.subplots()
     ax.axis('off')
     ax.set_aspect('equal')
@@ -101,23 +101,57 @@ def PlotMesh(self, NodeNumber=True, ElementNumber=True, FontMag=1):
                    self.Nodes[:, 1].max()-self.Nodes[:, 1].min())
     p = deltaMax*0.0075
     for i in range(self.nEl):
-        xEl = self.Nodes[self.El[i, 0], 0], self.Nodes[self.El[i, 1], 0]
-        yEl = self.Nodes[self.El[i, 0], 1], self.Nodes[self.El[i, 1], 1]
+        xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
+        yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
         plt.plot(xEl, yEl, c='gray', lw=self.A[i]/np.max(self.A), ls='-')
     plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
     if NodeNumber:
-        for i in range(len(self.Nodes)):
+        for i in range(self.nN):
             ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p,
                                        self.Nodes[i, 1]+p),
                         fontsize=5*FontMag, clip_on=False)
     if ElementNumber:
         for i in range(self.nEl):
-            posx = (self.Nodes[self.El[i, 0], 0] +
-                    self.Nodes[self.El[i, 1], 0])/2
-            posy = (self.Nodes[self.El[i, 0], 1] +
-                    self.Nodes[self.El[i, 1], 1])/2
+            posx = (self.Nodes[self.El[i, 0]-1, 0] +
+                    self.Nodes[self.El[i, 1]-1, 0])/2
+            posy = (self.Nodes[self.El[i, 0]-1, 1] +
+                    self.Nodes[self.El[i, 1]-1, 1])/2
             ax.annotate("E"+str(i+1), (posx+p, posy+p), fontsize=5*FontMag,
                         c="gray", clip_on=False)
+    if Loads:
+        note = [r'$F_x$', r'$F_y$', r'$M$']
+        for i in range(len(self.Load)):
+            comment = ''
+            for ii in range(3):
+                if (isinstance(self.Load[i][1][ii], int) or
+                    isinstance(self.Load[i][1][ii], float)):
+                    if self.Load[i][1][ii] != 0:
+                        comment += note[ii]
+            ax.annotate(comment, (self.Nodes[self.Load[i][0]-1, 0]+p,
+                                  self.Nodes[self.Load[i][0]-1, 1]-p),
+                        fontsize=5*FontMag, c="red", clip_on=False,
+                        ha='left', va='top')
+    if BC:
+        noteBC = [r'$x_f$', r'$y_f$', r'$\theta_f$']
+        noteDL = [r'$x_d$', r'$y_d$', r'$\theta_d$']
+        for i in range(len(self.Disp)):
+            commentBC = ''
+            commentDL = ''
+            for ii in range(3):
+                if (isinstance(self.Disp[i][1][ii], int) or
+                    isinstance(self.Disp[i][1][ii], float)):
+                    if self.Disp[i][1][ii] == 0:
+                        commentBC += noteBC[ii]
+                    else:
+                        commentDL += noteDL[ii]
+            ax.annotate(commentBC, (self.Nodes[self.Disp[i][0]-1, 0]-p,
+                                    self.Nodes[self.Disp[i][0]-1, 1]-p),
+                        fontsize=5*FontMag, c="green", clip_on=False,
+                        ha='right', va='top')
+            ax.annotate(commentDL, (self.Nodes[self.Disp[i][0]-1, 0]-p,
+                                    self.Nodes[self.Disp[i][0]-1, 1]+p),
+                        fontsize=5*FontMag, c="blue", clip_on=False,
+                        ha='right', va='bottom')
     xmin = self.Nodes[:, 0].min()
     xmax = self.Nodes[:, 0].max()
     if self.Nodes[:,1].max()-self.Nodes[:,1].min() < 0.1:
@@ -162,4 +196,3 @@ def make_segments(x, y):
     points = np.array([x, y]).T.reshape(-1, 1, 2)
     segments = np.concatenate([points[:-1], points[1:]], axis=1)
     return segments
-

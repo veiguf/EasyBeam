@@ -38,10 +38,6 @@ def ShapeMat(self, ξ, ell):
     N[5, 11] = M6
     return N
 
-def NMat(self, i, ξ):
-    # still 2d
-    return self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
-
 def StrainDispMat(self, ξ, ell, zU, zL):
 
     return(BL, BU)
