@@ -6,7 +6,8 @@ from copy import deepcopy
 
 
 class Beam:
-
+    from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
+                              PlotStress, PlotMode)
     nSeg = 100
     Scale = 1
     ScalePhi = 1
@@ -264,8 +265,6 @@ class Beam:
 
 
 class Beam2D(Beam):
-    from EasyBeam.BeamPlotting2D import (_plotting, PlotMesh, PlotDisplacement,
-                                         PlotStress, PlotMode)
     from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
     nNDoF = 3
