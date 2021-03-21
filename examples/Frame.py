@@ -39,18 +39,14 @@ Frame.Disp = [[1, [  0, 0, 'f']],
               [4, ['f', 0, 'f']]]
 Frame.Load = [[6, [0, -20000, 0]]]
 
-# Initialisieren des Modells
-Frame.Initialize()
+Frame.nSeg = 20
 
 # Lösen
 Frame.StaticAnalysis()
-Frame.Scale = 100
-Frame.ComputeStress()
 Frame.EigenvalueAnalysis(nEig=len(Frame.DoF))
 
 # Grafische Darstellung
-Frame.PlotMesh()
-Frame.PlotStress(stress="all")
-Frame.PlotDisplacement()
-Frame.ScalePhi = 30
-Frame.PlotMode()
+Frame.PlotMesh(FontMag=2)
+Frame.PlotStress(stress="all", scale=100)
+Frame.PlotDisplacement(component="all", scale=100)
+Frame.PlotMode(scale=30)

@@ -36,7 +36,10 @@ def _plotting(self, val, disp, title, colormap):
     cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
     plt.show()
 
-def PlotStress(self, stress="all"):
+def PlotStress(self, stress="all", scale=1):
+    if not self.ComputedStress:
+        self.ComputeStress()
+    self.rS = self.r0S+self.uS*scale
     if stress.lower() in ["all", "upper"]:
         self._plotting(np.sum(self.sigmaU, 2), self.rS,
                        "upper fiber stress $\\sigma_U$\n[MPa]",
@@ -62,7 +65,10 @@ def PlotStress(self, stress="all"):
                        "axial stress $\\sigma_{axial}$\n[MPa]",
                        self.colormap)
 
-def PlotDisplacement(self, component="all"):
+def PlotDisplacement(self, component="all", scale=1):
+    if not self.ComputedDisplacement:
+        self.ComputeDisplacement()
+    self.rS = self.r0S+self.uS*scale
     if component.lower() in ["mag", "all"]:
         self.dS = np.sqrt(self.uS[:, 0, :]**2+self.uS[:, 1, :]**2)
         self._plotting(self.dS, self.rS,
@@ -74,7 +80,7 @@ def PlotDisplacement(self, component="all"):
         self._plotting(self.uS[:, 1, :], self.rS,
                        "$y$-deformation $u_y$\n[mm]", self.colormap)
 
-def PlotMode(self):
+def PlotMode(self, scale=1):
     Phii = np.zeros([3*self.nN])
     for ii in range(len(self.omega)):
         Phii[self.DoF] = self.Phi[:, ii]
@@ -87,13 +93,15 @@ def PlotMode(self):
                 S = self.ShapeMat(ξ, self.ell[i])
                 uS_Phi[i, :, j] = self.T2[i]@S@self.T[i]@uE_Phi[i, :]
         # deformation
-        rPhi = self.r0S+uS_Phi*self.ScalePhi
+        rPhi = self.r0S+uS_Phi*scale
         dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2)
         self._plotting(dPhi, rPhi, ("mode " + str(ii+1) + "\n" +
                                     str(round(self.f0[ii], 4)) + " [Hz]"),
                                     self.colormap)
 
 def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
+    if not self.Initialized:
+        self.Initialize()
     fig, ax = plt.subplots()
     ax.axis('off')
     ax.set_aspect('equal')

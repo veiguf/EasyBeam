@@ -8,9 +8,7 @@ from copy import deepcopy
 class Beam:
     from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
                               PlotStress, PlotMode)
-    nSeg = 100
-    Scale = 1
-    ScalePhi = 1
+    nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
@@ -18,7 +16,12 @@ class Beam:
     SizingVariables = []
     plotting = True
 
+    Initialized = False
+    ComputedDisplacement = False
+    ComputedStress = False
+
     def Initialize(self):
+        self.Initialized = True
         self.Nodes = np.array(self.Nodes, dtype=float)
         self.El = np.array(self.El, dtype=int)
         self.nEl = len(self.El)     # number of elements
@@ -80,7 +83,7 @@ class Beam:
         self.mass = 0
         self.L = np.zeros([self.nEl, 6, 3*self.nN])
         self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
-        self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
+
         for i in range(self.nEl):
             for ii in range(len(self.Properties)):
                 if self.PropID[i] == self.Properties[ii][0]:
@@ -146,7 +149,9 @@ class Beam:
                                   [0, 0, 0, 0, 0, 1]])
             self.L[i, 0:3, 3*(self.El[i, 0]-1):3*(self.El[i, 0]-1)+3] = np.eye(3)
             self.L[i, 3:6, 3*(self.El[i, 1]-1):3*(self.El[i, 1]-1)+3] = np.eye(3)
-            if self.plotting:
+        if self.plotting:
+            self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
+            for i in range(self.nEl):
                 for j in range(self.nSeg+1):
                     ξ = j/(self.nSeg)
                     self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
@@ -158,6 +163,8 @@ class Beam:
         return Matrix
 
     def StaticAnalysis(self):
+        if not self.Initialized:
+            self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
         self.u[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
                                               self.F[self.DoF_DL]-
@@ -188,9 +195,20 @@ class Beam:
         self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
                                                    FPseudo[self.DoF_DL])
 
-    def ComputeStress(self):
+    def ComputeDisplacement(self):
+        self.ComputedDisplacement = True
         self.uE = np.zeros([self.nEl, 6])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
+        for iEl in range(self.nEl):
+            self.uE[iEl]  = self.T[iEl]@self.L[iEl]@self.u
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
+                self.uS[iEl, :, j] = self.T2[iEl]@self.ShapeMat(ξ, self.ell[iEl])@self.uE[iEl]
+
+    def ComputeStress(self):
+        self.ComputedStress = True
+        if not self.ComputedDisplacement:
+            self.ComputeDisplacement()
         self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
         self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
         self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
@@ -199,10 +217,8 @@ class Beam:
         self.epsilon = np.zeros([self.nEl, self.nSeg+1, 2])
         self.sigma = np.zeros([self.nEl, self.nSeg+1, 2])
         for iEl in range(self.nEl):
-            self.uE[iEl]  = self.T[iEl]@self.L[iEl]@self.u
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
-                self.uS[iEl, :, j] = self.T2[iEl]@self.ShapeMat(ξ, self.ell[iEl])@self.uE[iEl]
                 BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
                                             self.zL[iEl])
                 self.epsilonL[iEl, j] = BL@self.uE[iEl]
@@ -211,7 +227,6 @@ class Beam:
                 self.sigmaU[iEl, j] = self.epsilonU[iEl, j]*self.E[iEl]
                 self.sigmaMax[iEl, j] = np.max((np.abs(np.sum(self.sigmaL[iEl, j])),
                                                 np.abs(np.sum(self.sigmaU[iEl, j]))))
-        self.rS = self.r0S+self.uS*self.Scale
 
     def ComputeStressSensitivity(self):
         # not general enough for shape
@@ -241,6 +256,8 @@ class Beam:
                 self.sigmaUNabla[iEl, j] = self.E[iEl]*self.epsilonUNabla[iEl, j]
 
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
+        if not self.Initialized:
+            self.Initialize()
         self.massMatType = massMatType
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
@@ -302,17 +319,6 @@ if __name__ == '__main__':
     Test.SizingVariables = [["h", "b"],
                             ["h", "b"]]
 
-    # Test.Nodes = [[  0,   0],
-    #               [ 50,   0],
-    #               [100,   0],
-    #               [100,  50],
-    #               [100, 100]]
-    # Test.El = [[0, 1],
-    #            [1, 2],
-    #            [2, 3],
-    #            [3, 4]]
-    # Test.PropID = ["Alu", "Alu", "Steel", "Steel"]
-
     Test.Nodes = [[  0,   0],
                   [100,   0],
                   [100, 100]]
@@ -321,25 +327,19 @@ if __name__ == '__main__':
     Test.PropID = ["Alu", "Steel"]
 
     Test.Disp = [[1, [  0,   0, 'f']],
-                 [2, [  1,   0, 'f']]]
+                 [2, [0.1,   0, 'f']]]
     Test.Load = [[3, [800, 'f', 'f']]]
 
-    # Test.nSeg = 1
-    Test.Initialize()
-    Test.PlotMesh(FontMag=2)
+    Test.nSeg = 100
+    Test.PlotMesh(NodeNumber=True, ElementNumber=True, Loads=True, BC=True,
+                  FontMag=2)
 
-    Test.Scale = 20
     Test.StaticAnalysis()
-
-    Test.ComputeStress()
-
-    Test.PlotDisplacement('all')
-    Test.PlotStress('all')
-
-    Test.ScalePhi = 0.1
+    Test.PlotDisplacement('mag', scale=20)
+    Test.PlotStress('max', scale=20)
 
     Test.EigenvalueAnalysis(nEig=len(Test.DoF))
-    Test.PlotMode()
+    Test.PlotMode(scale=0.1)
 
     Test.SensitivityAnalysis()
 

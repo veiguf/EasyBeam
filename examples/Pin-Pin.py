@@ -27,18 +27,14 @@ PinPin.Disp = [[1, [0, 0, 'f']],
                [3, [1, 0, 0.1]]]
 PinPin.Load = []
 
-# Initialisieren des Modells
-PinPin.Initialize()
+PinPin.nSeg = 100
 
 # Lösen
 PinPin.StaticAnalysis()
-PinPin.Scale = 10
-PinPin.ComputeStress()
 PinPin.EigenvalueAnalysis(nEig=len(PinPin.DoF))
 
 # Grafische Darstellung
-PinPin.PlotMesh()
-PinPin.PlotStress()
-PinPin.PlotDisplacement()
-PinPin.ScalePhi = 1
-PinPin.PlotMode()
+PinPin.PlotMesh(FontMag=2)
+PinPin.PlotStress(stress='all', scale=10)
+PinPin.PlotDisplacement(component='all', scale=10)
+PinPin.PlotMode(scale=1)

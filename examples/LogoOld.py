@@ -172,11 +172,8 @@ Logo.PropID = ["Prop1"]*len(Logo.El)
 Logo.Disp = [[ 1, [0, 0, 0]]]
 Logo.Load = [[77, [0, -200, 0]]]
 Logo.nStep = 100
-Logo.Initialize()
 
 Logo.StaticAnalysis()
-Logo.Scale = 2
-Logo.ComputeStress()
 
-Logo.PlotMesh()
-Logo.PlotDisplacement()
+Logo.PlotMesh(ElementNumber=False)
+Logo.PlotDisplacement(scale=2)

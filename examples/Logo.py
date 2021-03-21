@@ -78,28 +78,13 @@ Logo.PropID = ["Prop1"]*len(Logo.El)
 Logo.Disp = [[ 5, [0, 0, 0]]]
 Logo.Load = [[29, [0, -10, 0]]]
 
-# Initialisieren des Modells
-Logo.Initialize()
-
-# Querschnittgeometrie und Werkstoff
-b = 10      # mm
-h = 10      # mm
-Logo.eU = np.ones([Logo.nEl, 1])*h/2
-Logo.eL = np.ones([Logo.nEl, 1])*-h/2
-Logo.A = np.ones([Logo.nEl, 1])*b*h     # mm^2
-Logo.I = np.ones([Logo.nEl, 1])*b*h**3/12    # mm^4
-Logo.E = np.ones([Logo.nEl, 1])*210000        # MPa
-Logo.rho = np.ones([Logo.nEl, 1])*7.85e-9   # t/mm^3
-
 # Lösen
 Logo.StaticAnalysis()
-Logo.Scale = 5
-Logo.ComputeStress()
 Logo.EigenvalueAnalysis(nEig=10)
 
 # Grafische Darstellung
-Logo.PlotMesh(ElementNumber=False)
-Logo.PlotMesh(NodeNumber=False)
-Logo.PlotStress(stress="all")
-Logo.PlotDisplacement()
-Logo.PlotMode()
+Logo.PlotMesh(ElementNumber=False, FontMag=1.5)
+Logo.PlotMesh(NodeNumber=False, FontMag=1.5)
+Logo.PlotStress(stress="all", scale=5)
+Logo.PlotDisplacement(component="all", scale=5)
+Logo.PlotMode(scale=1)
