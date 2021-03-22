@@ -12,7 +12,7 @@ if __name__ == '__main__':
     from distutils.core import setup
     extra_files = package_files('EasyBeam')
     setup(name='EasyBeam',
-          version='0.2.0',
+          version='0.3.0',
           description='Easy Application for Structural analYsis with BEAMs',
           author='V. Gufler, E.J. Wehrle',
           author_email='veit.gufler@unibz.it',

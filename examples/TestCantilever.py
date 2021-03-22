@@ -17,7 +17,7 @@ nu = 0.3
 # Initialisiern des Problems
 Cantilever = Beam2D()
 Cantilever.SizingVariables = [["h", "b"]]
-Cantilever.nSeg = 1
+Cantilever.nSeg = 100
 Cantilever.stiffMatType = "Euler-Bernoulli"
 Cantilever.massMatType = "consistent"
 Cantilever.Properties = [['Prop1', rho, E, nu, 1, h, b]]
@@ -30,12 +30,17 @@ for i in range(nEl):
 Cantilever.PropID = ["Prop1"]*nEl
 Cantilever.Disp = [[    1, [0, 0, 0]]]
 Cantilever.Load = [[nEl+1, [Fy, Fy, 0]]]
-Cantilever.Initialize()
+Cantilever.nSeg = 5
+
+# Lösen
 Cantilever.StaticAnalysis()
 
-Cantilever.ComputeStress()
+# Darstellung
 Cantilever.PlotMesh()
-Cantilever.PlotStress()
+Cantilever.PlotDisplacement(scale=10)
+Cantilever.PlotStress(scale=10)
+
+# Sensitivitäten
 Cantilever.SensitivityAnalysis()
 Cantilever.ComputeStressSensitivity()
 
@@ -56,14 +61,9 @@ print(Cantilever.epsilonUNabla)
 print("stress sensitivity")
 print(Cantilever.sigmaLNabla)
 print(Cantilever.sigmaUNabla)
-#Cantilever.EigenvalueAnalysis(nEig=3)
 
-# Grafische Darstellung
-
-
-# Cantilever.PlotDisplacement()
-# Cantilever.ScalePhi = 10
-# Cantilever.PlotMode()
+# Cantilever.EigenvalueAnalysis(nEig=3)
+# Cantilever.PlotMode(scale=10)
 # print('Eigenvalue solver:', Cantilever.EigenvalSolver)
 
 # # Analytical values, continuous beam theory for eigenfrequencies

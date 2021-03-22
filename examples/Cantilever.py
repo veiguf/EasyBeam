@@ -20,9 +20,6 @@ Cantilever = Beam2D()
 Cantilever.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
 Cantilever.massMatType = "consistent"        # lumped or consistent
 
-# Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
-Cantilever.Properties = [['Prop1', rho, E, nu, 1, h, b]]
-
 # Knoten [mm]
 Cantilever.Nodes = [[]]*(nEl+1)
 for i in range(nEl+1):
@@ -33,27 +30,27 @@ Cantilever.El = [[]]*(nEl)
 for i in range(nEl):
     Cantilever.El[i] = [i+1, i+2]
 
-Cantilever.PropID = ["Prop1"]*nEl
-
 # Randbedingungen und Belastung [N] bzw. [Nmm]
 Cantilever.Disp = [[    1, [0, 0, 0]]]
 Cantilever.Load = [[nEl+1, [0, F, 0]]]
 
-# Initialisieren des Modells
-Cantilever.Initialize()
+# Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
+Cantilever.Properties = [['Prop1', rho, E, nu, 1, h, b]]
+# Zuweisung auf Elemente
+Cantilever.PropID = ["Prop1"]*nEl
 
-# Lösen
-Cantilever.StaticAnalysis()
-Cantilever.Scale = 10
-Cantilever.ComputeStress()
-Cantilever.EigenvalueAnalysis(nEig=3)
-
-# Grafische Darstellung
+Cantilever.nSeg = 20
+# Darstellung Vernetzung
 Cantilever.PlotMesh()
-Cantilever.PlotStress()
-Cantilever.PlotDisplacement()
-Cantilever.ScalePhi = 10
-Cantilever.PlotMode()
+
+# Statische Analyse
+Cantilever.StaticAnalysis()
+Cantilever.PlotDisplacement(component='mag', scale=10)
+Cantilever.PlotStress(stress='max', scale=10)
+
+# Modalanalyse
+Cantilever.EigenvalueAnalysis(nEig=3)
+Cantilever.PlotMode(scale=5)
 print('Eigenvalue solver:', Cantilever.EigenvalSolver)
 
 # Analytical values, continuous beam theory for eigenfrequencies
@@ -61,7 +58,6 @@ print("Analytical results")
 print("maximum stress [MPa]:")
 sigmaMax = np.abs(F*l/I*h/2)
 print(sigmaMax)
-
 print("maximum displacement [mm]:")
 wMax = F*l**3/(3*E*I)
 print(wMax)
