@@ -30,12 +30,6 @@ def TransMat(self, i):
                   [            0, 0, 0,         0, 0,                1]])
     return T
 
-def BoolMat(self, i):
-    L = np.zeros([2*self.nNDoF, self.nNDoF*self.nN])
-    L[0:3, 3*(self.El[i, 0]-1):3*(self.El[i, 0]-1)+3] = np.eye(3)
-    L[3:6, 3*(self.El[i, 1]-1):3*(self.El[i, 1]-1)+3] = np.eye(3)
-    return L
-
 def StrainDispMat(self, ξ, ell, zU, zL):
     BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
                    [     0, zL*(6-12*ξ)/ell**2,  zL*(4-6*ξ)/ell,     0, zL*(-6+12*ξ)/ell**2, zL*(-6*ξ+2)/ell]])

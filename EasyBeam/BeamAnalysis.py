@@ -128,7 +128,9 @@ class Beam:
             self.mass += (self.A[i]*self.ell[i]*self.rho[i])
             self.TX[i] = self.TransXMat(i)
             self.T[i] = self.TransMat(i)
-            self.L[i] = self.BoolMat(i)
+            self.L[i,          0:  self.nNDoF, self.nNDoF*(self.El[i, 0]-1):self.nNDoF*(self.El[i, 0]-1)+self.nNDoF] = np.eye(self.nNDoF)
+            self.L[i, self.nNDoF:2*self.nNDoF, self.nNDoF*(self.El[i, 1]-1):self.nNDoF*(self.El[i, 1]-1)+self.nNDoF] = np.eye(self.nNDoF)
+
         if self.plotting:
             self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
             for i in range(self.nEl):
@@ -262,7 +264,7 @@ class Beam:
 
 
 class Beam2D(Beam):
-    from EasyBeam.Beam2D import (ShapeMat, TransXMat, TransMat, BoolMat,
+    from EasyBeam.Beam2D import (ShapeMat, TransXMat, TransMat,
                                  StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
     nNDoF = 3   # number of nodal degrees of freedom
