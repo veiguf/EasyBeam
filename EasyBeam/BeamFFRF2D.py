@@ -1,7 +1,7 @@
 import numpy as np
 
 def NMat(self, i, ξ):
-    NMat = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
+    NMat = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
     return NMat
 
 def StfElem(self, i):
@@ -26,7 +26,7 @@ def SrfElem(self, i):
 def Assemble2x6(self, MatElem):
     Matrix = np.zeros([2, 3*self.nN])
     for i in range(self.nEl):
-        Matrix += self.T2[i]@MatElem(i)@self.T[i]@self.L[i]
+        Matrix += self.TX[i]@MatElem(i)@self.T[i]@self.L[i]
     return Matrix
 
 def FFRF_Output(self):

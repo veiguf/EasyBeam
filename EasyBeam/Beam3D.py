@@ -3,12 +3,12 @@ import numpy as np
 
 def ShapeMat(self, ξ, ell):
     # from: https://github.com/airinnova/framat/blob/8ebbc85d048484c339703ae107df6247e43990b6/src/framat/_element.py
-    N1 = 1 - xi
-    N2 = xi
-    N3 = 1 - 3*xi**2 + 2*xi**3
-    N4 = 3*xi**2 - 2*xi**3
-    N5 = L*(xi - 2*xi**2 + xi**3)
-    N6 = L*(-xi**2 + xi**3)
+    N1 = 1 - ξ
+    N2 = ξ
+    N3 = 1 - 3*ξ**2 + 2*ξ**3
+    N4 = 3*ξ**2 - 2*ξ**3
+    N5 = ell*(ξ - 2*ξ**2 + ξ**3)
+    N6 = ell*(-xi**2 + xi**3)
     M1 = 1 - xi
     M2 = xi
     M3 = -(6/L)*(xi - xi**2)
@@ -126,7 +126,7 @@ def MassMatElem(self, i):
             m[5, 11] = -3*ell**2
             m[7, 11] = -22*ell
             m[8, 10] = 22*ell
-            m += np.triu(m_elem, k=1).T
+            m += np.triu(m, k=1).T
             m *= c
 
         elif self.massMatType[0].lower() == "l":
