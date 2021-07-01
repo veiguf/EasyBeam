@@ -48,7 +48,7 @@ def StiffMatElem(self, i):
     A = self.A[i]
     E = self.E[i]
     ell = self.ell[i]
-    I = self.I[i]
+    I = self.Iy[i]
     nu = self.nu[i]
     ϰ = self.ϰ[i]
     # bar (column) terms of stiffness matrix
@@ -78,8 +78,8 @@ def StiffMatElem(self, i):
     return k
 
 def MatMat(self, i):
-    return(np.array([[self.E[i]*self.A[i],                   0],
-                     [                  0, self.E[i]*self.I[i]]]))
+    return(np.array([[self.E[i]*self.A[i],                    0],
+                     [                  0, self.E[i]*self.Iy[i]]]))
 
 def MassMatElem(self, i):
     ell = self.ell[i]
@@ -107,11 +107,11 @@ def MassMatElem(self, i):
                             [ 0, 0,              0, 0, 0, 2*alpha*ell**2.]],
                            dtype=float)
     elif self.stiffMatType[0].lower() == "t":
-        IR = self.I[i]
+        IR = self.Iy[i]
         nu = 0.3
         G = self.E[i]/(2*(1+nu))
         AS = A * ϰ
-        phi = 12*self.E[i]*self.I[i]/(ϰ*A*G*ell**2)
+        phi = 12*self.E[i]*self.Iy[i]/(ϰ*A*G*ell**2)
         m = A*rho*ell/420*np.array([[140, 0, 0,  70, 0, 0],
                                     [  0, 0, 0,   0, 0, 0],
                                     [  0, 0, 0,   0, 0, 0],

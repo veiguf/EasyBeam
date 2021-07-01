@@ -97,13 +97,13 @@ def StiffMatElem(self, i):
     # from: https://github.com/airinnova/framat/blob/8ebbc85d048484c339703ae107df6247e43990b6/src/framat/_element.py
     A = self.A[i]
     E = self.E[i]
-    G = self.G[i]
     ell = self.ell[i]
     Ix = self.Ix[i]
     Iy = self.Iy[i]
     Iz = self.Iz[i]
     nu = self.nu[i]
     ϰ = self.ϰ[i]
+    G = self.G[i]
 
     # Bending terms after Euler-Bernoulli
     k = np.zeros((12, 12))
