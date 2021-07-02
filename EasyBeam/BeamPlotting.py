@@ -91,7 +91,7 @@ def PlotMode(self, scale=1):
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
                 S = self.ShapeMat(ξ, self.ell[i])
-                uS_Phi[i, :, j] = self.T2[i]@S@self.T[i]@uE_Phi[i, :]
+                uS_Phi[i, :, j] = self.TX[i]@S@self.T[i]@uE_Phi[i, :]
         # deformation
         rPhi = self.r0S+uS_Phi*scale
         dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2)

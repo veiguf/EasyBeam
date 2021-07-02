@@ -1,8 +1,34 @@
 import numpy as np
+from numpy import pi
 
 def ShapeMat(self, ξ, ell):
     return(np.array([[1-ξ,               0,              0, ξ,            0,              0],
                      [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
+
+def TransXMat(self, i):
+    if self.Nodes[self.El[i, 1]-1, 0] >= self.Nodes[self.El[i, 0]-1, 0]:
+        """
+        HERE is a division by zero...needs to be checked
+        """
+        β = np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
+                          self.Nodes[self.El[i, 0]-1, 1])/
+                         (self.Nodes[self.El[i, 1]-1, 0] -
+                          self.Nodes[self.El[i, 0]-1, 0]))
+    else:
+        β = pi + np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
+                               self.Nodes[self.El[i, 0]-1, 1])/
+                              (self.Nodes[self.El[i, 1]-1, 0] -
+                               self.Nodes[self.El[i, 0]-1, 0]))
+    T2 = np.array([[np.cos(β), -np.sin(β)],
+                   [np.sin(β),  np.cos(β)]], dtype=float)
+    return T2
+
+def TransMat(self, i):
+    T = np.block([[    self.TX[i].T,                  np.zeros([2, 4])],
+                  [            0, 0, 1,         0, 0,                0],
+                  [   np.zeros([2, 3]), self.TX[i].T, np.zeros([2, 1])],
+                  [            0, 0, 0,         0, 0,                1]])
+    return T
 
 def StrainDispMat(self, ξ, ell, zU, zL):
     BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
@@ -22,7 +48,7 @@ def StiffMatElem(self, i):
     A = self.A[i]
     E = self.E[i]
     ell = self.ell[i]
-    I = self.I[i]
+    I = self.Iy[i]
     nu = self.nu[i]
     ϰ = self.ϰ[i]
     # bar (column) terms of stiffness matrix
@@ -40,7 +66,7 @@ def StiffMatElem(self, i):
     elif self.stiffMatType[0].lower() == "t":
         G = E/(2*(1+nu))
         AS = A * ϰ
-        phi = 12*E*I/(ϰ*A*G*l**2)
+        phi = 12*E*I/(ϰ*A*G*ell**2)
     c = E*I/(ell**3*(1+phi))
     k += c*np.array([[0,     0,              0, 0,      0,                0],
                      [0,    12,          6*ell, 0,    -12,            6*ell],
@@ -52,13 +78,14 @@ def StiffMatElem(self, i):
     return k
 
 def MatMat(self, i):
-    return(np.array([[self.E[i]*self.A[i],                   0],
-                     [                  0, self.E[i]*self.I[i]]]))
+    return(np.array([[self.E[i]*self.A[i],                    0],
+                     [                  0, self.E[i]*self.Iy[i]]]))
 
 def MassMatElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
     A = self.A[i]
+    ϰ = self.ϰ[i]
     if self.stiffMatType[0].lower() in ["e", "b"]:
         if self.massMatType[0].lower() == "c":
             c = A*rho*ell/420
@@ -80,11 +107,11 @@ def MassMatElem(self, i):
                             [ 0, 0,              0, 0, 0, 2*alpha*ell**2.]],
                            dtype=float)
     elif self.stiffMatType[0].lower() == "t":
-        IR = self.I[i]
+        IR = self.Iy[i]
         nu = 0.3
         G = self.E[i]/(2*(1+nu))
         AS = A * ϰ
-        phi = 12*self.E[i]*self.I[i]/(ϰ*A*G*ell**2)
+        phi = 12*self.E[i]*self.Iy[i]/(ϰ*A*G*ell**2)
         m = A*rho*ell/420*np.array([[140, 0, 0,  70, 0, 0],
                                     [  0, 0, 0,   0, 0, 0],
                                     [  0, 0, 0,   0, 0, 0],

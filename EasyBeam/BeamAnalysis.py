@@ -69,20 +69,25 @@ class Beam:
         self.rho = np.zeros([self.nEl])
         self.E = np.zeros([self.nEl])
         self.nu = np.zeros([self.nEl])
+        self.G = np.zeros([self.nEl])
         self.A = np.zeros([self.nEl])
-        self.I = np.zeros([self.nEl])
+        self.Ix = np.zeros([self.nEl])
+        self.Iy = np.zeros([self.nEl])
+        self.Iz = np.zeros([self.nEl])
         self.zU = np.zeros([self.nEl])
         self.zL = np.zeros([self.nEl])
         self.ϰ = np.zeros([self.nEl])
         # lengths and rotations
         self.ell = np.zeros([self.nEl])
-        self.β = np.zeros([self.nEl])
-        self.T2 = np.zeros([self.nEl, 2, 2])
-        self.T = np.zeros([self.nEl, 6, 6])
+        self.TX = np.zeros([self.nEl, self.nNPoC, self.nNPoC])
+        self.T = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF])
         # self.r = np.zeros([self.nEl, 3, self.nSeg+1])
         self.mass = 0
-        self.L = np.zeros([self.nEl, 6, 3*self.nN])
-        self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
+        self.L = np.zeros([self.nEl, 2*self.nNDoF, self.nNDoF*self.nN])
+        if self.nNDoF == 3:
+            self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
+        elif self.nNDoF == 6:
+            self.r0 = np.block([self.Nodes, np.zeros_like(self.Nodes)]).flatten('C')
 
         for i in range(self.nEl):
             for ii in range(len(self.Properties)):
@@ -90,18 +95,28 @@ class Beam:
                     self.rho[i] = self.Properties[ii][1]
                     self.E[i] = self.Properties[ii][2]
                     self.nu[i] = self.Properties[ii][3]
+                    self.G[i] = self.E[i]/(2*(1+self.nu[i]))
+                    # Böge & Böge (2019) Formeln und Tabellen zur Technischen Mechanik
                     if self.Properties[ii][4] in [1, "rect", "Rectangle"]:
                         h = self.Properties[ii][5]
                         b = self.Properties[ii][6]
                         self.A[i] = b*h
-                        self.I[i] = b*h**3/12
+                        c = 1/3*(1-0.63/(h/b)+0.052/(h/b)**5)
+                        if h >= b:
+                            self.Ix[i] = c*h*b**3
+                        else:
+                            self.Ix[i] = c*b*h**3
+                        self.Iy[i] = b*h**3/12
+                        self.Iz[i] = h*b**3/12
                         self.zU[i] = h/2
                         self.zL[i] = -h/2
                         self.ϰ[i] = 10*(1+self.nu[i])/(12+11*self.nu[i])  #Solid rectangular cross-sectional geometry after Cowper (1966)
                     elif self.Properties[ii][4] in [2, "round"]:
                         r = self.Properties[ii][5]
                         self.A[i] = pi*r**2
-                        self.I[i] = pi*r**4/4
+                        self.Ix[i] = pi*r**4/2
+                        self.Iy[i] = pi*r**4/4
+                        self.Iz[i] = pi*r**4/4
                         self.zU[i] = r/2
                         self.zL[i] = -r/2
                         self.ϰ[i] = 0.847
@@ -109,7 +124,9 @@ class Beam:
                         r = self.Properties[ii][5]
                         t = self.Properties[ii][6]
                         self.A[i] = pi*((r+t)**2-(r)**2)
-                        self.I[i] = pi*((r+t)**4-r**4)/4
+                        self.Ix[i] = pi*((r+t)**4-r**4)/2
+                        self.Iy[i] = pi*((r+t)**4-r**4)/4
+                        self.Iz[i] = pi*((r+t)**4-r**4)/4
                         self.zU[i] = r/2
                         self.zL[i] = -r/2
                         self.ϰ[i] = 0.847 # needs to be corrected!!!!
@@ -119,7 +136,13 @@ class Beam:
                         b = self.Properties[ii][6]
                         t = self.Properties[ii][7]
                         self.A[i] = b*h-(b-t)*(h-2*t)
-                        self.I[i] = b*h**3/12-(b-t)*(h-2*t)**3/12
+                        lt1 = 2*b-t
+                        lt2 = h-1.6*t
+                        self.Ix[i] = 1/3*(lt1*t**3+lt2*t**3)
+                        self.Iy[i] = b*h**3/12-(b-t)*(h-2*t)**3/12
+                        e1 = 1/2*(2*t*b**2+(h-2*t)*t**2)/(2*t*b+(h-2*t)*t)
+                        e2 = b-2*e1
+                        self.Iz[i] = 1/3*(h*e1**3-(h-2*t)*(e1-t)**3+2*t*e2**3)
                         self.zU[i] = h/2
                         self.zL[i] = -h/2
                     else:
@@ -127,34 +150,17 @@ class Beam:
             self.ell[i] = np.linalg.norm(self.Nodes[self.El[i, 1]-1, :] -
                                        self.Nodes[self.El[i, 0]-1, :])
             self.mass += (self.A[i]*self.ell[i]*self.rho[i])
-            if self.Nodes[self.El[i, 1]-1, 0] >= self.Nodes[self.El[i, 0]-1, 0]:
-                """
-                HERE is a division by zero...needs to be checked
-                """
-                self.β[i] = np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
-                                       self.Nodes[self.El[i, 0]-1, 1])/
-                                      (self.Nodes[self.El[i, 1]-1, 0] -
-                                       self.Nodes[self.El[i, 0]-1, 0]))
-            else:
-                self.β[i] = pi + np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
-                                            self.Nodes[self.El[i, 0]-1, 1])/
-                                           (self.Nodes[self.El[i, 1]-1, 0] -
-                                            self.Nodes[self.El[i, 0]-1, 0]))
-            self.T2[i] = np.array([[np.cos(self.β[i]), -np.sin(self.β[i])],
-                                  [np.sin(self.β[i]),  np.cos(self.β[i])]],
-                                 dtype=float)
-            self.T[i] = np.block([[    self.T2[i].T, np.zeros([2, 4])],
-                                  [0, 0, 1, 0, 0, 0],
-                                  [np.zeros([2, 3]), self.T2[i].T, np.zeros([2, 1])],
-                                  [0, 0, 0, 0, 0, 1]])
-            self.L[i, 0:3, 3*(self.El[i, 0]-1):3*(self.El[i, 0]-1)+3] = np.eye(3)
-            self.L[i, 3:6, 3*(self.El[i, 1]-1):3*(self.El[i, 1]-1)+3] = np.eye(3)
+            self.TX[i] = self.TransXMat(i)
+            self.T[i] = self.TransMat(i)
+            self.L[i,          0:  self.nNDoF, self.nNDoF*(self.El[i, 0]-1):self.nNDoF*(self.El[i, 0]-1)+self.nNDoF] = np.eye(self.nNDoF)
+            self.L[i, self.nNDoF:2*self.nNDoF, self.nNDoF*(self.El[i, 1]-1):self.nNDoF*(self.El[i, 1]-1)+self.nNDoF] = np.eye(self.nNDoF)
+
         if self.plotting:
             self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
             for i in range(self.nEl):
                 for j in range(self.nSeg+1):
                     ξ = j/(self.nSeg)
-                    self.r0S[i, :, j] = self.T2[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
+                    self.r0S[i, :, j] = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
 
     def Assemble(self, MatElem):
         Matrix = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN])
@@ -203,7 +209,7 @@ class Beam:
             self.uE[iEl]  = self.T[iEl]@self.L[iEl]@self.u
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
-                self.uS[iEl, :, j] = self.T2[iEl]@self.ShapeMat(ξ, self.ell[iEl])@self.uE[iEl]
+                self.uS[iEl, :, j] = self.TX[iEl]@self.ShapeMat(ξ, self.ell[iEl])@self.uE[iEl]
 
     def ComputeStress(self):
         self.ComputedStress = True
@@ -282,24 +288,29 @@ class Beam:
 
 
 class Beam2D(Beam):
-    from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
+    from EasyBeam.Beam2D import (ShapeMat, TransXMat, TransMat,
+                                 StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
-    nNDoF = 3
+    nNDoF = 3   # number of nodal degrees of freedom
+    nNPoC = 2   # number of nodal position coordinates
 
 class Beam3D(Beam):
     """
     I need Ix, Iy, Iz...
     """
-    from EasyBeam.Beam3D import (StiffMatElem, ShapeMat, StrainDispMat,
-                                 MassMatElem, StrainDispNablah)
-    nNDoF = 6
+    from EasyBeam.Beam3D import (ShapeMat, TransXMat, TransMat,
+                                 StrainDispMat, StrainDispNablah,
+                                 StiffMatElem, MassMatElem)
+    nNDoF = 6   # number of nodal degrees of freedom
+    nNPoC = 3   # number of nodal position coordinates
 
 class BeamFFRF2D(Beam2D):
     from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
     from EasyBeam.BeamFFRF2D import (NMat, StfElem, SrfElem, Assemble2x6,
                                      FFRF_Output)
-    nNDoF = 3
+    nNDoF = 3   # number of nodal degrees of freedom
+    nNPoC = 2   # number of nodal position coordinates
 
 if __name__ == '__main__':
 
