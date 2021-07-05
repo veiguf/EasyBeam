@@ -122,7 +122,9 @@ def StiffMatElem(self, i):
         k[2, 8] = -12*E*Iy/ell**3
         k[2, 10] = -6*E*Iy/ell**2
         k[3, 9] = -G*Ix/ell
+        k[4, 8] = 6*E*Iy/ell**2
         k[4, 10] = 2*E*Iy/ell
+        k[5, 7] = -6*E*Iz/ell**2
         k[5, 11] = 2*E*Iz/ell
         k[7, 11] = -6*E*Iz/ell**2
         k[8, 10] = 6*E*Iy/ell**2
