@@ -48,13 +48,15 @@ Cantilever.Initialize()
 
 # Statische Analyse
 Cantilever.StaticAnalysis()
-"""
-Cantilever.PlotDisplacement(component='mag', scale=10)
-Cantilever.PlotStress(stress='max', scale=10)
+
+# Cantilever.PlotDisplacement(component='mag', scale=10)
+# Cantilever.PlotStress(stress='max', scale=10)
 
 # Modalanalyse
-Cantilever.EigenvalueAnalysis(nEig=3)
-Cantilever.PlotMode(scale=5)
+Cantilever.EigenvalueAnalysis(nEig=20)
+
+#Cantilever.PlotMode(scale=5)
+"""
 print('Eigenvalue solver:', Cantilever.EigenvalSolver)
 
 # Analytical values, continuous beam theory for eigenfrequencies

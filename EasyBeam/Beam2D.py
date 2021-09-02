@@ -6,19 +6,19 @@ def ShapeMat(self, ξ, ell):
                      [  0, 1-3*ξ**2+2*ξ**3, ξ*ell*(1-ξ)**2, 0, ξ**2*(3-2*ξ), ξ**2*ell*(ξ-1)]]))
 
 def TransXMat(self, i):
-    if self.Nodes[self.El[i, 1]-1, 0] >= self.Nodes[self.El[i, 0]-1, 0]:
-        """
-        HERE is a division by zero...needs to be checked
-        """
-        β = np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
-                          self.Nodes[self.El[i, 0]-1, 1])/
-                         (self.Nodes[self.El[i, 1]-1, 0] -
-                          self.Nodes[self.El[i, 0]-1, 0]))
-    else:
-        β = pi + np.arctan((self.Nodes[self.El[i, 1]-1, 1] -
-                               self.Nodes[self.El[i, 0]-1, 1])/
-                              (self.Nodes[self.El[i, 1]-1, 0] -
-                               self.Nodes[self.El[i, 0]-1, 0]))
+    xDelta = self.Nodes[self.El[i, 1]-1, 0]-self.Nodes[self.El[i, 0]-1, 0]
+    yDelta = self.Nodes[self.El[i, 1]-1, 1]-self.Nodes[self.El[i, 0]-1, 1]
+    if xDelta > 0:
+        β = np.arctan(yDelta/xDelta)
+    elif xDelta < 0:
+        β = pi + np.arctan(yDelta/xDelta)
+    else:       # elif xDelta == 0:
+        if yDelta > 0:
+            β = pi/2
+        elif yDelta < 0:
+            β = -pi/2
+        else:   # elif yDelta == 0:
+            print("Both nodes of the element are in the same place")
     T2 = np.array([[np.cos(β), -np.sin(β)],
                    [np.sin(β),  np.cos(β)]], dtype=float)
     return T2
