@@ -239,10 +239,16 @@ class Beam:
         nx = np.size(self.SizingVariables)
         self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
         self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
+        self.ENabla = np.zeros((self.nEl, nx))
         self.sigmaLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
         self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
         for iEl in range(self.nEl):
             uENabla = self.T[iEl]@self.L[iEl]@self.uNabla
+
+            for i in range(nx):
+                if self.SizingVariables[i] == "E":
+                    self.ENabla[iEl, i] = 1
+
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
                 BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
@@ -258,8 +264,16 @@ class Beam:
                         ix += 1
                 self.epsilonLNabla[iEl, j] = BLNabla.transpose(0, 2, 1)@self.uE[iEl] + BL@uENabla
                 self.epsilonUNabla[iEl, j] = BUNabla.transpose(0, 2, 1)@self.uE[iEl] + BU@uENabla
-                self.sigmaLNabla[iEl, j] = self.E[iEl]*self.epsilonLNabla[iEl, j]
-                self.sigmaUNabla[iEl, j] = self.E[iEl]*self.epsilonUNabla[iEl, j]
+
+                epsilonL_ENabla = np.zeros((2, nx))
+                epsilonL_ENabla[0, :] = self.epsilonL[iEl, j, 0]*self.ENabla[iEl]
+                epsilonL_ENabla[1, :] = self.epsilonL[iEl, j, 1]*self.ENabla[iEl]
+                epsilonU_ENabla = np.zeros((2, nx))
+                epsilonU_ENabla[0, :] = self.epsilonU[iEl, j, 0]*self.ENabla[iEl]
+                epsilonU_ENabla[1, :] = self.epsilonU[iEl, j, 1]*self.ENabla[iEl]
+
+                self.sigmaLNabla[iEl, j] = self.E[iEl]*self.epsilonLNabla[iEl, j]+epsilonL_ENabla
+                self.sigmaUNabla[iEl, j] = self.E[iEl]*self.epsilonUNabla[iEl, j]+epsilonU_ENabla
 
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
         if not self.Initialized:
