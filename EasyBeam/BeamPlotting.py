@@ -22,6 +22,8 @@ def _plotting(self, val, disp, title, colormap):
                         cmap=colormap, norm=lcAll.norm)
     cb = plt.colorbar(lcAll, ticks=c, shrink=0.5, ax=[ax], location="left",
                       aspect=10)
+    cb.outline.set_visible(False)
+    cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
     #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
     xmin = disp[:, 0, :].min()-1
     xmax = disp[:, 0, :].max()+1
@@ -33,7 +35,6 @@ def _plotting(self, val, disp, title, colormap):
     plt.xlim(xmin-xdelta*buff, xmax+xdelta*buff)
     plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
     #cb.ax.set_title(title)
-    cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
     plt.show()
 
 def PlotStress(self, stress="all", scale=1):
