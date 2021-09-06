@@ -4,7 +4,7 @@
 
 **Easy Application for Structural analYsis with BEAMs**
 
-A Python package for the structural analysis of planar structures based on Euler-Bernoulli beam theory. EasyBeam analyzes both statics, giving deformation and stress reslts, as well as the eigenvalue problem to assess the free-vibration resonance behavior.  Ths package is geared education and therefore trimmed to code readability and expandability, while maintaining usability and easy to understand graphical dipiction of the results. 
+A Python package for the structural analysis of planar structures based on Euler-Bernoulli beam theory. EasyBeam analyzes both statics, giving deformation and stress reslts, as well as the eigenvalue problem to assess the free-vibration resonance behavior.  Ths package is geared education and therefore trimmed to code readability and expandability, while maintaining usability and easy to understand graphical dipiction of the results. Currently EasyBeam considers only simple cross-sectional geometry, i.e. it does not consider e.g. shear center. 
 
 ## Installation
 ### Prerequisites
