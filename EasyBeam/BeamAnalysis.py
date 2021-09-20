@@ -175,7 +175,7 @@ class Beam:
         self.u[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
                                               self.F[self.DoF_DL]-
                                               self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL])
-        self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF_DL]@self.u[self.DoF_DL]
+        self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
     def SensitivityAnalysis(self, xDelta=1e-3):
