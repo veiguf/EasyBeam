@@ -12,7 +12,7 @@ class Beam:
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
-    colormap = "RdBu" #"coolwarm_r" #"Blues"
+    colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
     SizingVariables = []
     plotting = True
 
