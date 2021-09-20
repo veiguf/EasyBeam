@@ -16,7 +16,7 @@ def _plotting(self, val, disp, title, colormap):
     for i in range(self.nEl):
         xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
         yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
-        plt.plot(xEl, yEl, c='gray', lw=0.5, ls=self.lineStyleUndeformed)
+        plt.plot(xEl, yEl, c='gray', lw=0.5, ls=self.lineStyleUndeformed, clip_on=False)
     for i in range(self.nEl):
         lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
                         cmap=colormap, norm=lcAll.norm)
@@ -113,7 +113,7 @@ def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, Fon
         xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
         yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
         plt.plot(xEl, yEl, c='gray', lw=self.A[i]/np.max(self.A), ls='-')
-    plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k")
+    plt.plot(self.Nodes[:, 0], self.Nodes[:, 1], ".k", clip_on=False)
     if NodeNumber:
         for i in range(self.nN):
             ax.annotate("N"+str(i+1), (self.Nodes[i, 0]+p,
