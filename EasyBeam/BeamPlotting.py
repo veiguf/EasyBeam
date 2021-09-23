@@ -9,10 +9,12 @@ def _plotting(self, val, disp, title, colormap):
     fig, ax = plt.subplots()
     ax.axis('off')
     ax.set_aspect('equal')
+
     c = np.linspace(val.min(), val.max(), 5)
-    norm = mpl.colors.Normalize(vmin=-val.max(), vmax=val.max())
+    norm = MidpointNormalizeNew(vmin=-np.abs(val).max(), vmax=np.abs(val).max())
     lcAll = colorline(disp[:, 0, :], disp[:, 1, :], val, cmap=colormap,
-                      plot=False, norm=MidpointNormalize(midpoint=0.))
+                      plot=False, norm=norm)
+
     for i in range(self.nEl):
         xEl = self.Nodes[self.El[i, 0]-1, 0], self.Nodes[self.El[i, 1]-1, 0]
         yEl = self.Nodes[self.El[i, 0]-1, 1], self.Nodes[self.El[i, 1]-1, 1]
@@ -20,8 +22,9 @@ def _plotting(self, val, disp, title, colormap):
     for i in range(self.nEl):
         lc = colorline(disp[i, 0, :], disp[i, 1, :], val[i, :],
                         cmap=colormap, norm=lcAll.norm)
+
     cb = plt.colorbar(lcAll, ticks=c, shrink=0.5, ax=[ax], location="left",
-                      aspect=10)
+                      aspect=10, boundaries=np.linspace(val.min(), val.max(), 100))
     cb.outline.set_visible(False)
     cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
     #cb = plt.colorbar(lcAll, ticks=c, shrink=0.4, orientation="horizontal")
@@ -176,17 +179,29 @@ def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, Fon
     plt.ylim(ymin-ydelta*buff, ymax+ydelta*buff)
     plt.show()
 
-
-class MidpointNormalize(colors.Normalize):
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+class MidpointNormalizeNew(mpl.colors.Normalize):
+    def __init__(self, vmin, vmax, midpoint=0, clip=False):
         self.midpoint = midpoint
-        colors.Normalize.__init__(self, vmin, vmax, clip)
+        mpl.colors.Normalize.__init__(self, vmin, vmax, clip)
 
     def __call__(self, value, clip=None):
-        # I'm ignoring masked values and all kinds of edge cases to make a
-        # simple example...
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+        normalized_min = max(0, 1 / 2 * (1 - abs((self.midpoint - self.vmin) / (self.midpoint - self.vmax))))
+        normalized_max = min(1, 1 / 2 * (1 + abs((self.vmax - self.midpoint) / (self.midpoint - self.vmin))))
+        normalized_mid = 0.5
+        x, y = [self.vmin, self.midpoint, self.vmax], [normalized_min, normalized_mid, normalized_max]
         return np.ma.masked_array(np.interp(value, x, y))
+
+
+# class MidpointNormalize(colors.Normalize):
+#     def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+#         self.midpoint = midpoint
+#         colors.Normalize.__init__(self, vmin, vmax, clip)
+
+#     def __call__(self, value, clip=None):
+#         # I'm ignoring masked values and all kinds of edge cases to make a
+#         # simple example...
+#         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
+#         return np.ma.masked_array(np.interp(value, x, y))
 
 def colorline(x, y, z, cmap='jet', linewidth=2, alpha=1.0,
               plot=True, norm=None):
