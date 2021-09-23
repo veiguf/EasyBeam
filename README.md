@@ -1,4 +1,4 @@
-<p align=center><img width="100%" src="figures/EasyBeam2.svg"></p>
+<p align=center><img width="100%" src="figures/EasyBeamBlue.svg"></p>
 
 # EasyBeam
 
