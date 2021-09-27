@@ -15,7 +15,7 @@ class Beam:
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
     SizingVariables = []
     plotting = True
-
+    Load = []
     Initialized = False
     ComputedDisplacement = False
     ComputedStress = False
@@ -418,4 +418,3 @@ if __name__ == '__main__':
             #print(sigmaLNablahFD)
             print("Analytical")
             #print(Test.sigmaLNabla)
-
