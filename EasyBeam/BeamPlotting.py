@@ -59,7 +59,7 @@ def PlotStress(self, stress="all", scale=1):
         self._plotting(
             np.sum(self.sigmaU, 2),
             self.rS,
-            "upper fiber stress $\\sigma_U$\n[MPa]",
+            "upper fiber stress\n$\\sigma_U$ [MPa]",
             self.colormap,
         )
 
@@ -67,7 +67,7 @@ def PlotStress(self, stress="all", scale=1):
         self._plotting(
             np.sum(self.sigmaL, 2),
             self.rS,
-            "lower fiber stress $\\sigma_L$\n[MPa]",
+            "lower fiber stress\n$\\sigma_L$ [MPa]",
             self.colormap,
         )
 
@@ -75,7 +75,7 @@ def PlotStress(self, stress="all", scale=1):
         self._plotting(
             self.sigmaMax,
             self.rS,
-            "maximum stress $|\\sigma_{max}|$\n[MPa]",
+            "maximum stress\n$|\\sigma_{max}|$ [MPa]",
             self.colormap,
         )
 
@@ -83,7 +83,7 @@ def PlotStress(self, stress="all", scale=1):
         self._plotting(
             self.sigmaU[:, :, 1],
             self.rS,
-            "bending stress\n(upper fiber) $\\sigma_{bending}$\n[MPa]",
+            "bending stress\n(upper fiber)\n$\\sigma_{bending}$ [MPa]",
             self.colormap,
         )
 
@@ -91,7 +91,7 @@ def PlotStress(self, stress="all", scale=1):
         self._plotting(
             self.sigmaU[:, :, 0],
             self.rS,
-            "axial stress $\\sigma_{axial}$\n[MPa]",
+            "axial stress\n$\\sigma_{axial}$ [MPa]",
             self.colormap,
         )
 
@@ -103,15 +103,15 @@ def PlotDisplacement(self, component="all", scale=1):
     if component.lower() in ["mag", "all"]:
         self.dS = np.sqrt(self.uS[:, 0, :] ** 2 + self.uS[:, 1, :] ** 2)
         self._plotting(
-            self.dS, self.rS, "deformation magnitude $|u|$\n[mm]", self.colormap
+            self.dS, self.rS, "deformation\nmagnitude\n$|u|$ [mm]", self.colormap
         )
     if component.lower() in ["x", "all"]:
         self._plotting(
-            self.uS[:, 0, :], self.rS, "$x$-deformation $u_x$\n[mm]", self.colormap
+            self.uS[:, 0, :], self.rS, "$x$-deformation\n$u_x$ [mm]", self.colormap
         )
     if component.lower() in ["y", "all"]:
         self._plotting(
-            self.uS[:, 1, :], self.rS, "$y$-deformation $u_y$\n[mm]", self.colormap
+            self.uS[:, 1, :], self.rS, "$y$-deformation\n$u_y$ [mm]", self.colormap
         )
 
 
@@ -133,7 +133,7 @@ def PlotMode(self, scale=1):
         self._plotting(
             dPhi,
             rPhi,
-            ("mode " + str(ii + 1) + "\n" + str(round(self.f0[ii], 4)) + " [Hz]"),
+            ("mode " + str(ii + 1) + "\n" + str(round(self.f0[ii], 4)) + " Hz"),
             self.colormap,
         )
 
