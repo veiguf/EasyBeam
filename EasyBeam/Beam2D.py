@@ -18,7 +18,7 @@ def TransXMat(self, i):
         elif yDelta < 0:
             β = -pi/2
         else:   # elif yDelta == 0:
-            print("Both nodes of the element are in the same place")
+            raise NameError('Nodes have same position')
     T2 = np.array([[np.cos(β), -np.sin(β)],
                    [np.sin(β),  np.cos(β)]], dtype=float)
     return T2

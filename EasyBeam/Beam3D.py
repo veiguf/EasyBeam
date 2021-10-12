@@ -51,7 +51,7 @@ def ShapeMat(self, ξ, ell):
                   [  0,                   0,        3*ξ**2-2*ξ**3],
                   [  0,                   0,                    0],
                   [  0,                   0,    -ell*(-ξ**2+ξ**3)],
-                  [  0,    ell*(-ξ**2+ξ**3),                    0]])
+                  [  0,    ell*(-ξ**2+ξ**3),                    0]]).T
     return N
 
 def TransXMat(self, i):
@@ -135,6 +135,7 @@ def StiffMatElem(self, i):
     return k
 
 def MatMat(self, i):
+    A = self.A[i]
     E = self.E[i]
     Ix = self.Ix[i]
     Iy = self.Iy[i]
