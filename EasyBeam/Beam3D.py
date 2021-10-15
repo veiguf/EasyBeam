@@ -56,6 +56,8 @@ def ShapeMat(self, ξ, ell):
 
 def TransXMat(self, i):
     # from Shabana (2020) Eq. (6.114)
+    # local x-axis goes from first element to the second element
+    # local z-axis is perpendicular (cross product) to local x-axis and global y-axis
     a1 = self.Nodes[self.El[i, 0]-1, 0]
     a2 = self.Nodes[self.El[i, 0]-1, 1]
     a3 = self.Nodes[self.El[i, 0]-1, 2]

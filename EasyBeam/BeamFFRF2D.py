@@ -1,9 +1,5 @@
 import numpy as np
 
-def NMat(self, i, ξ):
-    NMat = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
-    return NMat
-
 def StfElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
@@ -23,17 +19,11 @@ def SrfElem(self, i):
                                   [ 2*ell,  0,     0,  3*ell,  0,      0]],
                                  dtype=float))
 
-def Assemble2x6(self, MatElem):
-    Matrix = np.zeros([2, 3*self.nN])
-    for i in range(self.nEl):
-        Matrix += self.TX[i]@MatElem(i)@self.T[i]@self.L[i]
-    return Matrix
-
 def FFRF_Output(self):
     if (self.stiffMatType[0].lower() == "e" and
         self.massMatType[0].lower() == "c"):
         self.kff = self.Assemble(self.StiffMatElem)
-        self.Stf = self.Assemble2x6(self.StfElem)
+        self.Stf = self.AssembleOneDirection(self.StfElem)
         self.Srf = self.Assemble(self.SrfElem)
         self.Sff = self.Assemble(self.MassMatElem)
     else:

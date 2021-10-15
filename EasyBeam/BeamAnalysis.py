@@ -168,6 +168,16 @@ class Beam:
             Matrix += self.L[i].T@self.T[i].T@MatElem(i)@self.T[i]@self.L[i]
         return Matrix
 
+    def NMat(self, i, ξ):
+        NMat = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
+        return NMat
+
+    def AssembleOneDirection(self, MatElem):  # needed for FFRF
+        Matrix = np.zeros([self.nNPoC, self.nNDoF*self.nN])
+        for i in range(self.nEl):
+            Matrix += self.TX[i]@MatElem(i)@self.T[i]@self.L[i]
+        return Matrix
+
     def StaticAnalysis(self):
         if not self.Initialized:
             self.Initialize()
@@ -321,8 +331,7 @@ class Beam3D(Beam):
 class BeamFFRF2D(Beam2D):
     from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
-    from EasyBeam.BeamFFRF2D import (NMat, StfElem, SrfElem, Assemble2x6,
-                                     FFRF_Output)
+    from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output)
     nNDoF = 3   # number of nodal degrees of freedom
     nNPoC = 2   # number of nodal position coordinates
 
