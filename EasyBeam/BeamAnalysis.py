@@ -7,7 +7,7 @@ from copy import deepcopy
 
 class Beam:
     from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
-                              PlotStress, PlotMode)
+                              PlotStress, PlotMode, PlotMesh3D)
     nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
@@ -16,6 +16,8 @@ class Beam:
     SizingVariables = []
     plotting = True
     Load = []
+    Disp = []
+    Properties = []
     Initialized = False
     ComputedDisplacement = False
     ComputedStress = False
