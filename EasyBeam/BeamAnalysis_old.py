@@ -374,6 +374,7 @@ if __name__ == '__main__':
                   FontMag=2)
 
     Test.StaticAnalysis()
+    Test.ComputeStress()
     Test.PlotDisplacement('mag', scale=20)
     Test.PlotStress('max', scale=20)
 
