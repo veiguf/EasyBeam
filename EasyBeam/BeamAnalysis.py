@@ -255,9 +255,14 @@ class Beam:
         for iEl in range(self.nEl):
             uENabla = self.T[iEl]@self.L[iEl]@self.uNabla
 
-            for i in range(nx):
-                if self.SizingVariables[i] == "E":
-                    self.ENabla[iEl, i] = 1
+            # for i in range(nx):
+            #     if self.SizingVariables[i] == "E":
+            #         self.ENabla[iEl, i] = 1
+
+            for i in range(len(self.SizingVariables)):
+                for j in self.SizingVariables[i]:
+                    if j == "E":
+                        self.ENabla[iEl, i] = 1
 
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
@@ -364,7 +369,7 @@ if __name__ == '__main__':
                  [2, [0.1,   0, 'f']]]
     Test.Load = [[3, [800, 'f', 'f']]]
 
-    Test.nSeg = 100
+    Test.nSeg = 2
     Test.PlotMesh(NodeNumber=True, ElementNumber=True, Loads=True, BC=True,
                   FontMag=2)
 
@@ -396,6 +401,7 @@ if __name__ == '__main__':
             Test1.StaticAnalysis()
             uNablahFD[i] = (Test1.u-Test.u)/xDelta
             if CheckStress:
+                Test1.ComputeDisplacement()
                 Test1.ComputeStress()
                 sigmaLNablahFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
                 sigmaUNablahFD[i] = (Test1.sigmaU-Test.sigmaU)/xDelta
@@ -410,20 +416,34 @@ if __name__ == '__main__':
             uNablabFD[i] = (Test1.u-Test.u)/xDelta
 
             if CheckStress:
+                Test1.ComputeDisplacement()
                 Test1.ComputeStress()
                 sigmaLNablabFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
                 sigmaUNablabFD[i] = (Test1.sigmaU-Test.sigmaU)/xDelta
 
-        print("sensitivities:")
-        print("displacement")
-        print("FD")
-        print(uNablahFD)
-        print(uNablabFD)
-        print("Analytical")
-        print(Test.uNabla)
+        np.set_printoptions(precision=3, suppress=True)
+        print("\ndisplacement sensitivity h1")
+        print("FD:\n", uNablahFD[0])
+        print("Analytical:\n", Test.uNabla[:, 0])
+        print("\ndisplacement sensitivity b1")
+        print("FD:\n", uNablabFD[0])
+        print("Analytical:\n", Test.uNabla[:, 1])
+        print("\ndisplacement sensitivity h2")
+        print("FD:\n", uNablahFD[1])
+        print("Analytical:\n", Test.uNabla[:, 2])
+        print("\ndisplacement sensitivity b2")
+        print("FD:\n", uNablabFD[1])
+        print("Analytical:\n", Test.uNabla[:, 3])
         if CheckStress:
-            print("stress")
-            print("FD")
-            #print(sigmaLNablahFD)
-            print("Analytical")
-            #print(Test.sigmaLNabla)
+            print("\nstress sensitivity h1")
+            print("FD:\n", sigmaLNablahFD[0])
+            print("Analytical:\n", Test.sigmaLNabla[:, :, :, 0])
+            print("\nstress sensitivity b1")
+            print("FD:\n", sigmaLNablabFD[0])
+            print("Analytical:\n", Test.sigmaLNabla[:, :, :, 1])
+            print("\nstress sensitivity h2")
+            print("FD:\n", sigmaLNablahFD[1])
+            print("Analytical:\n", Test.sigmaLNabla[:, :, :, 2])
+            print("\nstress sensitivity b2")
+            print("FD:\n", sigmaLNablabFD[1])
+            print("Analytical:\n", Test.sigmaLNabla[:, :, :, 3])
