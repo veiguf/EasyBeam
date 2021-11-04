@@ -194,7 +194,7 @@ class Beam:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
-    def SensitivityAnalysis(self, xDelta=1e-9):
+    def SensitivityAnalysis(self, xDelta=1e-6):
         nx = np.size(self.SizingVariables)
         self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
         self.massNabla = np.zeros((np.size(self.SizingVariables,)))
@@ -330,7 +330,7 @@ if __name__ == '__main__':
         y1 = 0
         y2 = 0
         y3 = 100
-        SizingVariables = ["b1", "h1", "b2", "h2", "x1", "x2", "x3", "y1", "y2", "y3"]
+        SizingVariables = ["h1", "b1", "h2", "b2", "x1", "x2", "x3", "y1", "y2", "y3"]
 
         def __init__(self):
             self.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
@@ -367,37 +367,21 @@ if __name__ == '__main__':
     t1 = time.time()
 
     xDelta = 1e-6
-    x0 = np.array([10, 20, 10, 20, 0, 100, 100, 0, 0, 100])
+    x0 = np.array([20, 10, 20, 10, 0, 100, 100, 0, 0, 100])
 
     def Eval(x):
-        b1 = x[0]  # 10
-        h1 = x[1]  # 20
-        b2 = x[2]  # 10
-        h2 = x[3]  # 20
-        x1 = x[4]  # 0
-        x2 = x[5]  # 100
-        x3 = x[6]  # 100
-        y1 = x[7]  # 0
-        y2 = x[8]  # 0
-        y3 = x[9]  # 100
-
-        Test = Beam2D()
-        Test.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
-        Test.massMatType = "consistent"        # lumped or consistent
-
-        #Material     rho       E   nu shape, h, b
-        Test.Properties = [['Steel', 7.85e-9, 210000, 0.3, 1, h1, b1],
-                            [  'Alu', 2.70e-9,  70000, 0.3, 1, h2, b2]]
-        Test.Nodes = [[x1, y1],
-                      [x2, y2],
-                      [x3, y3]]
-        Test.El = [[1, 2],
-                    [2, 3]]
-        Test.PropID = ["Alu", "Steel"]
-        Test.Disp = [[1, [  0,   0, 'f']],
-                      [2, [0.1,   0, 'f']]]
-        Test.Load = [[3, [800, 'f', 'f']]]
-        Test.nSeg = 2
+        Test = Model()
+        Test.h1 = x[0]
+        Test.b1 = x[1]
+        Test.h2 = x[2]
+        Test.b2 = x[3]
+        Test.x1 = x[4]
+        Test.x2 = x[5]
+        Test.x3 = x[6]
+        Test.y1 = x[7]
+        Test.y2 = x[8]
+        Test.y3 = x[9]
+        Test.__init__()
         Test.StaticAnalysis()
         Test.ComputeStress()
         return(Test.u, Test.sigmaL)
@@ -412,45 +396,18 @@ if __name__ == '__main__':
         uNabla[:, i] = (u1-u0)/xDelta
         sigmaNabla[:, :, :, i] = (sigma1-sigma0)/xDelta
 
-    # def Eval(x):
-    #     Test = Model()
-    #     Test.b1 = x[0]
-    #     Test.h1 = x[1]
-    #     Test.b2 = x[2]
-    #     Test.h2 = x[3]
-    #     Test.x1 = x[4]
-    #     Test.x2 = x[5]
-    #     Test.x3 = x[6]
-    #     Test.y1 = x[7]
-    #     Test.y2 = x[8]
-    #     Test.y3 = x[9]
-    #     Test.__init__()
-    #     Test.StaticAnalysis()
-    #     Test.ComputeStress()
-    #     return(Test.u, Test.sigmaL)
-
-    # u0, sigma0 = Eval(x0)
-    # uNabla = np.zeros([len(u0), len(x0)])
-    # sigmaNabla = np.zeros([sigma0.shape[0], sigma0.shape[1], sigma0.shape[2], len(x0)])
-    # for i in range(len(x0)):
-    #     e = np.zeros_like(x0)
-    #     e[i] = 1
-    #     u1, sigma1 = Eval(x0+e*xDelta)
-    #     uNabla[:, i] = (u1-u0)/xDelta
-    #     sigmaNabla[:, :, :, i] = (sigma1-sigma0)/xDelta
-
     t2 = time.time()
 
+    # np.set_printoptions(precision=6, suppress=True)
     for i in range(len(x0)):
         print("\ndisplacement sensitivity "+str(Test.SizingVariables[i]))
         print(np.linalg.norm(uNabla[:, i]-Test.uNabla[:, i]))
-        # print("FD:\n", uNabla[:, i])
-        # print("Analytical:\n", Test.uNabla[:, i])
-
+        print("FD:\n", uNabla[:, i])
+        print("Analytical:\n", Test.uNabla[:, i])
     for i in range(len(x0)):
         print("\nstress sensitivity "+str(Test.SizingVariables[i]))
         print(np.linalg.norm(sigmaNabla[:, :, :, i]-Test.sigmaLNabla[:, :, :, i]))
         print("FD:\n", sigmaNabla[:, :, :, i])
         print("Analytical:\n", Test.sigmaLNabla[:, :, :, i])
-    print("\ncomputation time analytical", t1-t0)
-    print("\ncomputation time numerical", t2-t1)
+    print("\ncomputation time analytical:", t1-t0)
+    print("\ncomputation time numerical:", t2-t1)

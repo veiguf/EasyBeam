@@ -394,7 +394,7 @@ if __name__ == '__main__':
         sigmaLNablabFD = [np.zeros_like(Test.sigmaL)]*2
         sigmaUNablahFD = [np.zeros_like(Test.sigmaL)]*2
         sigmaUNablabFD = [np.zeros_like(Test.sigmaL)]*2
-        xDelta = 1
+        xDelta = 1e-6
         for i in range(2):
             Test1 = deepcopy(Test)
             Test1.Properties[i][5] += xDelta
@@ -422,7 +422,6 @@ if __name__ == '__main__':
                 sigmaLNablabFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
                 sigmaUNablabFD[i] = (Test1.sigmaU-Test.sigmaU)/xDelta
 
-        np.set_printoptions(precision=3, suppress=True)
         print("\ndisplacement sensitivity h1")
         print("FD:\n", uNablahFD[0])
         print("Analytical:\n", Test.uNabla[:, 0])
