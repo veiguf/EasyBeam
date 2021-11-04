@@ -78,7 +78,6 @@ class Beam:
         self.zU = np.zeros([self.nEl])
         self.zL = np.zeros([self.nEl])
         self.ϰ = np.zeros([self.nEl])
-
         # lengths and rotations
         self.ell = np.zeros([self.nEl])
         self.TX = np.zeros([self.nEl, self.nNPoC, self.nNPoC])
@@ -237,11 +236,9 @@ class Beam:
             self.ComputeDisplacement()
         self.epsilonL = np.zeros([self.nEl, self.nSeg+1, 2])
         self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
-        # self.epsilon = np.zeros([self.nEl, self.nSeg+1, 2])
         self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
         self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
         self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
-        # self.sigma = np.zeros([self.nEl, self.nSeg+1, 2])
         for iEl in range(self.nEl):
             for j in range(self.nSeg+1):
                 self.epsilonL[iEl, j] = self.BL[iEl, j]@self.uE[iEl]
