@@ -39,8 +39,8 @@ def FFRF_OutputSensitivities(self, xDelta=1e-9):
     if (self.stiffMatType[0].lower() == "e" and
         self.massMatType[0].lower() == "c"):
 
-        nx = np.size(self.SizingVariables)
-        self.massNabla = np.zeros([np.size(self.SizingVariables,)])
+        nx = np.size(self.DesVar)
+        self.massNabla = np.zeros([np.size(self.DesVar,)])
         self.kffNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, nx])
         self.StfNabla = np.zeros([self.nNPoC, self.nNDoF*self.nN, nx])
         self.SrfNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, nx])
@@ -48,9 +48,9 @@ def FFRF_OutputSensitivities(self, xDelta=1e-9):
         self.r0Nabla = np.zeros([self.nNDoF*self.nN, nx])
         for i in range(nx):
             new = deepcopy(self)
-            xPert = xDelta*(1+getattr(new, new.SizingVariables[i]))
-            setattr(new, new.SizingVariables[i],
-                    getattr(new, new.SizingVariables[i])+xPert)
+            xPert = xDelta*(1+getattr(new, new.DesVar[i]))
+            setattr(new, new.DesVar[i],
+                    getattr(new, new.DesVar[i])+xPert)
             new.__init__()
             new.Initialize()
             new.kff = new.Assemble(new.StiffMatElem)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         rhoMod = 7.85e-9
         EMod = 210000
         nuMod = 0.3
-        SizingVariables = ["wC", "hC", "lC", "rhoMod", "EMod"]
+        DesVar = ["wC", "hC", "lC", "rhoMod", "EMod"]
         def __init__(self):
             self.plotting = False
             self.Properties = [['Prop1', self.rhoMod, self.EMod, self.nuMod, 'rect', self.hC, self.wC]]

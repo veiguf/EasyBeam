@@ -14,7 +14,7 @@ class Beam:
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
-    SizingVariables = []
+    DesVar = []
     plotting = True
     Load = []
     Initialized = False
@@ -197,9 +197,9 @@ class Beam:
         self.r = self.r0+self.u
 
     def SensitivityAnalysis(self, xDelta=1e-9):
-        nx = np.size(self.SizingVariables)
-        self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
-        self.massNabla = np.zeros((np.size(self.SizingVariables,)))
+        nx = np.size(self.DesVar)
+        self.uNabla = np.zeros((len(self.u), np.size(self.DesVar)))
+        self.massNabla = np.zeros((np.size(self.DesVar,)))
         FPseudo = np.zeros((len(self.F), nx))
         self.TNabla = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF, nx])
         self.BLNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, nx])
@@ -207,9 +207,9 @@ class Beam:
         self.ENabla = np.zeros((self.nEl, nx))
         for i in range(nx):
             new = deepcopy(self)
-            xPert = xDelta*(1+getattr(new, new.SizingVariables[i]))
-            setattr(new, new.SizingVariables[i],
-                    getattr(new, new.SizingVariables[i])+xPert)
+            xPert = xDelta*(1+getattr(new, new.DesVar[i]))
+            setattr(new, new.DesVar[i],
+                    getattr(new, new.DesVar[i])+xPert)
             new.__init__()
             new.Initialize()
             self.TNabla[:, :, :, i] = (new.T-self.T)/xPert
@@ -254,7 +254,7 @@ class Beam:
 
     def ComputeStressSensitivity(self):
         # not general enough for shape
-        nx = np.size(self.SizingVariables)
+        nx = np.size(self.DesVar)
         self.uENabla = np.zeros([self.nEl, 2*self.nNDoF, nx])
         self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
         self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
@@ -335,7 +335,7 @@ if __name__ == '__main__':
         y1 = 0
         y2 = 0
         y3 = 100
-        SizingVariables = ["h1", "b1", "h2", "b2", "x1", "x2", "x3", "y1", "y2", "y3"]
+        DesVar = ["h1", "b1", "h2", "b2", "x1", "x2", "x3", "y1", "y2", "y3"]
 
         def __init__(self):
             self.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
@@ -405,12 +405,12 @@ if __name__ == '__main__':
 
     # np.set_printoptions(precision=6, suppress=True)
     for i in range(len(x0)):
-        print("\ndisplacement sensitivity "+str(Test.SizingVariables[i]))
+        print("\ndisplacement sensitivity "+str(Test.DesVar[i]))
         print(np.linalg.norm(uNabla[:, i]-Test.uNabla[:, i]))
         print("FD:\n", uNabla[:, i])
         print("Analytical:\n", Test.uNabla[:, i])
     for i in range(len(x0)):
-        print("\nstress sensitivity "+str(Test.SizingVariables[i]))
+        print("\nstress sensitivity "+str(Test.DesVar[i]))
         print(np.linalg.norm(sigmaNabla[:, :, :, i]-Test.sigmaLNabla[:, :, :, i]))
         print("FD:\n", sigmaNabla[:, :, :, i])
         print("Analytical:\n", Test.sigmaLNabla[:, :, :, i])
