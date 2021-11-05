@@ -18,6 +18,7 @@ class Beam:
     plotting = True
     Load = []
     Initialized = False
+    StaticAnalyzed = False
     ComputedDisplacement = False
     ComputedStress = False
 
@@ -185,6 +186,7 @@ class Beam:
         return Matrix
 
     def StaticAnalysis(self):
+        self.StaticAnalyzed = True
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
@@ -194,7 +196,7 @@ class Beam:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
-    def SensitivityAnalysis(self, xDelta=1e-6):
+    def SensitivityAnalysis(self, xDelta=1e-9):
         nx = np.size(self.SizingVariables)
         self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
         self.massNabla = np.zeros((np.size(self.SizingVariables,)))
@@ -222,6 +224,8 @@ class Beam:
 
     def ComputeDisplacement(self):
         self.ComputedDisplacement = True
+        if not self.StaticAnalyzed:
+            self.StaticAnalysis()
         self.uE = np.zeros([self.nEl, 2*self.nNDoF])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
         for iEl in range(self.nEl):
@@ -311,7 +315,8 @@ class Beam3D(Beam):
 class BeamFFRF2D(Beam2D):
     from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
-    from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output)
+    from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output,
+                                     FFRF_OutputSensitivities)
     nNDoF = 3   # number of nodal degrees of freedom
     nNPoC = 2   # number of nodal position coordinates
 
