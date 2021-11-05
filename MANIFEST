@@ -4,13 +4,13 @@ EasyBeam/Beam2D.py
 EasyBeam/Beam3D.py
 EasyBeam/BeamAnalysis.py
 EasyBeam/BeamFFRF2D.py
+EasyBeam/BeamFFRF3D.py
 EasyBeam/BeamPlotting.py
 EasyBeam/__init__.py
 EasyBeam/../EasyBeam/Beam2D.py
 EasyBeam/../EasyBeam/Beam3D.py
 EasyBeam/../EasyBeam/BeamAnalysis.py
 EasyBeam/../EasyBeam/BeamFFRF2D.py
+EasyBeam/../EasyBeam/BeamFFRF3D.py
 EasyBeam/../EasyBeam/BeamPlotting.py
 EasyBeam/../EasyBeam/__init__.py
-EasyBeam/../EasyBeam/__pycache__/EasyBeam.cpython-38.pyc
-EasyBeam/../EasyBeam/__pycache__/__init__.cpython-38.pyc

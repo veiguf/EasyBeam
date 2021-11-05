@@ -12,7 +12,7 @@ if __name__ == '__main__':
     from distutils.core import setup
     extra_files = package_files('EasyBeam')
     setup(name='EasyBeam',
-          version='0.3.0',
+          version='0.4.0',
           description='Easy Application for Structural analYsis with BEAMs',
           author='V. Gufler, E.J. Wehrle',
           author_email='veit.gufler@unibz.it',
@@ -20,7 +20,7 @@ if __name__ == '__main__':
           package_data={'': extra_files},
           license='GNU Lesser General Public License 3.0',
           packages=['EasyBeam'],
-          copyright="Copyright 2020 V. Gufler",
+          copyright="Copyright 2020, 2021 V. Gufler",
           install_requires=['numpy',
                             'scipy',
                             'matplotlib'])
