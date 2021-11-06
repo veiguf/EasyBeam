@@ -4,6 +4,7 @@ import numpy.linalg as npla
 from scipy.constants import pi
 from copy import deepcopy
 
+import time
 
 class Beam:
     from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
@@ -13,12 +14,13 @@ class Beam:
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
-    SizingVariables = []
+    DesVar = []
     plotting = True
     Load = []
     Disp = []
     Properties = []
     Initialized = False
+    StaticAnalyzed = False
     ComputedDisplacement = False
     ComputedStress = False
 
@@ -86,6 +88,8 @@ class Beam:
         # self.r = np.zeros([self.nEl, 3, self.nSeg+1])
         self.mass = 0
         self.L = np.zeros([self.nEl, 2*self.nNDoF, self.nNDoF*self.nN])
+        self.BL = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF])
+        self.BU = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF])
         if self.nNDoF == 3:
             self.r0 = np.insert(self.Nodes, 2, 0, axis=1).flatten('C')
         elif self.nNDoF == 6:
@@ -156,6 +160,9 @@ class Beam:
             self.T[i] = self.TransMat(i)
             self.L[i,          0:  self.nNDoF, self.nNDoF*(self.El[i, 0]-1):self.nNDoF*(self.El[i, 0]-1)+self.nNDoF] = np.eye(self.nNDoF)
             self.L[i, self.nNDoF:2*self.nNDoF, self.nNDoF*(self.El[i, 1]-1):self.nNDoF*(self.El[i, 1]-1)+self.nNDoF] = np.eye(self.nNDoF)
+            for j in range(self.nSeg+1):
+                ξ = j/(self.nSeg)
+                self.BL[i, j], self.BU[i, j] = self.StrainDispMat(ξ, self.ell[i], self.zU[i], self.zL[i])
 
         if self.plotting:
             self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
@@ -181,6 +188,7 @@ class Beam:
         return Matrix
 
     def StaticAnalysis(self):
+        self.StaticAnalyzed = True
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
@@ -190,32 +198,37 @@ class Beam:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
-    def SensitivityAnalysis(self, xDelta=1e-3):
-        nx = np.size(self.SizingVariables)
-        self.uNabla = np.zeros((len(self.u), np.size(self.SizingVariables)))
-        self.massNabla = np.zeros((np.size(self.SizingVariables,)))
+    def SensitivityAnalysis(self, xDelta=1e-9):
+        nx = np.size(self.DesVar)
+        self.uNabla = np.zeros((len(self.u), np.size(self.DesVar)))
+        self.massNabla = np.zeros((np.size(self.DesVar,)))
         FPseudo = np.zeros((len(self.F), nx))
-        ix = 0
-        for i in range(len(self.SizingVariables)):
-            for j in self.SizingVariables[i]:
-                new = deepcopy(self)
-                if j =="h":
-                    xPert = xDelta*(1+new.Properties[i][5])
-                    new.Properties[i][5] += xPert
-                elif j =="b":
-                    xPert = xDelta*(1+new.Properties[i][6])
-                    new.Properties[i][6] += xPert
-                new.Initialize()
-                kNew = new.Assemble(new.StiffMatElem)
-                FPseudo[:, ix] = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
-                self.massNabla[ix] = (new.mass-self.mass)/xPert
-                ix += 1
+        self.TNabla = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF, nx])
+        self.BLNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, nx])
+        self.BUNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, nx])
+        self.ENabla = np.zeros((self.nEl, nx))
+        for i in range(nx):
+            new = deepcopy(self)
+            xPert = xDelta*(1+getattr(new, new.DesVar[i]))
+            setattr(new, new.DesVar[i],
+                    getattr(new, new.DesVar[i])+xPert)
+            new.__init__()
+            new.Initialize()
+            self.TNabla[:, :, :, i] = (new.T-self.T)/xPert
+            self.BLNabla[:, :, :, :, i] = (new.BL-self.BL)/xPert
+            self.BUNabla[:, :, :, :, i] = (new.BU-self.BU)/xPert
+            self.ENabla[:, i] = (new.E-self.E)/xPert
+            kNew = new.Assemble(new.StiffMatElem)
+            FPseudo[:, i] = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
+            self.massNabla[i] = (new.mass-self.mass)/xPert
         self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
                                                    FPseudo[self.DoF_DL])
 
     def ComputeDisplacement(self):
         self.ComputedDisplacement = True
-        self.uE = np.zeros([self.nEl, 6])
+        if not self.StaticAnalyzed:
+            self.StaticAnalysis()
+        self.uE = np.zeros([self.nEl, 2*self.nNDoF])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
         for iEl in range(self.nEl):
             self.uE[iEl]  = self.T[iEl]@self.L[iEl]@self.u
@@ -227,20 +240,15 @@ class Beam:
         self.ComputedStress = True
         if not self.ComputedDisplacement:
             self.ComputeDisplacement()
-        self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
         self.epsilonL = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.epsilonU = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigmaL = np.zeros([self.nEl, self.nSeg+1, 2])
+        self.sigmaU = np.zeros([self.nEl, self.nSeg+1, 2])
         self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
-        self.epsilon = np.zeros([self.nEl, self.nSeg+1, 2])
-        self.sigma = np.zeros([self.nEl, self.nSeg+1, 2])
         for iEl in range(self.nEl):
             for j in range(self.nSeg+1):
-                ξ = j/(self.nSeg)
-                BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
-                                            self.zL[iEl])
-                self.epsilonL[iEl, j] = BL@self.uE[iEl]
-                self.epsilonU[iEl, j] = BU@self.uE[iEl]
+                self.epsilonL[iEl, j] = self.BL[iEl, j]@self.uE[iEl]
+                self.epsilonU[iEl, j] = self.BU[iEl, j]@self.uE[iEl]
                 self.sigmaL[iEl, j] = self.epsilonL[iEl, j]*self.E[iEl]
                 self.sigmaU[iEl, j] = self.epsilonU[iEl, j]*self.E[iEl]
                 self.sigmaMax[iEl, j] = np.max((np.abs(np.sum(self.sigmaL[iEl, j])),
@@ -248,44 +256,20 @@ class Beam:
 
     def ComputeStressSensitivity(self):
         # not general enough for shape
-        nx = np.size(self.SizingVariables)
+        nx = np.size(self.DesVar)
+        self.uENabla = np.zeros([self.nEl, 2*self.nNDoF, nx])
         self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
         self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.ENabla = np.zeros((self.nEl, nx))
         self.sigmaLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
         self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        for iEl in range(self.nEl):
-            uENabla = self.T[iEl]@self.L[iEl]@self.uNabla
-
-            for i in range(nx):
-                if self.SizingVariables[i] == "E":
-                    self.ENabla[iEl, i] = 1
-
-            for j in range(self.nSeg+1):
-                ξ = j/(self.nSeg)
-                BL, BU = self.StrainDispMat(ξ, self.ell[iEl], self.zU[iEl],
-                                            self.zL[iEl])
-                BLNabla = np.zeros((2, 6, nx))
-                BUNabla = np.zeros((2, 6, nx))
-                ix = 0
-                for ii in range(len(self.SizingVariables)):
-                    for iVar in self.SizingVariables[ii]:
-                        if iVar == "h":
-                            BLNabla[:, :, ix], BUNabla[:, :, ix] = \
-                                self.StrainDispNablah(ξ, self.ell[iEl])
-                        ix += 1
-                self.epsilonLNabla[iEl, j] = BLNabla.transpose(0, 2, 1)@self.uE[iEl] + BL@uENabla
-                self.epsilonUNabla[iEl, j] = BUNabla.transpose(0, 2, 1)@self.uE[iEl] + BU@uENabla
-
-                epsilonL_ENabla = np.zeros((2, nx))
-                epsilonL_ENabla[0, :] = self.epsilonL[iEl, j, 0]*self.ENabla[iEl]
-                epsilonL_ENabla[1, :] = self.epsilonL[iEl, j, 1]*self.ENabla[iEl]
-                epsilonU_ENabla = np.zeros((2, nx))
-                epsilonU_ENabla[0, :] = self.epsilonU[iEl, j, 0]*self.ENabla[iEl]
-                epsilonU_ENabla[1, :] = self.epsilonU[iEl, j, 1]*self.ENabla[iEl]
-
-                self.sigmaLNabla[iEl, j] = self.E[iEl]*self.epsilonLNabla[iEl, j]+epsilonL_ENabla
-                self.sigmaUNabla[iEl, j] = self.E[iEl]*self.epsilonUNabla[iEl, j]+epsilonU_ENabla
+        for i in range(nx):
+            for iEl in range(self.nEl):
+                self.uENabla[iEl, :, i]  = self.T[iEl]@self.L[iEl]@self.uNabla[:, i]+self.TNabla[iEl, :, :, i]@self.L[iEl]@self.u
+                for j in range(self.nSeg+1):
+                    self.epsilonLNabla[iEl, j, :, i] = self.BLNabla[iEl, j, :, :, i]@self.uE[iEl] + self.BL[iEl, j]@self.uENabla[iEl, :, i]
+                    self.epsilonUNabla[iEl, j, :, i] = self.BUNabla[iEl, j, :, :, i]@self.uE[iEl] + self.BU[iEl, j]@self.uENabla[iEl, :, i]
+                    self.sigmaLNabla[iEl, j, :, i] = self.epsilonLNabla[iEl, j, :, i]*self.E[iEl] + self.epsilonL[iEl, j]*self.ENabla[iEl, i]
+                    self.sigmaUNabla[iEl, j, :, i] = self.epsilonUNabla[iEl, j, :, i]*self.E[iEl] + self.epsilonU[iEl, j]*self.ENabla[iEl, i]
 
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
         if not self.Initialized:
@@ -333,99 +317,104 @@ class Beam3D(Beam):
 class BeamFFRF2D(Beam2D):
     from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
-    from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output)
+    from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output,
+                                     FFRF_OutputSensitivities)
     nNDoF = 3   # number of nodal degrees of freedom
     nNPoC = 2   # number of nodal position coordinates
 
 if __name__ == '__main__':
 
-    Test = Beam2D()
+    t0 = time.time()
 
-    Test.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
-    Test.massMatType = "consistent"        # lumped or consistent
+    class Model(Beam2D):
+        b1 = 10    # mm
+        h1 = 20    # mm
+        b2 = 10    # mm
+        h2 = 20    # mm
+        x1 = 0
+        x2 = 100
+        x3 = 100
+        y1 = 0
+        y2 = 0
+        y3 = 100
+        DesVar = ["h1", "b1", "h2", "b2", "x1", "x2", "x3", "y1", "y2", "y3"]
 
-    b = 10      # mm
-    h = 20      # mm
+        def __init__(self):
+            self.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
+            self.massMatType = "consistent"        # lumped or consistent
 
-    #Material     rho       E   nu shape, h, b
-    Test.Properties = [['Steel', 7.85e-9, 210000, 0.3, 1, h, b],
-                       [  'Alu', 2.70e-9,  70000, 0.3, 1, h, b]]
+            #Material     rho       E   nu shape, h, b
+            self.Properties = [['Steel', 7.85e-9, 210000, 0.3, 1, self.h1, self.b1],
+                               [  'Alu', 2.70e-9,  70000, 0.3, 1, self.h2, self.b2]]
+            self.Nodes = [[self.x1, self.y1],
+                          [self.x2, self.y2],
+                          [self.x3, self.y3]]
+            self.El = [[1, 2],
+                       [2, 3]]
+            self.PropID = ["Alu", "Steel"]
+            self.Disp = [[1, [  0,   0, 'f']],
+                         [2, [0.1,   0, 'f']]]
+            self.Load = [[3, [800, 'f', 'f']]]
+            self.nSeg = 2
 
-    # one list per element property set: possibilities: None, "matertial", E, nu, A, I, h, b
-    Test.SizingVariables = [["h", "b"],
-                            ["h", "b"]]
-
-    Test.Nodes = [[  0,   0],
-                  [100,   0],
-                  [100, 100]]
-    Test.El = [[1, 2],
-               [2, 3]]
-    Test.PropID = ["Alu", "Steel"]
-
-    Test.Disp = [[1, [  0,   0, 'f']],
-                 [2, [0.1,   0, 'f']]]
-    Test.Load = [[3, [800, 'f', 'f']]]
-
-    Test.nSeg = 100
-    Test.PlotMesh(NodeNumber=True, ElementNumber=True, Loads=True, BC=True,
-                  FontMag=2)
+    Test = Model()
+    # Test.PlotMesh(NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=2)
 
     Test.StaticAnalysis()
-    Test.PlotDisplacement('mag', scale=20)
-    Test.PlotStress('max', scale=20)
-
-    Test.EigenvalueAnalysis(nEig=len(Test.DoF))
-    Test.PlotMode(scale=0.1)
+    Test.ComputeStress()
+    # Test.PlotDisplacement('mag', scale=20)
+    # Test.PlotStress('max', scale=20)
 
     Test.SensitivityAnalysis()
+    Test.ComputeStressSensitivity()
 
-    CheckSens = 1
-    if CheckSens:
-        CheckStress = 1
-        if CheckStress:
-            Test.ComputeStressSensitivity()
+    # Test.EigenvalueAnalysis(nEig=len(Test.DoF))
+    # Test.PlotMode(scale=0.1)
 
-        uNablahFD = [np.zeros_like(Test.u)]*2
-        sigmaLNablahFD = [np.zeros_like(Test.sigmaL)]*2
-        sigmaLNablabFD = [np.zeros_like(Test.sigmaL)]*2
-        sigmaUNablahFD = [np.zeros_like(Test.sigmaL)]*2
-        sigmaUNablabFD = [np.zeros_like(Test.sigmaL)]*2
-        xDelta = 1
-        for i in range(2):
-            Test1 = deepcopy(Test)
-            Test1.Properties[i][5] += xDelta
-            Test1.Initialize()
-            Test1.StaticAnalysis()
-            uNablahFD[i] = (Test1.u-Test.u)/xDelta
-            if CheckStress:
-                Test1.ComputeStress()
-                sigmaLNablahFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
-                sigmaUNablahFD[i] = (Test1.sigmaU-Test.sigmaU)/xDelta
+    t1 = time.time()
 
-        uNablabFD = [np.zeros_like(Test.u)]*2
-        sigmaLNablabFD = [np.zeros_like(Test.sigmaL)]*2
-        for i in range(2):
-            Test1 = deepcopy(Test)
-            Test1.Properties[i][6] += xDelta
-            Test1.Initialize()
-            Test1.StaticAnalysis()
-            uNablabFD[i] = (Test1.u-Test.u)/xDelta
+    xDelta = 1e-6
+    x0 = np.array([20, 10, 20, 10, 0, 100, 100, 0, 0, 100])
 
-            if CheckStress:
-                Test1.ComputeStress()
-                sigmaLNablabFD[i] = (Test1.sigmaL-Test.sigmaL)/xDelta
-                sigmaUNablabFD[i] = (Test1.sigmaU-Test.sigmaU)/xDelta
+    def Eval(x):
+        Test = Model()
+        Test.h1 = x[0]
+        Test.b1 = x[1]
+        Test.h2 = x[2]
+        Test.b2 = x[3]
+        Test.x1 = x[4]
+        Test.x2 = x[5]
+        Test.x3 = x[6]
+        Test.y1 = x[7]
+        Test.y2 = x[8]
+        Test.y3 = x[9]
+        Test.__init__()
+        Test.StaticAnalysis()
+        Test.ComputeStress()
+        return(Test.u, Test.sigmaL)
 
-        print("sensitivities:")
-        print("displacement")
-        print("FD")
-        print(uNablahFD)
-        print(uNablabFD)
-        print("Analytical")
-        print(Test.uNabla)
-        if CheckStress:
-            print("stress")
-            print("FD")
-            #print(sigmaLNablahFD)
-            print("Analytical")
-            #print(Test.sigmaLNabla)
+    u0, sigma0 = Eval(x0)
+    uNabla = np.zeros([len(u0), len(x0)])
+    sigmaNabla = np.zeros([sigma0.shape[0], sigma0.shape[1], sigma0.shape[2], len(x0)])
+    for i in range(len(x0)):
+        e = np.zeros_like(x0)
+        e[i] = 1
+        u1, sigma1 = Eval(x0+e*xDelta)
+        uNabla[:, i] = (u1-u0)/xDelta
+        sigmaNabla[:, :, :, i] = (sigma1-sigma0)/xDelta
+
+    t2 = time.time()
+
+    # np.set_printoptions(precision=6, suppress=True)
+    for i in range(len(x0)):
+        print("\ndisplacement sensitivity "+str(Test.DesVar[i]))
+        print(np.linalg.norm(uNabla[:, i]-Test.uNabla[:, i]))
+        print("FD:\n", uNabla[:, i])
+        print("Analytical:\n", Test.uNabla[:, i])
+    for i in range(len(x0)):
+        print("\nstress sensitivity "+str(Test.DesVar[i]))
+        print(np.linalg.norm(sigmaNabla[:, :, :, i]-Test.sigmaLNabla[:, :, :, i]))
+        print("FD:\n", sigmaNabla[:, :, :, i])
+        print("Analytical:\n", Test.sigmaLNabla[:, :, :, i])
+    print("\ncomputation time analytical:", t1-t0)
+    print("\ncomputation time numerical:", t2-t1)
