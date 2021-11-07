@@ -18,7 +18,6 @@ class Beam:
     plotting = True
     Load = []
     Initialized = False
-    StaticAnalyzed = False
     ComputedDisplacement = False
     ComputedStress = False
 
@@ -186,7 +185,6 @@ class Beam:
         return Matrix
 
     def StaticAnalysis(self):
-        self.StaticAnalyzed = True
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
@@ -224,7 +222,7 @@ class Beam:
 
     def ComputeDisplacement(self):
         self.ComputedDisplacement = True
-        if not self.StaticAnalyzed:
+        if np.isnan(self.u).any():
             self.StaticAnalysis()
         self.uE = np.zeros([self.nEl, 2*self.nNDoF])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
