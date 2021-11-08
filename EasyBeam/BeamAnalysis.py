@@ -200,9 +200,9 @@ class Beam:
         self.r = self.r0+self.u
 
     def SensitivityAnalysis(self):
-        self.SensitivityAnalyzed = True
         if not self.ModeledPartialDerivatives:
             self.ModelPartialDerivatives()
+        self.SensitivityAnalyzed = True
         self.uNabla = np.zeros((len(self.u), np.size(self.DesVar)))
         FPseudo = np.zeros((len(self.F), self.nx))
         for i in range(self.nx):
@@ -212,8 +212,9 @@ class Beam:
 
     def ModelPartialDerivatives(self, xDelta=1e-9):
         self.ModeledPartialDerivatives = True
-        self.kNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, self.nx])
-        self.FNabla = np.zeros([self.nNDoF*self.nN, self.nx])
+        if not self.SensitivityAnalyzed:
+            self.kNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, self.nx])
+            self.FNabla = np.zeros([self.nNDoF*self.nN, self.nx])
         self.TNabla = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF, self.nx])
         self.BLNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, self.nx])
         self.BUNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, self.nx])
@@ -226,9 +227,10 @@ class Beam:
                     getattr(new, new.DesVar[i])+xPert)
             new.__init__()
             new.Initialize()
-            new.k = new.Assemble(new.StiffMatElem)
-            self.kNabla[:, :, i] = (new.k-self.k)/xPert
-            self.FNabla[:, i] = (new.F-self.F)/xPert
+            if not self.SensitivityAnalyzed:
+                new.k = new.Assemble(new.StiffMatElem)
+                self.kNabla[:, :, i] = (new.k-self.k)/xPert
+                self.FNabla[:, i] = (new.F-self.F)/xPert
             self.TNabla[:, :, :, i] = (new.T-self.T)/xPert
             self.BLNabla[:, :, :, :, i] = (new.BL-self.BL)/xPert
             self.BUNabla[:, :, :, :, i] = (new.BU-self.BU)/xPert
