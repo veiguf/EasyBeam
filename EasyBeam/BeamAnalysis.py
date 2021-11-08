@@ -18,8 +18,11 @@ class Beam:
     plotting = True
     Load = []
     Initialized = False
+    StaticAnalyzed = False
     ComputedDisplacement = False
     ComputedStress = False
+    ModeledPartialDerivatives = False
+    SensitivityAnalyzed = False
 
     def Initialize(self):
         self.Initialized = True
@@ -27,6 +30,7 @@ class Beam:
         self.El = np.array(self.El, dtype=int)
         self.nEl = len(self.El)     # number of elements
         self.nN = len(self.Nodes[:, 0])       # number of nodes
+        self.nx = np.size(self.DesVar)
         self.BC = []        # boundary conditions
         self.BC_DL = []
         self.DL = []        # displacement load
@@ -185,6 +189,7 @@ class Beam:
         return Matrix
 
     def StaticAnalysis(self):
+        self.StaticAnalyzed = True
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
@@ -194,35 +199,45 @@ class Beam:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
-    def SensitivityAnalysis(self, xDelta=1e-9):
-        nx = np.size(self.DesVar)
+    def SensitivityAnalysis(self):
+        self.SensitivityAnalyzed = True
+        if not self.ModeledPartialDerivatives:
+            self.ModelPartialDerivatives()
         self.uNabla = np.zeros((len(self.u), np.size(self.DesVar)))
-        self.massNabla = np.zeros((np.size(self.DesVar,)))
-        FPseudo = np.zeros((len(self.F), nx))
-        self.TNabla = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF, nx])
-        self.BLNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, nx])
-        self.BUNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, nx])
-        self.ENabla = np.zeros((self.nEl, nx))
-        for i in range(nx):
+        FPseudo = np.zeros((len(self.F), self.nx))
+        for i in range(self.nx):
+            FPseudo[:, i] = self.FNabla[:, i]-self.kNabla[:, :, i]@self.u
+        self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
+                                                   FPseudo[self.DoF_DL])
+
+    def ModelPartialDerivatives(self, xDelta=1e-9):
+        self.ModeledPartialDerivatives = True
+        self.kNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, self.nx])
+        self.FNabla = np.zeros([self.nNDoF*self.nN, self.nx])
+        self.TNabla = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF, self.nx])
+        self.BLNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, self.nx])
+        self.BUNabla = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF, self.nx])
+        self.massNabla = np.zeros([self.nx])
+        self.ENabla = np.zeros((self.nEl, self.nx))
+        for i in range(self.nx):
             new = deepcopy(self)
             xPert = xDelta*(1+getattr(new, new.DesVar[i]))
             setattr(new, new.DesVar[i],
                     getattr(new, new.DesVar[i])+xPert)
             new.__init__()
             new.Initialize()
+            new.k = new.Assemble(new.StiffMatElem)
+            self.kNabla[:, :, i] = (new.k-self.k)/xPert
+            self.FNabla[:, i] = (new.F-self.F)/xPert
             self.TNabla[:, :, :, i] = (new.T-self.T)/xPert
             self.BLNabla[:, :, :, :, i] = (new.BL-self.BL)/xPert
             self.BUNabla[:, :, :, :, i] = (new.BU-self.BU)/xPert
             self.ENabla[:, i] = (new.E-self.E)/xPert
-            kNew = new.Assemble(new.StiffMatElem)
-            FPseudo[:, i] = (new.F-self.F)/xPert-((kNew-self.k)/xPert)@self.u
             self.massNabla[i] = (new.mass-self.mass)/xPert
-        self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
-                                                   FPseudo[self.DoF_DL])
 
     def ComputeDisplacement(self):
         self.ComputedDisplacement = True
-        if np.isnan(self.u).any():
+        if not self.StaticAnalyzed:
             self.StaticAnalysis()
         self.uE = np.zeros([self.nEl, 2*self.nNDoF])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
@@ -251,14 +266,16 @@ class Beam:
                                                 np.abs(np.sum(self.sigmaU[iEl, j]))))
 
     def ComputeStressSensitivity(self):
-        # not general enough for shape
-        nx = np.size(self.DesVar)
-        self.uENabla = np.zeros([self.nEl, 2*self.nNDoF, nx])
-        self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.sigmaLNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, nx))
-        for i in range(nx):
+        if not self.SensitivityAnalyzed:
+            self.SensitivityAnalysis()
+        if not self.ModeledPartialDerivatives:
+            self.ModelPartialDerivatives()
+        self.uENabla = np.zeros([self.nEl, 2*self.nNDoF, self.nx])
+        self.epsilonLNabla = np.zeros((self.nEl, self.nSeg+1, 2, self.nx))
+        self.epsilonUNabla = np.zeros((self.nEl, self.nSeg+1, 2, self.nx))
+        self.sigmaLNabla = np.zeros((self.nEl, self.nSeg+1, 2, self.nx))
+        self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, self.nx))
+        for i in range(self.nx):
             for iEl in range(self.nEl):
                 self.uENabla[iEl, :, i]  = self.T[iEl]@self.L[iEl]@self.uNabla[:, i]+self.TNabla[iEl, :, :, i]@self.L[iEl]@self.u
                 for j in range(self.nSeg+1):
