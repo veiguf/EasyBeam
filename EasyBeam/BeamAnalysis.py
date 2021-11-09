@@ -8,7 +8,7 @@ import time
 
 class Beam:
     from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
-                              PlotStress, PlotMode)
+                              PlotStress, PlotMode, PlotMesh3D)
     nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
@@ -17,6 +17,8 @@ class Beam:
     DesVar = []
     plotting = True
     Load = []
+    Disp = []
+    Properties = []
     Initialized = False
     StaticAnalyzed = False
     ComputedDisplacement = False
