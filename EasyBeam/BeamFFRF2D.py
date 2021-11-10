@@ -51,7 +51,6 @@ def FFRF_OutputSensitivities(self, xDelta=1e-9):
             xPert = xDelta*(1+getattr(new, new.DesVar[i]))
             setattr(new, new.DesVar[i],
                     getattr(new, new.DesVar[i])+xPert)
-            new.__init__()
             new.Initialize()
             new.kff = new.Assemble(new.StiffMatElem)
             new.Stf = new.AssembleOneDirection(new.StfElem)
@@ -99,8 +98,6 @@ if __name__ == '__main__':
         Model.lC = x[2]
         Model.rhoMod = x[3]
         Model.EMod = x[4]
-        Model.__init__()
-        Model.Initialize()
         Model.FFRF_Output()
         return(Model.mass, Model.kff, Model.Stf, Model.Srf, Model.Sff, Model.r0)
 

@@ -25,6 +25,7 @@ class Beam:
     SensitivityAnalyzed = False
 
     def Initialize(self):
+        self.__init__()
         self.Initialized = True
         self.Nodes = np.array(self.Nodes, dtype=float)
         self.El = np.array(self.El, dtype=int)
@@ -225,7 +226,6 @@ class Beam:
             xPert = xDelta*(1+getattr(new, new.DesVar[i]))
             setattr(new, new.DesVar[i],
                     getattr(new, new.DesVar[i])+xPert)
-            new.__init__()
             new.Initialize()
             if not self.SensitivityAnalyzed:
                 new.k = new.Assemble(new.StiffMatElem)
@@ -330,8 +330,6 @@ class Beam3D(Beam):
     nNPoC = 3   # number of nodal position coordinates
 
 class BeamFFRF2D(Beam2D):
-    from EasyBeam.Beam2D import (ShapeMat, StrainDispMat, StrainDispNablah,
-                                 StiffMatElem, MassMatElem)
     from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output,
                                      FFRF_OutputSensitivities)
     nNDoF = 3   # number of nodal degrees of freedom
@@ -403,8 +401,6 @@ if __name__ == '__main__':
         Test.y1 = x[7]
         Test.y2 = x[8]
         Test.y3 = x[9]
-        Test.__init__()
-        Test.StaticAnalysis()
         Test.ComputeStress()
         return(Test.u, Test.sigmaL)
 
