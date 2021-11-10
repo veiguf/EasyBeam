@@ -8,14 +8,14 @@ import time
 
 class Beam:
     from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
-                              PlotStress, PlotMode, PlotMesh3D)
+                                       PlotStress, PlotMode, PlotMesh3D)
     nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
     lineStyleUndeformed = "-"
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
-    DesVar = []
     plotting = True
+    DesVar = []
     Load = []
     Disp = []
     Properties = []
