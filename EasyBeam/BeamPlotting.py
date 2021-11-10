@@ -1,6 +1,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.collections as mplcollect
+import pyvista
 
 # import matplotlib.colors as colors
 import numpy as np
@@ -299,6 +300,35 @@ class MidpointNormalizeNew(mpl.colors.Normalize):
 #         # simple example...
 #         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
 #         return np.ma.masked_array(np.interp(value, x, y))
+
+def _plotting3D(self):    #, val, disp, title, colormap):
+    pyvista.global_theme.axes.box = False
+    pyvista.global_theme.axes.x_color = 'black'
+    pyvista.global_theme.axes.y_color = 'black'
+    pyvista.global_theme.axes.z_color = 'black'
+    pyvista.global_theme.font.color = 'black'
+    #colors = np.random.random(self.El.shape[0])
+    #colors = np.zeros(self.El.shape[0])
+
+def PlotMesh3D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
+    _plotting3D(self)
+    mesh = pyvista.PolyData(self.Nodes, np.vstack((np.ones(np.array(self.El).shape[0], int)*2, (np.array(self.El)-1).T)).T)
+    mesh.plot(off_screen=False,
+              full_screen=False,
+              interactive=True,
+              parallel_projection=True,
+             # show_axes=False,
+              #scalars=colors,
+              render_lines_as_tubes=True,
+              style='wireframe',
+              line_width=10,
+              cmap="turbo",
+              lighting='three lights',
+              color="#1f77b4",
+              show_scalar_bar=False,
+              background='w')
+
+
 
 
 def colorline(x, y, z, cmap="jet", linewidth=2, alpha=1.0, plot=True, norm=None):
