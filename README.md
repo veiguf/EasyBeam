@@ -1,6 +1,7 @@
 <p align=center><img width="100%" src="figures/EasyBeamBlue.svg"></p>
 
 [![DOI](https://zenodo.org/badge/312570858.svg)](https://zenodo.org/badge/latestdoi/312570858)
+[![PyPI Version](https://pypip.in/version/EasyBeam/badge.svg)](https://pypi.python.org/pypi/EasyBeam/)
 
 # EasyBeam
 
