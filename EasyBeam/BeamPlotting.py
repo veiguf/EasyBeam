@@ -123,7 +123,7 @@ def PlotMode(self, scale=1):
         uE_Phi = np.zeros([self.nEl, 6])
         uS_Phi = np.zeros([self.nEl, 2, self.nSeg + 1])
         for i in range(self.nEl):
-            uE_Phi[i, :] = self.L[i] @ Phii
+            uE_Phi[i, :] = Phii[self.idx[i]]
             for j in range(self.nSeg + 1):
                 ξ = j / (self.nSeg)
                 S = self.ShapeMat(ξ, self.ell[i])

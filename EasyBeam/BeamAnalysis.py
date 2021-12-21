@@ -91,7 +91,6 @@ class Beam:
         self.T = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF])
         # self.r = np.zeros([self.nEl, 3, self.nSeg+1])
         self.mass = 0
-        # self.L = np.zeros([self.nEl, 2*self.nNDoF, self.nNDoF*self.nN])
         self.idx = [[]]*self.nEl
         self.BL = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF])
         self.BU = np.zeros([self.nEl, self.nSeg+1, 2, 2*self.nNDoF])
@@ -163,8 +162,6 @@ class Beam:
             self.mass += (self.A[i]*self.ell[i]*self.rho[i])
             self.TX[i] = self.TransXMat(i)
             self.T[i] = self.TransMat(i)
-            # self.L[i,          0:  self.nNDoF, self.nNDoF*(self.El[i, 0]-1):self.nNDoF*(self.El[i, 0]-1)+self.nNDoF] = np.eye(self.nNDoF)
-            # self.L[i, self.nNDoF:2*self.nNDoF, self.nNDoF*(self.El[i, 1]-1):self.nNDoF*(self.El[i, 1]-1)+self.nNDoF] = np.eye(self.nNDoF)
             self.idx[i] = np.r_[self.nNDoF*(self.El[i, 0]-1):self.nNDoF*(self.El[i, 0]-1)+self.nNDoF,
                                 self.nNDoF*(self.El[i, 1]-1):self.nNDoF*(self.El[i, 1]-1)+self.nNDoF].tolist()
             for j in range(self.nSeg+1):
@@ -176,18 +173,15 @@ class Beam:
             for i in range(self.nEl):
                 for j in range(self.nSeg+1):
                     ξ = j/(self.nSeg)
-                    # self.r0S[i, :, j] = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]@self.r0
                     self.r0S[i, :, j] = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.r0[self.idx[i]]
 
     def Assemble(self, MatElem):
         Matrix = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN])
         for i in range(self.nEl):
-            # Matrix += self.L[i].T@self.T[i].T@MatElem(i)@self.T[i]@self.L[i]
             Matrix[np.ix_(self.idx[i], self.idx[i])] += self.T[i].T@MatElem(i)@self.T[i]
         return Matrix
 
     def NMat(self, i, ξ):
-        # NMat = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.L[i]
         NMat = np.zeros([self.nNPoC, self.nNDoF*self.nN])
         NMat[:, self.idx[i]] += self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]
         return NMat
@@ -195,7 +189,6 @@ class Beam:
     def AssembleOneDirection(self, MatElem):  # needed for FFRF
         Matrix = np.zeros([self.nNPoC, self.nNDoF*self.nN])
         for i in range(self.nEl):
-            # Matrix += self.TX[i]@MatElem(i)@self.T[i]@self.L[i]
             Matrix[:, self.idx[i]] += self.TX[i]@MatElem(i)@self.T[i]
         return Matrix
 
@@ -254,7 +247,6 @@ class Beam:
         self.uE = np.zeros([self.nEl, 2*self.nNDoF])
         self.uS = np.zeros([self.nEl, 2, self.nSeg+1])
         for iEl in range(self.nEl):
-            # self.uE[iEl]  = self.T[iEl]@self.L[iEl]@self.u
             self.uE[iEl]  = self.T[iEl]@self.u[self.idx[iEl]]
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
@@ -290,7 +282,6 @@ class Beam:
         self.sigmaUNabla = np.zeros((self.nEl, self.nSeg+1, 2, self.nx))
         for i in range(self.nx):
             for iEl in range(self.nEl):
-                # self.uENabla[iEl, :, i]  = self.T[iEl]@self.L[iEl]@self.uNabla[:, i]+self.TNabla[iEl, :, :, i]@self.L[iEl]@self.u
                 self.uENabla[iEl, :, i]  = self.T[iEl]@self.uNabla[self.idx[iEl], i]+self.TNabla[iEl, :, :, i]@self.u[self.idx[iEl]]
                 for j in range(self.nSeg+1):
                     self.epsilonLNabla[iEl, j, :, i] = self.BLNabla[iEl, j, :, :, i]@self.uE[iEl] + self.BL[iEl, j]@self.uENabla[iEl, :, i]
