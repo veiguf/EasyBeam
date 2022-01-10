@@ -82,18 +82,13 @@ def TransMat(self, i):
     T[0:3, 0:3] = T[3:6, 3:6] = T[6:9, 6:9] = T[9:12, 9:12] = self.TX[i].T
     return T
 
-def StrainDispMat(self, ξ, ell, zU, zL):
-    BL = 0
-    BU = 0
-    return(BL, BU)
-
-def StrainDispNablah(self, ξ, ell):
-    # still 2d
-    BLNablah = np.array([[0,                0,            0, 0,                 0,             0],
-                         [0, -1/2*(6-12*ξ)/ell**2, -1/2*(4-6*ξ)/ell, 0, -1/2*(-6+12*ξ)/ell**2, -1/2*(-6*ξ+2)/ell]])
-    BUNablah = np.array([[0,               0,           0, 0,                0,            0],
-                         [0, 1/2*(6-12*ξ)/ell**2, 1/2*(4-6*ξ)/ell, 0, 1/2*(-6+12*ξ)/ell**2, 1/2*(-6*ξ+2)/ell]])
-    return(BLNablah, BUNablah)
+def StrainDispMat(self, ξ, ell, y, z):
+    B = np.array([[-1/ell,                   0,                   0, 0,               0,                0, 1/ell,                  0,                  0, 0,               0,                0],
+                  [     0, -6*(2*ξ - 1)/ell**2,                   0, 0,               0, -2*(3*ξ - 2)/ell,     0, 6*(2*ξ - 1)/ell**2,                  0, 0,               0, -2*(3*ξ - 1)/ell],
+                  [     0,                   0, -6*(2*ξ - 1)/ell**2, 0, 2*(3*ξ - 2)/ell,                0,     0,                  0, 6*(2*ξ - 1)/ell**2, 0, 2*(3*ξ - 1)/ell,                0]])
+    B[1, :] *= y
+    B[2, :] *= z
+    return(B)
 
 def StiffMatElem(self, i):
     # from: https://github.com/airinnova/framat/blob/8ebbc85d048484c339703ae107df6247e43990b6/src/framat/_element.py
