@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os
+from pathlib import Path
+
+
+this_directory = Path(__file__).parent
+long_description = (this_directory / 'README.md').read_text()
+
 def package_files(directory):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
@@ -23,4 +29,6 @@ if __name__ == '__main__':
           copyright="Copyright 2020, 2021 V. Gufler",
           install_requires=['numpy',
                             'scipy',
-                            'matplotlib'])
+                            'matplotlib'],
+    long_description=long_description,
+    long_description_content_type='text/markdown')
