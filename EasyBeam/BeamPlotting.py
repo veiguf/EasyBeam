@@ -52,26 +52,33 @@ def _plotting(self, val, disp, title, colormap):
     plt.show()
 
 
-def PlotStress(self, stress="all", scale=1):
+def PlotStress(self, points=[0, 1, 2], stress="all", scale=1):
     if not self.ComputedStress:
         self.ComputeStress()
     self.rS = self.r0S + self.uS * scale
-    if stress.lower() in ["all", "upper"]:
-        self._plotting(
-            np.sum(self.sigmaU, 2),
-            self.rS,
-            "upper fiber stress\n$\\sigma_U$ [MPa]",
-            self.colormap,
-        )
-
-    if stress.lower() in ["all", "lower"]:
-        self._plotting(
-            np.sum(self.sigmaL, 2),
-            self.rS,
-            "lower fiber stress\n$\\sigma_L$ [MPa]",
-            self.colormap,
-        )
-
+    position = ["neutral fiber", "upper fiber", "lower fiber"]
+    for i in points:
+        if stress.lower() in ["all", "axial"]:
+            self._plotting(
+                self.sigma[:, :, i, 0],
+                self.rS,
+                "axial stress\n"+position[i]+"\n$\\sigma_{ax}$ [MPa]",
+                self.colormap,
+            )
+        if stress.lower() in ["all", "bending"]:
+            self._plotting(
+                self.sigma[:, :, i, 1],
+                self.rS,
+                "bending stress\n"+position[i]+"\n$\\sigma_{b}$ [MPa]",
+                self.colormap,
+            )
+        if stress.lower() in ["all", "total"]:
+            self._plotting(
+                self.sigmaTot[:, :, i],
+                self.rS,
+                "total stress\n"+position[i]+"\n$|\\sigma_{tot}|$ [MPa]",
+                self.colormap,
+            )
     if stress.lower() in ["all", "max"]:
         self._plotting(
             self.sigmaMax,
@@ -79,23 +86,6 @@ def PlotStress(self, stress="all", scale=1):
             "maximum stress\n$|\\sigma_{max}|$ [MPa]",
             self.colormap,
         )
-
-    if stress.lower() in ["all", "bending"]:
-        self._plotting(
-            self.sigmaU[:, :, 1],
-            self.rS,
-            "bending stress\n(upper fiber)\n$\\sigma_{bending}$ [MPa]",
-            self.colormap,
-        )
-
-    if stress.lower() in ["all", "axial"]:
-        self._plotting(
-            self.sigmaU[:, :, 0],
-            self.rS,
-            "axial stress\n$\\sigma_{axial}$ [MPa]",
-            self.colormap,
-        )
-
 
 def PlotDisplacement(self, component="all", scale=1):
     if not self.ComputedDisplacement:
@@ -113,6 +103,20 @@ def PlotDisplacement(self, component="all", scale=1):
     if component.lower() in ["y", "all"]:
         self._plotting(
             self.uS[:, 1, :], self.rS, "$y$-deformation\n$u_y$ [mm]", self.colormap
+        )
+
+def PlotInternalForces(self, scale=1):
+    if not self.ComputedInternalForces:
+        self.ComputeInternalForces()
+    self.rS = self.r0S + self.uS * scale
+    name = ["Normal force", "Shear force", "Bending moment"]
+    label = ["$F_N$ [N]", "$F_Q$ [N]", "$M_b$ [Nmm]"]
+    for i in range(self.nNDoF):
+        self._plotting(
+            self.QS[:, :, i],
+            self.rS,
+            name[i]+"\n"+label[i],
+            self.colormap,
         )
 
 

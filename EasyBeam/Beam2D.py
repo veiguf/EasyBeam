@@ -30,12 +30,11 @@ def TransMat(self, i):
                   [            0, 0, 0,         0, 0,                1]])
     return T
 
-def StrainDispMat(self, ξ, ell, zU, zL):
-    BL = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
-                   [     0, zL*(6-12*ξ)/ell**2,  zL*(4-6*ξ)/ell,     0, zL*(-6+12*ξ)/ell**2, zL*(-6*ξ+2)/ell]])
-    BU = np.array([[-1/ell,                  0,               0, 1/ell,                   0,               0],
-                   [     0, zU*(6-12*ξ)/ell**2,  zU*(4-6*ξ)/ell,     0, zU*(-6+12*ξ)/ell**2, zU*(-6*ξ+2)/ell]])
-    return(BL, BU)
+def StrainDispMat(self, ξ, ell, y, z, r):
+    B = np.array([[-1/ell,                              0,                0, 1/ell,                             0,                        0],
+                  [     0,            -6*(2*ξ - 1)/ell**2, -2*(3*ξ - 2)/ell,     0,            2*(6*ξ - 3)/ell**2,         -2*(3*ξ - 1)/ell]])
+    B[1, :] *= z
+    return(B)
 
 def StrainDispNablah(self, ξ, ell):
     BLNablah = np.array([[0,                0,            0, 0,                 0,             0],

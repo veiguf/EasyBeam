@@ -1,10 +1,11 @@
 from EasyBeam import Beam3D
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Parameter
 b = 10          # mm
 h = 20          # mm
-F = -100        # N
+F = 100        # N
 l = 1000        # mm
 E = 210000      # MPa
 rho = 7.85e-9   # t/mm^3
@@ -32,8 +33,8 @@ for i in range(nEl):
     Cantilever.El[i] = [i+1, i+2]
 
 # Randbedingungen und Belastung [N] bzw. [Nmm]
-Cantilever.Disp = [[    1, [0, 0, 0, 0, 0, 0]]]
-Cantilever.Load = [[nEl+1, [0, 0, F, 0, 0, 0]]]
+Cantilever.Disp = [[    1, [0, 0,  0, 0, 0, 0]]]
+Cantilever.Load = [[nEl+1, [0, 0, -F, 0, 0, 0]]]
 
 # Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
 Cantilever.Properties = [["Prop1", rho, E, nu, 1, h, b]]
@@ -48,12 +49,35 @@ Cantilever.Initialize()
 
 # Statische Analyse
 Cantilever.StaticAnalysis()
-
+Cantilever.ComputeDisplacement()
+Cantilever.ComputeInternalForces()
+Cantilever.ComputeStress()
 # Cantilever.PlotDisplacement(component='mag', scale=10)
 # Cantilever.PlotStress(stress='max', scale=10)
 
 # Modalanalyse
 Cantilever.EigenvalueAnalysis(nEig=20)
+
+labels = ["N", "Qy", "Qz", "Mt", "My", "Mz"]
+for i in range(6):
+    plt.figure()
+    plt.title(labels[i])
+    plt.plot(Cantilever.QS[:, :, i].flatten("C"))
+
+labels = ["sigma_N", "sigma_by", "sigma_bz", "tau_t"]
+for i in range(4):
+    for j in range(9):
+        plt.figure()
+        plt.title(labels[i]+"SecPoint"+str(j))
+        plt.plot(Cantilever.sigma[:, :, j,i].flatten("C"))
+
+for i in range(9):
+    plt.figure()
+    plt.title("TotalStress SecPoint"+str(i))
+    plt.plot(Cantilever.sigmaTot[:, :, i].flatten("C"))
+
+plt.figure()
+plt.plot(Cantilever.sigmaMax[:, :].flatten("C"))
 
 #Cantilever.PlotMode(scale=5)
 """
