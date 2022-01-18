@@ -15,7 +15,7 @@ class Model(Beam2D):
         self.nSeg = 1
         self.stiffMatType = "Euler-Bernoulli"
         self.massMatType = "consistent"
-        self.Properties = [['Prop1', self.rho_x, self.E_x, self.nu_x, 1, self.h_x, self.b_x]]
+        self.Properties = [['Prop1', self.rho_x, self.E_x, self.nu_x, "rect", self.h_x, self.b_x]]
         self.Nodes = [[]]*(self.nEl+1)
         for i in range(self.nEl+1):
             self.Nodes[i] = [self.l_x*i/self.nEl, 0.0]
@@ -42,17 +42,13 @@ Cantilever.ComputeStressSensitivity()
 print("deformation")
 print(Cantilever.u)
 print("strain")
-print(Cantilever.epsilonL)
-print(Cantilever.epsilonU)
+print(Cantilever.epsilon)
 print("stress")
-print(Cantilever.sigmaL)
-print(Cantilever.sigmaU)
+print(Cantilever.sigma)
 print()
 print("deformation sensitivity")
 print(Cantilever.uNabla)
 print("strain sensitivity")
-print(Cantilever.epsilonLNabla)
-print(Cantilever.epsilonUNabla)
+print(Cantilever.epsilonNabla)
 print("stress sensitivity")
-print(Cantilever.sigmaLNabla)
-print(Cantilever.sigmaUNabla)
+print(Cantilever.sigmaNabla)

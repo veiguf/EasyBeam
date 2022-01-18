@@ -108,7 +108,50 @@ class Beam:
                     self.nu[i] = self.Properties[ii][3]
                     self.G[i] = self.E[i]/(2*(1+self.nu[i]))
                     # Böge & Böge (2019) Formeln und Tabellen zur Technischen Mechanik
-                    if self.Properties[ii][4] in [1, "rect", "Rectangle"]:
+                    if self.Properties[ii][4] in [1, "round"]:
+                        r = self.Properties[ii][5]
+                        self.A[i] = pi*r**2
+                        self.Ix[i] = pi*r**4/2
+                        self.Iy[i] = pi*r**4/4
+                        self.Iz[i] = pi*r**4/4
+                        if self.nNDoF == 3:
+                            self.Sec[i, :, :] = np.array([[   0,  0, 0],
+                                                          [   0,  r, 0],
+                                                          [   0, -r, 0]])
+                        if self.nNDoF == 6:
+                            self.Sec[i, :, :] = np.array([[              0,               0, 0],
+                                                          [              r,               0, r],
+                                                          [ np.sqrt(2)/2*r,  np.sqrt(2)/2*r, r],
+                                                          [              0,               r, r],
+                                                          [-np.sqrt(2)/2*r,  np.sqrt(2)/2*r, r],
+                                                          [             -r,               0, r],
+                                                          [-np.sqrt(2)/2*r, -np.sqrt(2)/2*r, r],
+                                                          [              0,              -r, r],
+                                                          [ np.sqrt(2)/2*r, -np.sqrt(2)/2*r, r]])
+                        self.ϰ[i] = 0.847
+                    elif self.Properties[ii][4] in [2, "roundtube"]:
+                        r = self.Properties[ii][5]
+                        t = self.Properties[ii][6]
+                        self.A[i] = pi*(r**2-(r-t)**2)
+                        self.Ix[i] = pi*(r**4-(r-t)**4)/2
+                        self.Iy[i] = pi*(r**4-(r-t)**4)/4
+                        self.Iz[i] = pi*(r**4-(r-t)**4)/4
+                        if self.nNDoF == 3:
+                            self.Sec[i, :, :] = np.array([[   0,  0, 0],
+                                                          [   0,  r, 0],
+                                                          [   0, -r, 0]])
+                        if self.nNDoF == 6:
+                            self.Sec[i, :, :] = np.array([[              0,               0, 0],
+                                                          [              r,               0, r],
+                                                          [ np.sqrt(2)/2*r,  np.sqrt(2)/2*r, r],
+                                                          [              0,               r, r],
+                                                          [-np.sqrt(2)/2*r,  np.sqrt(2)/2*r, r],
+                                                          [             -r,               0, r],
+                                                          [-np.sqrt(2)/2*r, -np.sqrt(2)/2*r, r],
+                                                          [              0,              -r, r],
+                                                          [ np.sqrt(2)/2*r, -np.sqrt(2)/2*r, r]])
+                        self.ϰ[i] = 0.847 # needs to be corrected!!!!
+                    elif self.Properties[ii][4] in [3, "rect", "Rectangle"]:
                         h = self.Properties[ii][5]
                         b = self.Properties[ii][6]
                         self.A[i] = b*h
@@ -153,24 +196,29 @@ class Beam:
                         self.Iy[i] = b*h**3/12
                         self.Iz[i] = h*b**3/12
                         self.ϰ[i] = 10*(1+self.nu[i])/(12+11*self.nu[i])  #Solid rectangular cross-sectional geometry after Cowper (1966)
-                    elif self.Properties[ii][4] in [2, "round"]:
-                        r = self.Properties[ii][5]
-                        self.A[i] = pi*r**2
-                        self.Ix[i] = pi*r**4/2
-                        self.Iy[i] = pi*r**4/4
-                        self.Iz[i] = pi*r**4/4
-                        self.zU[i] = r/2
-                        self.zL[i] = -r/2
-                        self.ϰ[i] = 0.847
-                    elif self.Properties[ii][4] in [3, "roundtube"]:
-                        r = self.Properties[ii][5]
-                        t = self.Properties[ii][6]
-                        self.A[i] = pi*((r+t)**2-(r)**2)
-                        self.Ix[i] = pi*((r+t)**4-r**4)/2
-                        self.Iy[i] = pi*((r+t)**4-r**4)/4
-                        self.Iz[i] = pi*((r+t)**4-r**4)/4
-                        self.zU[i] = r/2
-                        self.zL[i] = -r/2
+                    elif self.Properties[ii][4] in [4, "recttube"]:
+                        h = self.Properties[ii][5]
+                        b = self.Properties[ii][6]
+                        t = self.Properties[ii][7]
+                        self.A[i] = 2*t*(b+h-2*t)
+                        self.Ix[i] = 2*t*(b-t)**2*(h-t)**2/(b+h-2*t)
+                        self.Iy[i] = b*h**3/12-(b-2*t)*(h-2*t)**3/12
+                        self.Iz[i] = h*b**3/12-(h-2*t)*(b-2*t)**3/12
+                        if self.nNDoF == 3:
+                            self.Sec[i, :, :] = np.array([[   0,    0, 0],
+                                                          [   0,  h/2, 0],
+                                                          [   0, -h/2, 0]])
+                        if self.nNDoF == 6:
+                            x = (b-t)*(h-t)/(b+h-2*t)
+                            self.Sec[i, :, :] = np.array([[   0,    0, 0],
+                                                          [ b/2,    0, x],
+                                                          [ b/2,  h/2, x],
+                                                          [   0,  h/2, x],
+                                                          [-b/2,  h/2, x],
+                                                          [-b/2,    0, x],
+                                                          [-b/2, -h/2, x],
+                                                          [   0, -h/2, x],
+                                                          [ b/2, -h/2, x]])
                         self.ϰ[i] = 0.847 # needs to be corrected!!!!
                     #elif self.Properties[ii][4] in [5, 'I', 'DoubleT']
                     elif self.Properties[ii][4] in [6, "C"]:
@@ -303,7 +351,7 @@ class Beam:
             self.ComputeDisplacement()
         self.epsilon = np.zeros([self.nEl, self.nSeg+1, self.nSec, self.nSVal])
         self.sigma = np.zeros([self.nEl, self.nSeg+1, self.nSec, self.nSVal])
-        self.sigmaTot = np.zeros([self.nEl, self.nSeg+1, self.nSec])
+        self.sigmaEqv = np.zeros([self.nEl, self.nSeg+1, self.nSec])
         self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
         for iEl in range(self.nEl):
             for j in range(self.nSeg+1):
@@ -311,10 +359,10 @@ class Beam:
                     self.epsilon[iEl, j, ii] = self.B[iEl, j, ii]@self.uE[iEl]
                     self.sigma[iEl, j, ii] = self.EMat[iEl]@self.epsilon[iEl, j, ii]
                     if self.nNDoF == 3:
-                        self.sigmaTot[iEl, j, ii] = np.abs(np.sum(self.sigma[iEl, j, ii, :]))
+                        self.sigmaEqv[iEl, j, ii] = np.abs(np.sum(self.sigma[iEl, j, ii, :]))
                     elif self.nNDoF == 6:
-                        self.sigmaTot[iEl, j, ii] = np.sqrt(np.sum(self.sigma[iEl, j, ii, :3])**2+3*self.sigma[iEl, j, ii, 3]**2)
-                self.sigmaMax[iEl, j] = np.max(self.sigmaTot[iEl, j, :])
+                        self.sigmaEqv[iEl, j, ii] = np.sqrt(np.sum(self.sigma[iEl, j, ii, :3])**2+3*self.sigma[iEl, j, ii, 3]**2)
+                self.sigmaMax[iEl, j] = np.max(self.sigmaEqv[iEl, j, :])
 
     def ComputeStressSensitivity(self):
         if not self.SensitivityAnalyzed:

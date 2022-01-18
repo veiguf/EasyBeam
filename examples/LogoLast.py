@@ -7,7 +7,7 @@ Logo = Beam2D()
 Logo.nSeg = 500
 b = 10      # mm
 h = 20      # mm
-Logo.Properties = [['Prop1', 7.85e-9, 210000, 0.3, 1, h, b]]
+Logo.Properties = [['Prop1', 7.85e-9, 210000, 0.3, "rect", h, b]]
 
 # Knoten
 Logo.Nodes = [[ 100, 100],  # 0 E

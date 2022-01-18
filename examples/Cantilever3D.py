@@ -73,8 +73,8 @@ for i in range(4):
 
 for i in range(9):
     plt.figure()
-    plt.title("TotalStress SecPoint"+str(i))
-    plt.plot(Cantilever.sigmaTot[:, :, i].flatten("C"))
+    plt.title("EquivalentStress SecPoint"+str(i))
+    plt.plot(Cantilever.sigmaEqv[:, :, i].flatten("C"))
 
 plt.figure()
 plt.plot(Cantilever.sigmaMax[:, :].flatten("C"))

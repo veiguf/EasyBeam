@@ -35,7 +35,7 @@ Cantilever.Disp = [[    1, [0, 0, 0]]]
 Cantilever.Load = [[nEl+1, [0, F, 0]]]
 
 # Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
-Cantilever.Properties = [['Prop1', rho, E, nu, 1, h, b]]
+Cantilever.Properties = [['Prop1', rho, E, nu, "rect", h, b]]
 # Zuweisung auf Elemente
 Cantilever.PropID = ["Prop1"]*nEl
 

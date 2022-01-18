@@ -4,10 +4,10 @@ import numpy as np
 
 # Initialisiern des Problems
 Frame = Beam2D()
-Frame.Properties = [['Q12x12', 7.85e-9, 210000, 0.3, 1, 12, 12],
-                    ['Q16x16', 7.85e-9, 210000, 0.3, 1, 16, 16],
-                    ['Q20x20', 7.85e-9, 210000, 0.3, 1, 20, 10],
-                    ['QR20x3', 7.85e-9, 210000, 0.3, 3, 20,  3]]
+Frame.Properties = [['Q12x12', 7.85e-9, 210000, 0.3, "rect", 12, 12],
+                    ['Q16x16', 7.85e-9, 210000, 0.3, "rect", 16, 16],
+                    ['Q20x20', 7.85e-9, 210000, 0.3, "rect", 20, 10],
+                    ['QR20x3', 7.85e-9, 210000, 0.3, "recttube", 20, 20, 3]]
 
 # Knoten [mm]
 Frame.Nodes= [[   0,    0],

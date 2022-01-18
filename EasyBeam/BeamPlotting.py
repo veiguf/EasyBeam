@@ -72,11 +72,11 @@ def PlotStress(self, points=[0, 1, 2], stress="all", scale=1):
                 "bending stress\n"+position[i]+"\n$\\sigma_{b}$ [MPa]",
                 self.colormap,
             )
-        if stress.lower() in ["all", "total"]:
+        if stress.lower() in ["all", "equivalent"]:
             self._plotting(
-                self.sigmaTot[:, :, i],
+                self.sigmaEqv[:, :, i],
                 self.rS,
-                "total stress\n"+position[i]+"\n$|\\sigma_{tot}|$ [MPa]",
+                "equivalent stress\n"+position[i]+"\n$|\\sigma_{eqv}|$ [MPa]",
                 self.colormap,
             )
     if stress.lower() in ["all", "max"]:

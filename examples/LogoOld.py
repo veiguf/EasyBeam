@@ -6,7 +6,7 @@ import matplotlib as mpl
 Logo = Beam2D()
 b = 10      # mm
 h = 20      # mm
-Logo.Properties = [['Prop1', 7.85e-9, 210000, 0.3, 1, b, h]]
+Logo.Properties = [['Prop1', 7.85e-9, 210000, 0.3, "rect", b, h]]
 # Knoten [mm]
 Logo.Nodes = np.array([[ 90, 100],
                        [ 10, 100],
