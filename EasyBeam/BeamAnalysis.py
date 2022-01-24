@@ -288,9 +288,9 @@ class Beam:
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
-    def SensitivityAnalysis(self):
+    def SensitivityAnalysis(self, xDelta=1e-9):
         if not self.ModeledPartialDerivatives:
-            self.ModelPartialDerivatives()
+            self.ModelPartialDerivatives(xDelta)
         self.SensitivityAnalyzed = True
         self.uNabla = np.zeros((len(self.u), np.size(self.DesVar)))
         FPseudo = np.zeros((len(self.F), self.nx))
@@ -299,7 +299,7 @@ class Beam:
         self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
                                                    FPseudo[self.DoF_DL])
 
-    def ModelPartialDerivatives(self, xDelta=1e-9):
+    def ModelPartialDerivatives(self, xDelta):
         self.ModeledPartialDerivatives = True
         if not self.SensitivityAnalyzed:
             self.kNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, self.nx])
@@ -383,7 +383,8 @@ class Beam:
                         self.sigmaNabla[iEl, j, ii, :, i] = self.EMat[iEl]@self.epsilonNabla[iEl, j, ii, :, i] + self.EMatNabla[iEl, :, :, i]@self.epsilon[iEl, j, ii]
                         if self.nNDoF == 3:
                             # check!!!
-                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigma[iEl, j, ii, :] * self.sigmaNabla[iEl, j, ii, :, i])/ np.sqrt(self.sigmaEqv[iEl, j, ii]**2)
+                            #self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigma[iEl, j, ii, :] * self.sigmaNabla[iEl, j, ii, :, i])/self.sigmaEqv[iEl, j, ii]
+                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigmaNabla[iEl, j, ii, :, i]) * self.sigmaEqv[iEl, j, ii]/np.sum(self.sigma[iEl, j, ii, :])
                         elif self.nNDoF == 6:
                             # wrong....
                             self.sigmaEqvNabla[iEl, j, ii, i] = np.sqrt(np.sum(self.sigmaNabla[iEl, j, ii, :3, i])**2+3*self.sigmaNabla[iEl, j, ii, 3, i]**2)
