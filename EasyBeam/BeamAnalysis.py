@@ -8,7 +8,7 @@ import time
 
 class Beam:
     from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
-                                       PlotStress, PlotInternalForces, 
+                                       PlotStress, PlotInternalForces,
                                        PlotMode, PlotMesh3D)
     nSeg = 10
     massMatType = "consistent"
@@ -352,17 +352,17 @@ class Beam:
         self.epsilon = np.zeros([self.nEl, self.nSeg+1, self.nSec, self.nSVal])
         self.sigma = np.zeros([self.nEl, self.nSeg+1, self.nSec, self.nSVal])
         self.sigmaEqv = np.zeros([self.nEl, self.nSeg+1, self.nSec])
-        self.sigmaMax = np.zeros([self.nEl, self.nSeg+1])
+        self.sigmaEqvMax = np.zeros([self.nEl, self.nSeg+1])
         for iEl in range(self.nEl):
             for j in range(self.nSeg+1):
                 for ii in range(self.nSec):
                     self.epsilon[iEl, j, ii] = self.B[iEl, j, ii]@self.uE[iEl]
                     self.sigma[iEl, j, ii] = self.EMat[iEl]@self.epsilon[iEl, j, ii]
                     if self.nNDoF == 3:
-                        self.sigmaEqv[iEl, j, ii] = np.abs(np.sum(self.sigma[iEl, j, ii, :]))
+                        self.sigmaEqv[iEl, j, ii] = np.sqrt(np.sum(self.sigma[iEl, j, ii, :])**2)
                     elif self.nNDoF == 6:
                         self.sigmaEqv[iEl, j, ii] = np.sqrt(np.sum(self.sigma[iEl, j, ii, :3])**2+3*self.sigma[iEl, j, ii, 3]**2)
-                self.sigmaMax[iEl, j] = np.max(self.sigmaEqv[iEl, j, :])
+                self.sigmaEqvMax[iEl, j] = np.max(self.sigmaEqv[iEl, j, :])
 
     def ComputeStressSensitivity(self):
         if not self.SensitivityAnalyzed:
@@ -372,6 +372,8 @@ class Beam:
         self.uENabla = np.zeros([self.nEl, 2*self.nNDoF, self.nx])
         self.epsilonNabla = np.zeros((self.nEl, self.nSeg+1, self.nSec, self.nSVal, self.nx))
         self.sigmaNabla = np.zeros((self.nEl, self.nSeg+1, self.nSec, self.nSVal, self.nx))
+        self.sigmaEqvNabla = np.zeros([self.nEl, self.nSeg+1, self.nSec, self.nx])
+        self.sigmaEqvMaxNabla = np.zeros([self.nEl, self.nSeg+1, self.nx])
         for i in range(self.nx):
             for iEl in range(self.nEl):
                 self.uENabla[iEl, :, i]  = self.T[iEl]@self.uNabla[self.idx[iEl], i]+self.TNabla[iEl, :, :, i]@self.u[self.idx[iEl]]
@@ -379,6 +381,14 @@ class Beam:
                     for ii in range(self.nSec):
                         self.epsilonNabla[iEl, j, ii, :, i] = self.BNabla[iEl, j, ii, :, :, i]@self.uE[iEl] + self.B[iEl, j, ii]@self.uENabla[iEl, :, i]
                         self.sigmaNabla[iEl, j, ii, :, i] = self.EMat[iEl]@self.epsilonNabla[iEl, j, ii, :, i] + self.EMatNabla[iEl, :, :, i]@self.epsilon[iEl, j, ii]
+                        if self.nNDoF == 3:
+                            # check!!!
+                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigma[iEl, j, ii, :] * self.sigmaNabla[iEl, j, ii, :, i])/ np.sqrt(self.sigmaEqv[iEl, j, ii]**2)
+                        elif self.nNDoF == 6:
+                            # wrong....
+                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sqrt(np.sum(self.sigmaNabla[iEl, j, ii, :3, i])**2+3*self.sigmaNabla[iEl, j, ii, 3, i]**2)
+                    self.sigmaEqvMaxNabla[iEl, j, i] = self.sigmaEqvNabla[iEl, j, np.argmax(self.sigmaEqv[iEl, j, :]), i]
+
 
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
         if not self.Initialized:
