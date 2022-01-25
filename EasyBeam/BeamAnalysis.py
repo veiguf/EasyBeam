@@ -382,14 +382,11 @@ class Beam:
                         self.epsilonNabla[iEl, j, ii, :, i] = self.BNabla[iEl, j, ii, :, :, i]@self.uE[iEl] + self.B[iEl, j, ii]@self.uENabla[iEl, :, i]
                         self.sigmaNabla[iEl, j, ii, :, i] = self.EMat[iEl]@self.epsilonNabla[iEl, j, ii, :, i] + self.EMatNabla[iEl, :, :, i]@self.epsilon[iEl, j, ii]
                         if self.nNDoF == 3:
-                            # check!!!
-                            #self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigma[iEl, j, ii, :] * self.sigmaNabla[iEl, j, ii, :, i])/self.sigmaEqv[iEl, j, ii]
-                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigmaNabla[iEl, j, ii, :, i]) * self.sigmaEqv[iEl, j, ii]/np.sum(self.sigma[iEl, j, ii, :])
+                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigmaNabla[iEl, j, ii, :, i]) * np.sum(self.sigma[iEl, j, ii, :]) / self.sigmaEqv[iEl, j, ii]
                         elif self.nNDoF == 6:
-                            # wrong....
-                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sqrt(np.sum(self.sigmaNabla[iEl, j, ii, :3, i])**2+3*self.sigmaNabla[iEl, j, ii, 3, i]**2)
+                            self.sigmaEqvNabla[iEl, j, ii, i] = (np.sum(self.sigma[iEl, j, ii, :3]) * np.sum(self.sigmaNabla[iEl, j, ii, :3, i]) +
+                                                                 3*self.sigma[iEl, j, ii, 3] * self.sigmaNabla[iEl, j, ii, 3, i]) / self.sigmaEqv[iEl, j, ii]
                     self.sigmaEqvMaxNabla[iEl, j, i] = self.sigmaEqvNabla[iEl, j, np.argmax(self.sigmaEqv[iEl, j, :]), i]
-
 
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
         if not self.Initialized:

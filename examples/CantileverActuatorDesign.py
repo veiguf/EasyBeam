@@ -54,7 +54,7 @@ def SetupFE():
     for i in range(nEl):
         Cantilever.El[i] = [i + 1, i + 2]
 
-    Cantilever.Properties = [["Prop1", rho, E, nu, 1, h, b]]
+    Cantilever.Properties = [["Prop1", rho, E, nu, "rect", h, b]]
     Cantilever.PropID = ["Prop1"] * nEl
     Cantilever.Disp = [[1, [0.0, 0.0, 0.0]]]
     return Cantilever

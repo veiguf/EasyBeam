@@ -2,56 +2,66 @@ from EasyBeam import Beam3D
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Parameter
-b = 10          # mm
-h = 20          # mm
-F = 100        # N
-l = 1000        # mm
-E = 210000      # MPa
-rho = 7.85e-9   # t/mm^3
-I = b*h**3/12   # mm^4
-A = b*h         # mm^2
-nEl = 5
-nu = 0.3
+
+
+
+
+
+
+class Model(Beam3D):
+    # Parameter
+    b_x = 10          # mm
+    h_x = 20          # mm
+    F_x = 100        # N
+    l_x = 1000        # mm
+    E_x = 210000      # MPa
+    rho_x = 7.85e-9   # t/mm^3
+    nu_x = 0.3
+
+    DesVar = ["h_x", "b_x"]
+    def __init__(self):
+
+        self.nEl = 5
+        self.nSeg = 20
+
+        self.plotting = False
+        self.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
+        self.massMatType = "consistent"        # lumped or consistent
+
+        # Knoten [mm]
+        self.Nodes = [[]]*(self.nEl+1)
+        for i in range(self.nEl+1):
+            self.Nodes[i] = [self.l_x*i/self.nEl, 0.0, 0.0]
+
+        # Elemente: verbindet die Knoten
+        self.El = [[]]*(self.nEl)
+        for i in range(self.nEl):
+            self.El[i] = [i+1, i+2]
+
+        # Randbedingungen und Belastung [N] bzw. [Nmm]
+        self.Disp = [[         1, [0, 0,         0, 0, 0, 0]]]
+        self.Load = [[self.nEl+1, [0, 0, -self.F_x, 0, 0, 0]]]
+
+        # Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
+        self.Properties = [["Prop1", self.rho_x, self.E_x, self.nu_x, "rect", self.h_x, self.b_x]]
+        # Zuweisung auf Elemente
+        self.PropID = ["Prop1"]*self.nEl
+
 
 # Initialisiern des Problems
-Cantilever = Beam3D()
-Cantilever.plotting = False
+Cantilever = Model()
 
-# Setze Elementenbeschreibung
-Cantilever.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
-Cantilever.massMatType = "consistent"        # lumped or consistent
-
-# Knoten [mm]
-Cantilever.Nodes = [[]]*(nEl+1)
-for i in range(nEl+1):
-    Cantilever.Nodes[i] = [l*i/nEl, 0.0, 0.0]
-
-# Elemente: verbindet die Knoten
-Cantilever.El = [[]]*(nEl)
-for i in range(nEl):
-    Cantilever.El[i] = [i+1, i+2]
-
-# Randbedingungen und Belastung [N] bzw. [Nmm]
-Cantilever.Disp = [[    1, [0, 0,  0, 0, 0, 0]]]
-Cantilever.Load = [[nEl+1, [0, 0, -F, 0, 0, 0]]]
-
-# Werkstoff und Querschnitt: ID, rho, E, A, I, eU, eL
-Cantilever.Properties = [["Prop1", rho, E, nu, 1, h, b]]
-# Zuweisung auf Elemente
-Cantilever.PropID = ["Prop1"]*nEl
-
-Cantilever.nSeg = 20
 # Darstellung Vernetzung
 # Cantilever.PlotMesh()
 
 Cantilever.Initialize()
-
 # Statische Analyse
 Cantilever.StaticAnalysis()
 Cantilever.ComputeDisplacement()
 Cantilever.ComputeInternalForces()
 Cantilever.ComputeStress()
+Cantilever.SensitivityAnalysis()
+Cantilever.ComputeStressSensitivity()
 # Cantilever.PlotDisplacement(component='mag', scale=10)
 # Cantilever.PlotStress(stress='max', scale=10)
 
@@ -77,7 +87,7 @@ for i in range(9):
     plt.plot(Cantilever.sigmaEqv[:, :, i].flatten("C"))
 
 plt.figure()
-plt.plot(Cantilever.sigmaMax[:, :].flatten("C"))
+plt.plot(Cantilever.sigmaEqvMax[:, :].flatten("C"))
 
 #Cantilever.PlotMode(scale=5)
 """

@@ -81,7 +81,7 @@ def PlotStress(self, points=[0, 1, 2], stress="all", scale=1):
             )
     if stress.lower() in ["all", "max"]:
         self._plotting(
-            self.sigmaMax,
+            self.sigmaEqvMax,
             self.rS,
             "maximum stress\n$|\\sigma_{max}|$ [MPa]",
             self.colormap,
