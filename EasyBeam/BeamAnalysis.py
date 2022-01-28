@@ -436,8 +436,11 @@ class Beam3D(Beam):
 class BeamFFRF2D(Beam2D):
     from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output,
                                      FFRF_OutputSensitivities)
-    nNDoF = 3   # number of nodal degrees of freedom
-    nNPoC = 2   # number of nodal position coordinates
+
+class BeamFFRF3D(Beam3D):
+    from EasyBeam.BeamFFRF3D import (S__Elem, S11Elem, S22Elem, S33Elem,
+                                     S12Elem, S13Elem,S23Elem,FFRF_Output,
+                                     FFRF_OutputSensitivities)
 
 if __name__ == '__main__':
 
