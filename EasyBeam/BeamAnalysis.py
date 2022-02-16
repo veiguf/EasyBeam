@@ -254,7 +254,7 @@ class Beam:
                     self.B[i, j, ii] = self.StrainDispMat(ξ, self.ell[i], self.Sec[i, ii, 0], self.Sec[i, ii, 1], self.Sec[i, ii, 2])
 
         if self.plotting:
-            self.r0S = np.zeros([self.nEl, 2, self.nSeg+1])
+            self.r0S = np.zeros([self.nEl, self.nNPoC, self.nSeg+1])
             for i in range(self.nEl):
                 for j in range(self.nSeg+1):
                     ξ = j/(self.nSeg)
@@ -364,11 +364,11 @@ class Beam:
                         self.sigmaEqv[iEl, j, ii] = np.sqrt(np.sum(self.sigma[iEl, j, ii, :3])**2+3*self.sigma[iEl, j, ii, 3]**2)
                 self.sigmaEqvMax[iEl, j] = np.max(self.sigmaEqv[iEl, j, :])
 
-    def ComputeStressSensitivity(self):
+    def ComputeStressSensitivity(self, xDelta=1e-9):
         if not self.SensitivityAnalyzed:
             self.SensitivityAnalysis()
         if not self.ModeledPartialDerivatives:
-            self.ModelPartialDerivatives()
+            self.ModelPartialDerivatives(xDelta)
         self.uENabla = np.zeros([self.nEl, 2*self.nNDoF, self.nx])
         self.epsilonNabla = np.zeros((self.nEl, self.nSeg+1, self.nSec, self.nSVal, self.nx))
         self.sigmaNabla = np.zeros((self.nEl, self.nSeg+1, self.nSec, self.nSVal, self.nx))
@@ -381,11 +381,14 @@ class Beam:
                     for ii in range(self.nSec):
                         self.epsilonNabla[iEl, j, ii, :, i] = self.BNabla[iEl, j, ii, :, :, i]@self.uE[iEl] + self.B[iEl, j, ii]@self.uENabla[iEl, :, i]
                         self.sigmaNabla[iEl, j, ii, :, i] = self.EMat[iEl]@self.epsilonNabla[iEl, j, ii, :, i] + self.EMatNabla[iEl, :, :, i]@self.epsilon[iEl, j, ii]
-                        if self.nNDoF == 3:
-                            self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigmaNabla[iEl, j, ii, :, i]) * np.sum(self.sigma[iEl, j, ii, :]) / self.sigmaEqv[iEl, j, ii]
-                        elif self.nNDoF == 6:
-                            self.sigmaEqvNabla[iEl, j, ii, i] = (np.sum(self.sigma[iEl, j, ii, :3]) * np.sum(self.sigmaNabla[iEl, j, ii, :3, i]) +
-                                                                 3*self.sigma[iEl, j, ii, 3] * self.sigmaNabla[iEl, j, ii, 3, i]) / self.sigmaEqv[iEl, j, ii]
+                        if self.sigmaEqv[iEl, j, ii] == 0:
+                            self.sigmaEqvNabla[iEl, j, ii, i] = 0
+                        else:
+                            if self.nNDoF == 3:
+                                self.sigmaEqvNabla[iEl, j, ii, i] = np.sum(self.sigmaNabla[iEl, j, ii, :, i]) * np.sum(self.sigma[iEl, j, ii, :]) / self.sigmaEqv[iEl, j, ii]
+                            elif self.nNDoF == 6:
+                                self.sigmaEqvNabla[iEl, j, ii, i] = (np.sum(self.sigma[iEl, j, ii, :3]) * np.sum(self.sigmaNabla[iEl, j, ii, :3, i]) +
+                                                                     3*self.sigma[iEl, j, ii, 3] * self.sigmaNabla[iEl, j, ii, 3, i]) / self.sigmaEqv[iEl, j, ii]
                     self.sigmaEqvMaxNabla[iEl, j, i] = self.sigmaEqvNabla[iEl, j, np.argmax(self.sigmaEqv[iEl, j, :]), i]
 
     def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
