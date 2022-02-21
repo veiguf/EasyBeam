@@ -541,7 +541,7 @@ if __name__ == '__main__':
         print("FD:\n", sigmaNabla[:, :, :, :, i])
         print("Analytical:\n", Test.sigmaNabla[:, :, :, :, i])
     for i in range(len(x0)):
-        print("\nsequivalent tress sensitivity "+str(Test.DesVar[i]))
+        print("\nequivalent tress sensitivity "+str(Test.DesVar[i]))
         print(np.linalg.norm(sigmaEqvMaxNabla[:, :, i]-Test.sigmaEqvMaxNabla[:, :, i]))
         print("FD:\n", sigmaEqvMaxNabla[:, :, i])
         print("Analytical:\n", Test.sigmaEqvMaxNabla[:, :, i])
