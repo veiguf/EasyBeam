@@ -296,8 +296,8 @@ class Beam:
         FPseudo = np.zeros((len(self.F), self.nx))
         for i in range(self.nx):
             FPseudo[:, i] = self.FNabla[:, i]-self.kNabla[:, :, i]@self.u
-        self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL][:, self.DoF_DL],
-                                                   FPseudo[self.DoF_DL])
+        self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                                   FPseudo[self.DoF_DL, :])
 
     def ModelPartialDerivatives(self, xDelta):
         self.ModeledPartialDerivatives = True
@@ -467,8 +467,8 @@ if __name__ == '__main__':
             self.massMatType = "consistent"        # lumped or consistent
 
             #Material     rho       E   nu shape, h, b
-            self.Properties = [['Steel', 7.85e-9, 210000, 0.3, 1, self.h1, self.b1],
-                               [  'Alu', 2.70e-9,  70000, 0.3, 1, self.h2, self.b2]]
+            self.Properties = [['Steel', 7.85e-9, 210000, 0.3, "rect", self.h1, self.b1],
+                               [  'Alu', 2.70e-9,  70000, 0.3, "rect", self.h2, self.b2]]
             self.Nodes = [[self.x1, self.y1],
                           [self.x2, self.y2],
                           [self.x3, self.y3]]
