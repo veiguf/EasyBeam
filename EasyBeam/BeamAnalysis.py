@@ -512,17 +512,20 @@ if __name__ == '__main__':
         Test.y2 = x[8]
         Test.y3 = x[9]
         Test.ComputeStress()
-        return(Test.u, Test.sigma)
+        return(Test.u, Test.sigma, Test.sigmaEqvMax)
 
-    u0, sigma0 = Eval(x0)
+    u0, sigma0, sigmaEqvMax0 = Eval(x0)
     uNabla = np.zeros([len(u0), len(x0)])
     sigmaNabla = np.zeros([sigma0.shape[0], sigma0.shape[1], sigma0.shape[2], sigma0.shape[3], len(x0)])
+    sigmaEqvMaxNabla = np.zeros([sigmaEqvMax0.shape[0], sigmaEqvMax0.shape[1], len(x0)])
     for i in range(len(x0)):
         e = np.zeros_like(x0)
         e[i] = 1
-        u1, sigma1 = Eval(x0+e*xDelta)
+        u1, sigma1, sigmaEqvMax1 = Eval(x0+e*xDelta)
         uNabla[:, i] = (u1-u0)/xDelta
         sigmaNabla[:, :, :, :, i] = (sigma1-sigma0)/xDelta
+        sigmaNabla[:, :, :, :, i] = (sigma1-sigma0)/xDelta
+        sigmaEqvMaxNabla[:, :, i] = (sigmaEqvMax1-sigmaEqvMax0)/xDelta
 
     t2 = time.time()
 
@@ -537,7 +540,28 @@ if __name__ == '__main__':
         print(np.linalg.norm(sigmaNabla[:, :, :, :, i]-Test.sigmaNabla[:, :, :, :, i]))
         print("FD:\n", sigmaNabla[:, :, :, :, i])
         print("Analytical:\n", Test.sigmaNabla[:, :, :, :, i])
+    for i in range(len(x0)):
+        print("\nequivalent tress sensitivity "+str(Test.DesVar[i]))
+        print(np.linalg.norm(sigmaEqvMaxNabla[:, :, i]-Test.sigmaEqvMaxNabla[:, :, i]))
+        print("FD:\n", sigmaEqvMaxNabla[:, :, i])
+        print("Analytical:\n", Test.sigmaEqvMaxNabla[:, :, i])
+    print()
+    print("summary:")
+    rtol = 1e-6
+    for i in range(len(x0)):
+        print("du/" + Test.DesVar[i]  + ": " + str(np.isclose(uNabla[:, i], Test.uNabla[:, i], rtol=rtol)))
+    for i in range(len(x0)):
+        print("dsigma/" + Test.DesVar[i]  + ": ")
+        print(str(np.isclose(sigmaNabla[:, :, :, :, i], Test.sigmaNabla[:, :, :, :, i], rtol=rtol)))
+    for i in range(len(x0)):
+        print("dsigmaEqv/" + Test.DesVar[i]  + ": ")
+        print(str(np.isclose(sigmaEqvMaxNabla[:, :, i], Test.sigmaEqvMaxNabla[:, :, i], rtol=rtol)))
+
     print("\ncomputation time analytical:", t1-t0)
     print("\ncomputation time numerical:", t2-t1)
 
+    print("u")
+    print(np.isclose(Test.uNabla, uNabla, rtol=rtol))
+    print("equivalent sigma")
+    print(np.isclose(Test.sigmaEqvMaxNabla, sigmaEqvMaxNabla))
     V = Test.NMat(0, 0)
