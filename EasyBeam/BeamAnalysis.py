@@ -391,10 +391,9 @@ class Beam:
                                                                      3*self.sigma[iEl, j, ii, 3] * self.sigmaNabla[iEl, j, ii, 3, i]) / self.sigmaEqv[iEl, j, ii]
                     self.sigmaEqvMaxNabla[iEl, j, i] = self.sigmaEqvNabla[iEl, j, np.argmax(self.sigmaEqv[iEl, j, :]), i]
 
-    def EigenvalueAnalysis(self, nEig=2, massMatType="consistent"):
+    def EigenvalueAnalysis(self, nEig=2):
         if not self.Initialized:
             self.Initialize()
-        self.massMatType = massMatType
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
         try:

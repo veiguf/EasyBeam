@@ -87,6 +87,7 @@ def MassMatElem(self, i):
     ϰ = self.ϰ[i]
     if self.stiffMatType[0].lower() in ["e", "b"]:
         if self.massMatType[0].lower() == "c":
+            # Felippa Eq. (31.20)
             c = A*rho*ell/420
             m = c*np.array([[140,       0,         0,  70,       0,         0],
                             [  0,     156,    22*ell,   0,      54,   -13*ell],
@@ -96,14 +97,15 @@ def MassMatElem(self, i):
                             [  0, -13*ell, -3*ell**2,   0, -22*ell,  4*ell**2]],
                            dtype=float)
         elif self.massMatType[0].lower() == "l":
-            alpha = 0
+            # Felippa Eqs. (31.1) & (31.19)
+            alpha = 1/50  # 0
             c = A*rho*ell/2
-            m = c*np.array([[ 1, 0,              0, 1, 0,                0],
-                            [ 0, 1,              0, 0, 0,                0],
-                            [ 0, 0, 2*alpha*ell**2, 0, 0,                0],
-                            [ 1, 0,              0, 1, 0,                0],
-                            [ 0, 0,              0, 0, 1,                0],
-                            [ 0, 0,              0, 0, 0, 2*alpha*ell**2.]],
+            m = c*np.array([[ 1, 0,              0, 0, 0,              0],
+                            [ 0, 1,              0, 0, 0,              0],
+                            [ 0, 0, 2*alpha*ell**2, 0, 0,              0],
+                            [ 0, 0,              0, 1, 0,              0],
+                            [ 0, 0,              0, 0, 1,              0],
+                            [ 0, 0,              0, 0, 0, 2*alpha*ell**2]],
                            dtype=float)
     elif self.stiffMatType[0].lower() == "t":
         IR = self.Iy[i]
