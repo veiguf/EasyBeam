@@ -175,9 +175,17 @@ def MassMatElem(self, i):
             m[8, 10] = 22*ell
             m += np.triu(m, k=1).T
             m *= c
-
         elif self.massMatType[0].lower() == "l":
-            pass
+            # HRZ lumping: please check!
+            c = A*rho*ell
+            m = np.zeros([12, 12])
+            m[0, 0] = m[6, 6] = 1/2
+            m[1, 1] = m[7, 7] = 1/2
+            m[2, 2] = m[8, 8] = 1/2
+            m[3, 3] = m[9, 9] = 1/2*Ix/A
+            m[4, 4] = m[10, 10] = 1/64*ell**2
+            m[5, 5] = m[11, 11] = 1/64*ell**2
+            m *= c
     elif self.stiffMatType[0].lower() == "t":
         pass
     return m

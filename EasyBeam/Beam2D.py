@@ -98,7 +98,7 @@ def MassMatElem(self, i):
                            dtype=float)
         elif self.massMatType[0].lower() == "l":
             # Felippa Eqs. (31.1) & (31.19)
-            alpha = 1/50  # 0
+            alpha = 1/78  # HRZ lumping
             c = A*rho*ell/2
             m = c*np.array([[ 1, 0,              0, 0, 0,              0],
                             [ 0, 1,              0, 0, 0,              0],
