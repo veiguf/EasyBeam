@@ -8,6 +8,10 @@ import numpy as np
 
 
 def _plotting(self, val, disp, title, colormap):
+
+    if np.max(val) == np.min(val):
+        val[-1, -1] += 1e9
+
     fig, ax = plt.subplots()
     ax.axis("off")
     ax.set_aspect("equal")
