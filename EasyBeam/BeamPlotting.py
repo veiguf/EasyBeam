@@ -9,9 +9,6 @@ import numpy as np
 
 def _plotting(self, val, disp, title, colormap):
 
-    if np.max(val) == np.min(val):
-        val[-1, -1] += 1e9
-
     fig, ax = plt.subplots()
     ax.axis("off")
     ax.set_aspect("equal")
@@ -38,7 +35,7 @@ def _plotting(self, val, disp, title, colormap):
         ax=[ax],
         location="left",
         aspect=10,
-        boundaries=np.linspace(val.min(), val.max(), 100),
+        boundaries=np.linspace(val.min()-1e-9, val.max()+1e-9, 100),
     )
     cb.outline.set_visible(False)
     cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
