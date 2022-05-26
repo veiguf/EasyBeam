@@ -29,13 +29,13 @@ def _plotting(self, val, disp, title, colormap):
         )
 
     cb = plt.colorbar(
-        lcAll,
-        ticks=c,
-        shrink=0.5,
-        ax=[ax],
-        location="left",
-        aspect=10,
-        boundaries=np.linspace(val.min()-1e-9, val.max()+1e-9, 100),
+         lcAll,
+         ticks=c,
+         shrink=0.5,
+         ax=[ax],
+         location="left",
+         aspect=10,
+         boundaries=np.linspace(val.min()-1e-9, val.max()+1e-9, 100),
     )
     cb.outline.set_visible(False)
     cb.set_label(title, labelpad=0, y=1.1, rotation=0, ha="left")
@@ -306,24 +306,48 @@ class MidpointNormalizeNew(mpl.colors.Normalize):
 #         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
 #         return np.ma.masked_array(np.interp(value, x, y))
 
-def _plotting3D(self):    #, val, disp, title, colormap):
+def _plotting3D(self, val, disp, title, colormap):
+
     pyvista.global_theme.axes.box = False
     pyvista.global_theme.axes.x_color = 'black'
     pyvista.global_theme.axes.y_color = 'black'
     pyvista.global_theme.axes.z_color = 'black'
     pyvista.global_theme.font.color = 'black'
-    #colors = np.random.random(self.El.shape[0])
-    #colors = np.zeros(self.El.shape[0])
+
+    grid = pyvista.StructuredGrid(disp[:, 0, :].flatten(order="C"),
+                                  disp[:, 1, :].flatten(order="C"),
+                                  disp[:, 2, :].flatten(order="C"))
+    grid.cell_data[title] = val.flatten(order="C")[:-1]
+    grid.plot(off_screen=False,
+              full_screen=False,
+              interactive=True,
+              parallel_projection=True,
+              show_axes=True,
+              show_bounds=True,
+              # scalars=colors,
+              render_lines_as_tubes=True,
+              style='wireframe',
+              line_width=10,
+              cmap=colormap,
+              lighting='three lights',
+              show_scalar_bar=True,
+              background='w')
 
 def PlotMesh3D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
-    _plotting3D(self)
+
+    pyvista.global_theme.axes.box = False
+    pyvista.global_theme.axes.x_color = 'black'
+    pyvista.global_theme.axes.y_color = 'black'
+    pyvista.global_theme.axes.z_color = 'black'
+    pyvista.global_theme.font.color = 'black'
+
     mesh = pyvista.PolyData(self.Nodes, np.vstack((np.ones(np.array(self.El).shape[0], int)*2, (np.array(self.El)-1).T)).T)
     mesh.plot(off_screen=False,
               full_screen=False,
               interactive=True,
               parallel_projection=True,
-             # show_axes=False,
-              #scalars=colors,
+              show_axes=True,
+              scalars=colors,
               render_lines_as_tubes=True,
               style='wireframe',
               line_width=10,
@@ -333,7 +357,58 @@ def PlotMesh3D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, F
               show_scalar_bar=False,
               background='w')
 
+def PlotStress3D(self, points=[0, 1, 2, 3, 4, 5, 6, 7, 8], stress="all", scale=1):
 
+    if not self.ComputedDisplacement:
+        self.ComputeDisplacement()
+    self.rS = self.r0S + self.uS * scale
+
+    position = ["neutral fiber", "central-right fiber", "upper-right fiber",
+                "upper-central fiber", "upper-left fiber", "central-left fiber",
+                "lower-left fiber", "lower-central fiber", "lower-right fiber"]
+    for i in points:
+        if stress.lower() in ["all", "axial"]:
+            self._plotting3D(
+                self.sigma[:, :, i, 0],
+                self.rS,
+                "axial stress\n"+position[i]+"\n$\\sigma_{ax}$ [MPa]",
+                self.colormap,
+            )
+        if stress.lower() in ["all", "bending_y"]:
+            self._plotting3D(
+                self.sigma[:, :, i, 1],
+                self.rS,
+                "bending stress in y on "+position[i]+" in MPa",
+                self.colormap,
+            )
+        if stress.lower() in ["all", "bending_z"]:
+            self._plotting3D(
+                self.sigma[:, :, i, 2],
+                self.rS,
+                "bending stress in z on "+position[i]+" in MPa",
+                self.colormap,
+            )
+        if stress.lower() in ["all", "tau_t"]:
+            self._plotting3D(
+                self.sigma[:, :, i, 3],
+                self.rS,
+                "torsional stress on "+position[i]+" in MPa",
+                self.colormap,
+            )
+        if stress.lower() in ["all", "equivalent"]:
+            self._plotting3D(
+                self.sigmaEqv[:, :, i],
+                self.rS,
+                "Equivalent stress on "+position[i]+" in MPa",
+                self.colormap,
+            )
+    if stress.lower() in ["all", "max"]:
+        self._plotting3D(
+            self.sigmaEqvMax,
+            self.rS,
+            "Maximum stress in MPa",
+            self.colormap,
+        )
 
 
 def colorline(x, y, z, cmap="jet", linewidth=2, alpha=1.0, plot=True, norm=None):
