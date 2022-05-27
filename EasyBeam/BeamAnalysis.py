@@ -7,9 +7,8 @@ from copy import deepcopy
 import time
 
 class Beam:
-    from EasyBeam.BeamPlotting import (_plotting, PlotMesh, PlotDisplacement,
-                                       PlotStress, PlotInternalForces,
-                                       PlotMode, _plotting3D, PlotMesh3D, PlotStress3D)
+    from EasyBeam.BeamPlotting import (PlotDisplacement, PlotStress,
+                                       PlotInternalForces, PlotMode)
     nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
@@ -419,6 +418,8 @@ class Beam2D(Beam):
     from EasyBeam.Beam2D import (ShapeMat, TransXMat, TransMat,
                                  StrainDispMat, StrainDispNablah,
                                  StiffMatElem, MassMatElem)
+    from EasyBeam.BeamPlotting import _plotting2D as _plotting
+    from EasyBeam.BeamPlotting import PlotMesh2D as PlotMesh
     nNDoF = 3   # number of nodal degrees of freedom
     nNPoC = 2   # number of nodal position coordinates
     nSVal = 2   # number of strain/stress values
@@ -430,6 +431,8 @@ class Beam3D(Beam):
     """
     from EasyBeam.Beam3D import (ShapeMat, TransXMat, TransMat, StrainDispMat,
                                  StiffMatElem, MassMatElem)
+    from EasyBeam.BeamPlotting import _plotting3D as _plotting
+    from EasyBeam.BeamPlotting import PlotMesh3D as PlotMesh
     nNDoF = 6   # number of nodal degrees of freedom
     nNPoC = 3   # number of nodal position coordinates
     nSVal = 4   # number of strain/stress values

@@ -6,8 +6,7 @@ import pyvista
 # import matplotlib.colors as colors
 import numpy as np
 
-
-def _plotting(self, val, disp, title, colormap):
+def _plotting2D(self, val, disp, title, colormap):
 
     fig, ax = plt.subplots()
     ax.axis("off")
@@ -52,81 +51,158 @@ def _plotting(self, val, disp, title, colormap):
     # cb.ax.set_title(title)
     plt.show()
 
+def _plotting3D(self, val, disp, title, colormap):
 
-def PlotStress(self, points=[0, 1, 2], stress="all", scale=1):
+    pyvista.global_theme.axes.box = False
+    pyvista.global_theme.axes.x_color = 'black'
+    pyvista.global_theme.axes.y_color = 'black'
+    pyvista.global_theme.axes.z_color = 'black'
+    pyvista.global_theme.font.color = 'black'
+
+    grid = pyvista.StructuredGrid(disp[:, 0, :].flatten(order="C"),
+                                  disp[:, 1, :].flatten(order="C"),
+                                  disp[:, 2, :].flatten(order="C"))
+    grid.cell_data[title] = val.flatten(order="C")[:-1]
+    grid.plot(off_screen=False,
+              full_screen=False,
+              interactive=True,
+              parallel_projection=True,
+              show_axes=True,
+              show_bounds=True,
+              # scalars=colors,
+              render_lines_as_tubes=True,
+              style='wireframe',
+              line_width=10,
+              cmap=colormap,
+              lighting='three lights',
+              show_scalar_bar=True,
+              background='w')
+
+def PlotStress(self, points="all", stress="all", scale=1):
     if not self.ComputedStress:
         self.ComputeStress()
     self.rS = self.r0S + self.uS * scale
-    position = ["neutral fiber", "upper fiber", "lower fiber"]
-    for i in points:
-        if stress.lower() in ["all", "axial"]:
-            self._plotting(
-                self.sigma[:, :, i, 0],
-                self.rS,
-                "axial stress\n"+position[i]+"\n$\\sigma_{ax}$ [MPa]",
-                self.colormap,
-            )
-        if stress.lower() in ["all", "bending"]:
-            self._plotting(
-                self.sigma[:, :, i, 1],
-                self.rS,
-                "bending stress\n"+position[i]+"\n$\\sigma_{b}$ [MPa]",
-                self.colormap,
-            )
-        if stress.lower() in ["all", "equivalent"]:
-            self._plotting(
-                self.sigmaEqv[:, :, i],
-                self.rS,
-                "equivalent stress\n"+position[i]+"\n$|\\sigma_{eqv}|$ [MPa]",
-                self.colormap,
-            )
+
+    if points == "all":  # points should be "all" or a list of section points
+        points = np.arange(0, self.nSec, 1).tolist()
+    if self.nNDoF == 3:
+        position = ["neutral fiber", "upper fiber", "lower fiber"]
+        prefix = ["maximum stress\n$", "equivalent stress\n",
+                  "axial stress\n", "bending stress\n"]
+        suffix = ["|\\sigma_{max}|$ [MPa]", "\n$|\\sigma_{eqv}|$ [MPa]",
+                  "\n$\\sigma_{ax}$ [MPa]", "\n$\\sigma_{b}$ [MPa]"]
+    elif self.nNDoF == 6:
+        position = ["neutral fiber", "central-right fiber", "upper-right fiber",
+                    "upper-central fiber", "upper-left fiber", "central-left fiber",
+                    "lower-left fiber", "lower-central fiber", "lower-right fiber"]
+        prefix = ["maximum stress", "equivalent stress on ",
+                  "axial stress on ", "bending stress in y on ",
+                  "bending stress in z on ", "torsional stress on "]
+        suffix = [" in MPa", " in MPa", " in MPa", " in MPa", " in MPa", " in MPa"]
+
     if stress.lower() in ["all", "max"]:
         self._plotting(
             self.sigmaEqvMax,
             self.rS,
-            "maximum stress\n$|\\sigma_{max}|$ [MPa]",
+            prefix[0]+suffix[0],
             self.colormap,
         )
+    for i in points:
+        if stress.lower() in ["all", "equivalent"]:
+            self._plotting(
+                self.sigmaEqv[:, :, i],
+                self.rS,
+                prefix[1]+position[i]+suffix[1],
+                self.colormap,
+            )
+        if stress.lower() in ["all", "axial"]:
+            self._plotting(
+                self.sigma[:, :, i, 0],
+                self.rS,
+                prefix[2]+position[i]+suffix[2],
+                self.colormap,
+            )
+        if stress.lower() in ["all", "bending", "bending_y"]:
+            self._plotting(
+                self.sigma[:, :, i, 1],
+                self.rS,
+                prefix[3]+position[i]+suffix[3],
+                self.colormap,
+            )
+        if stress.lower() in ["all", "bending", "bending_z"] and self.nSVal == 4:
+            self._plotting(
+                self.sigma[:, :, i, 2],
+                self.rS,
+                prefix[4]+position[i]+suffix[4],
+                self.colormap,
+            )
+        if stress.lower() in ["all", "torsional"] and self.nSVal == 4:
+            self._plotting(
+                self.sigma[:, :, i, 3],
+                self.rS,
+                prefix[5]+position[i]+suffix[5],
+                self.colormap,
+            )
+
 
 def PlotDisplacement(self, component="all", scale=1):
     if not self.ComputedDisplacement:
         self.ComputeDisplacement()
     self.rS = self.r0S + self.uS * scale
-    if component.lower() in ["mag", "all"]:
+
+    if self.nNPoC == 2:
         self.dS = np.sqrt(self.uS[:, 0, :] ** 2 + self.uS[:, 1, :] ** 2)
+        label = ["deformation\nmagnitude\n$|u|$ [mm]",
+                 "$x$-deformation\n$u_x$ [mm]", "$y$-deformation\n$u_y$ [mm]"]
+    elif self.nNPoC == 3:
+        self.dS = np.sqrt(self.uS[:, 0, :]**2+self.uS[:, 1, :]**2+self.uS[:, 2, :]**2)
+        label = ["deformation magnitude in mm", "x-deformation in mm",
+                 "y-deformation in mm", "z-deformation in mm"]
+
+    if component.lower() in ["mag", "all"]:
         self._plotting(
-            self.dS, self.rS, "deformation\nmagnitude\n$|u|$ [mm]", self.colormap
+            self.dS, self.rS, label[0], self.colormap
         )
     if component.lower() in ["x", "all"]:
         self._plotting(
-            self.uS[:, 0, :], self.rS, "$x$-deformation\n$u_x$ [mm]", self.colormap
+            self.uS[:, 0, :], self.rS, label[1], self.colormap
         )
     if component.lower() in ["y", "all"]:
         self._plotting(
-            self.uS[:, 1, :], self.rS, "$y$-deformation\n$u_y$ [mm]", self.colormap
+            self.uS[:, 1, :], self.rS, label[2], self.colormap
+        )
+    if component.lower() in ["z", "all"] and self.nNPoC == 3:
+        self._plotting(
+            self.uS[:, 2, :], self.rS, label[3], self.colormap
         )
 
 def PlotInternalForces(self, scale=1):
     if not self.ComputedInternalForces:
         self.ComputeInternalForces()
     self.rS = self.r0S + self.uS * scale
-    name = ["Normal force", "Shear force", "Bending moment"]
-    label = ["$F_N$ [N]", "$F_Q$ [N]", "$M_b$ [Nmm]"]
+
+    if self.nNDoF == 3:
+        label = ["Normal force\n$F_N$ [N]", "Shear force\n$F_Q$ [N]", "Bending moment\n$M_b$ [Nmm]"]
+    elif self.nNDoF == 6:
+        label = ["Normal force in N", "Shear force in y in N",
+                 "Shear force in z in N", "Torsional moment in Nmm",
+                 "Bending moment in y in Nmm", "Bending moment in z in Nmm"]
+
     for i in range(self.nNDoF):
         self._plotting(
             self.QS[:, :, i],
             self.rS,
-            name[i]+"\n"+label[i],
+            label[i],
             self.colormap,
         )
 
 
 def PlotMode(self, scale=1):
-    Phii = np.zeros([3 * self.nN])
+    Phii = np.zeros([self.nNDoF*self.nN])
     for ii in range(len(self.omega)):
         Phii[self.DoF] = self.Phi[:, ii]
-        uE_Phi = np.zeros([self.nEl, 6])
-        uS_Phi = np.zeros([self.nEl, 2, self.nSeg + 1])
+        uE_Phi = np.zeros([self.nEl, 2*self.nNDoF])
+        uS_Phi = np.zeros([self.nEl, self.nNPoC, self.nSeg + 1])
         for i in range(self.nEl):
             uE_Phi[i, :] = Phii[self.idx[i]]
             for j in range(self.nSeg + 1):
@@ -135,7 +211,10 @@ def PlotMode(self, scale=1):
                 uS_Phi[i, :, j] = self.TX[i] @ S @ self.T[i] @ uE_Phi[i, :]
         # deformation
         rPhi = self.r0S + uS_Phi * scale
-        dPhi = np.sqrt(uS_Phi[:, 0, :] ** 2 + uS_Phi[:, 1, :] ** 2)
+        if self.nNDoF == 3:
+            dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2)
+        elif self.nNDoF == 6:
+            dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2+uS_Phi[:, 2, :]**2)
         self._plotting(
             dPhi,
             rPhi,
@@ -144,7 +223,7 @@ def PlotMode(self, scale=1):
         )
 
 
-def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
+def PlotMesh2D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
     if not self.Initialized:
         self.Initialize()
     fig, ax = plt.subplots()
@@ -258,6 +337,29 @@ def PlotMesh(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, Fon
     plt.ylim(ymin - ydelta * buff, ymax + ydelta * buff)
     plt.show()
 
+def PlotMesh3D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
+
+    pyvista.global_theme.axes.box = False
+    pyvista.global_theme.axes.x_color = 'black'
+    pyvista.global_theme.axes.y_color = 'black'
+    pyvista.global_theme.axes.z_color = 'black'
+    pyvista.global_theme.font.color = 'black'
+
+    mesh = pyvista.PolyData(self.Nodes, np.vstack((np.ones(np.array(self.El).shape[0], int)*2, (np.array(self.El)-1).T)).T)
+    mesh.plot(off_screen=False,
+              full_screen=False,
+              interactive=True,
+              parallel_projection=True,
+              show_axes=True,
+              # scalars=colors,
+              render_lines_as_tubes=True,
+              style='wireframe',
+              line_width=10,
+              cmap="turbo",
+              lighting='three lights',
+              color="#1f77b4",
+              show_scalar_bar=False,
+              background='w')
 
 class MidpointNormalizeNew(mpl.colors.Normalize):
     def __init__(self, vmin, vmax, midpoint=0, clip=False):
@@ -305,57 +407,6 @@ class MidpointNormalizeNew(mpl.colors.Normalize):
 #         # simple example...
 #         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
 #         return np.ma.masked_array(np.interp(value, x, y))
-
-def _plotting3D(self, val, disp, title, colormap):
-
-    pyvista.global_theme.axes.box = False
-    pyvista.global_theme.axes.x_color = 'black'
-    pyvista.global_theme.axes.y_color = 'black'
-    pyvista.global_theme.axes.z_color = 'black'
-    pyvista.global_theme.font.color = 'black'
-
-    grid = pyvista.StructuredGrid(disp[:, 0, :].flatten(order="C"),
-                                  disp[:, 1, :].flatten(order="C"),
-                                  disp[:, 2, :].flatten(order="C"))
-    grid.cell_data[title] = val.flatten(order="C")[:-1]
-    grid.plot(off_screen=False,
-              full_screen=False,
-              interactive=True,
-              parallel_projection=True,
-              show_axes=True,
-              show_bounds=True,
-              # scalars=colors,
-              render_lines_as_tubes=True,
-              style='wireframe',
-              line_width=10,
-              cmap=colormap,
-              lighting='three lights',
-              show_scalar_bar=True,
-              background='w')
-
-def PlotMesh3D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
-
-    pyvista.global_theme.axes.box = False
-    pyvista.global_theme.axes.x_color = 'black'
-    pyvista.global_theme.axes.y_color = 'black'
-    pyvista.global_theme.axes.z_color = 'black'
-    pyvista.global_theme.font.color = 'black'
-
-    mesh = pyvista.PolyData(self.Nodes, np.vstack((np.ones(np.array(self.El).shape[0], int)*2, (np.array(self.El)-1).T)).T)
-    mesh.plot(off_screen=False,
-              full_screen=False,
-              interactive=True,
-              parallel_projection=True,
-              show_axes=True,
-              scalars=colors,
-              render_lines_as_tubes=True,
-              style='wireframe',
-              line_width=10,
-              cmap="turbo",
-              lighting='three lights',
-              color="#1f77b4",
-              show_scalar_bar=False,
-              background='w')
 
 def PlotStress3D(self, points=[0, 1, 2, 3, 4, 5, 6, 7, 8], stress="all", scale=1):
 
@@ -410,6 +461,67 @@ def PlotStress3D(self, points=[0, 1, 2, 3, 4, 5, 6, 7, 8], stress="all", scale=1
             self.colormap,
         )
 
+def PlotDisplacement3D(self, component="all", scale=1):
+    if not self.ComputedDisplacement:
+        self.ComputeDisplacement()
+    self.rS = self.r0S + self.uS * scale
+    if component.lower() in ["mag", "all"]:
+        self.dS = np.sqrt(self.uS[:, 0, :] ** 2 +
+                          self.uS[:, 1, :] ** 2 +
+                          self.uS[:, 2, :] ** 2)
+        self._plotting3D(
+            self.dS, self.rS, "deformation magnitude in mm", self.colormap
+        )
+    if component.lower() in ["x", "all"]:
+        self._plotting3D(
+            self.uS[:, 0, :], self.rS, "x-deformation in mm", self.colormap
+        )
+    if component.lower() in ["y", "all"]:
+        self._plotting3D(
+            self.uS[:, 1, :], self.rS, "y-deformation in mm", self.colormap
+        )
+    if component.lower() in ["z", "all"]:
+        self._plotting3D(
+            self.uS[:, 2, :], self.rS, "z-deformation in mm", self.colormap
+        )
+
+def PlotInternalForces3D(self, scale=1):
+    if not self.ComputedInternalForces:
+        self.ComputeInternalForces()
+    self.rS = self.r0S + self.uS * scale
+    name = ["Normal force", "Shear force in y", "Shear force in z",
+            "Torsional moment", "Bending moment in y", "Bending moment in z"]
+    label = ["Fn N", "Fqy in N", "Fqz in N", "Mt in Nmm", "Mby in Nmm", "Mbz in Nmm"]
+    for i in range(self.nNDoF):
+        self._plotting3D(
+            self.QS[:, :, i],
+            self.rS,
+            name[i]+" "+label[i],
+            self.colormap,
+        )
+
+
+def PlotMode3D(self, scale=1):
+    Phii = np.zeros([self.nNDoF * self.nN])
+    for ii in range(len(self.omega)):
+        Phii[self.DoF] = self.Phi[:, ii]
+        uE_Phi = np.zeros([self.nEl, 2*self.nNDoF])
+        uS_Phi = np.zeros([self.nEl, self.nNPoC, self.nSeg+1])
+        for i in range(self.nEl):
+            uE_Phi[i, :] = Phii[self.idx[i]]
+            for j in range(self.nSeg + 1):
+                ξ = j / (self.nSeg)
+                S = self.ShapeMat(ξ, self.ell[i])
+                uS_Phi[i, :, j] = self.TX[i] @ S @ self.T[i] @ uE_Phi[i, :]
+        # deformation
+        rPhi = self.r0S + uS_Phi * scale
+        dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2+uS_Phi[:, 2, :]**2)
+        self._plotting3D(
+            dPhi,
+            rPhi,
+            ("mode " + str(ii + 1) + "\n" + str(round(self.f0[ii], 4)) + " Hz"),
+            self.colormap,
+        )
 
 def colorline(x, y, z, cmap="jet", linewidth=2, alpha=1.0, plot=True, norm=None):
     x = x.flatten()
