@@ -24,7 +24,7 @@ class Model(Beam3D):
         self.nEl = 5
         self.nSeg = 20
 
-        self.plotting = False
+        self.plotting = True
         self.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
         self.massMatType = "consistent"        # lumped or consistent
 
@@ -52,65 +52,44 @@ class Model(Beam3D):
 Cantilever = Model()
 
 # Darstellung Vernetzung
-# Cantilever.PlotMesh()
+Cantilever.PlotMesh()
 
-Cantilever.Initialize()
 # Statische Analyse
+Cantilever.Initialize()
 Cantilever.StaticAnalysis()
 Cantilever.ComputeDisplacement()
 Cantilever.ComputeInternalForces()
 Cantilever.ComputeStress()
 Cantilever.SensitivityAnalysis()
 Cantilever.ComputeStressSensitivity()
-# Cantilever.PlotDisplacement(component='mag', scale=10)
-# Cantilever.PlotStress(stress='max', scale=10)
+
+# Plots
+Cantilever.PlotDisplacement(component='mag', scale=10)
+Cantilever.PlotStress(stress='max', scale=10)
+Cantilever.PlotInternalForces(scale=10)
 
 # Modalanalyse
-Cantilever.EigenvalueAnalysis(nEig=20)
-
-labels = ["N", "Qy", "Qz", "Mt", "My", "Mz"]
-for i in range(6):
-    plt.figure()
-    plt.title(labels[i])
-    plt.plot(Cantilever.QS[:, :, i].flatten("C"))
-
-labels = ["sigma_N", "sigma_by", "sigma_bz", "tau_t"]
-for i in range(4):
-    for j in range(9):
-        plt.figure()
-        plt.title(labels[i]+"SecPoint"+str(j))
-        plt.plot(Cantilever.sigma[:, :, j,i].flatten("C"))
-
-for i in range(9):
-    plt.figure()
-    plt.title("EquivalentStress SecPoint"+str(i))
-    plt.plot(Cantilever.sigmaEqv[:, :, i].flatten("C"))
-
-plt.figure()
-plt.plot(Cantilever.sigmaEqvMax[:, :].flatten("C"))
-
-#Cantilever.PlotMode(scale=5)
-"""
+Cantilever.EigenvalueAnalysis(nEig=6)
+Cantilever.PlotMode(scale=5)
 print('Eigenvalue solver:', Cantilever.EigenvalSolver)
 
-# Analytical values, continuous beam theory for eigenfrequencies
-print("Analytical results")
-print("maximum stress [MPa]:")
-sigmaMax = np.abs(F*l/I*h/2)
-print(sigmaMax)
-print("maximum displacement [mm]:")
-wMax = F*l**3/(3*E*I)
-print(wMax)
+# # Analytical values, continuous beam theory for eigenfrequencies
+# print("Analytical results")
+# print("maximum stress [MPa]:")
+# sigmaMax = np.abs(F*l/I*h/2)
+# print(sigmaMax)
+# print("maximum displacement [mm]:")
+# wMax = F*l**3/(3*E*I)
+# print(wMax)
 
-print("first three bending modes [Hz]:")
-fB1 = 1.87510107**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
-fB2 = 4.69409113**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
-fB3 = 7.85475744**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
-print(fB1, ',', fB2, ',', fB3)
+# print("first three bending modes [Hz]:")
+# fB1 = 1.87510107**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
+# fB2 = 4.69409113**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
+# fB3 = 7.85475744**2/(2*np.pi*l**2)*((E*I)/(rho*A))**0.5
+# print(fB1, ',', fB2, ',', fB3)
 
-print("first three longitudinal modes [Hz]:")
-fL1 = 1/(4*l)*(E/rho)**0.5
-fL2 = 3/(4*l)*(E/rho)**0.5
-fL3 = 5/(4*l)*(E/rho)**0.5
-print(fL1, ',', fL2, ',', fL3)
-"""
+# print("first three longitudinal modes [Hz]:")
+# fL1 = 1/(4*l)*(E/rho)**0.5
+# fL2 = 3/(4*l)*(E/rho)**0.5
+# fL3 = 5/(4*l)*(E/rho)**0.5
+# print(fL1, ',', fL2, ',', fL3)

@@ -68,7 +68,7 @@ def _plotting3D(self, val, disp, title, colormap):
               interactive=True,
               parallel_projection=True,
               show_axes=True,
-              show_bounds=True,
+              show_bounds=False,
               # scalars=colors,
               render_lines_as_tubes=True,
               style='wireframe',
@@ -218,7 +218,7 @@ def PlotMode(self, scale=1):
         self._plotting(
             dPhi,
             rPhi,
-            ("mode " + str(ii + 1) + "\n" + str(round(self.f0[ii], 4)) + " Hz"),
+            ("mode " + str(ii + 1) + " at " + str(round(self.f0[ii], 4)) + " Hz"),
             self.colormap,
         )
 
@@ -408,120 +408,6 @@ class MidpointNormalizeNew(mpl.colors.Normalize):
 #         x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
 #         return np.ma.masked_array(np.interp(value, x, y))
 
-def PlotStress3D(self, points=[0, 1, 2, 3, 4, 5, 6, 7, 8], stress="all", scale=1):
-
-    if not self.ComputedDisplacement:
-        self.ComputeDisplacement()
-    self.rS = self.r0S + self.uS * scale
-
-    position = ["neutral fiber", "central-right fiber", "upper-right fiber",
-                "upper-central fiber", "upper-left fiber", "central-left fiber",
-                "lower-left fiber", "lower-central fiber", "lower-right fiber"]
-    for i in points:
-        if stress.lower() in ["all", "axial"]:
-            self._plotting3D(
-                self.sigma[:, :, i, 0],
-                self.rS,
-                "axial stress\n"+position[i]+"\n$\\sigma_{ax}$ [MPa]",
-                self.colormap,
-            )
-        if stress.lower() in ["all", "bending_y"]:
-            self._plotting3D(
-                self.sigma[:, :, i, 1],
-                self.rS,
-                "bending stress in y on "+position[i]+" in MPa",
-                self.colormap,
-            )
-        if stress.lower() in ["all", "bending_z"]:
-            self._plotting3D(
-                self.sigma[:, :, i, 2],
-                self.rS,
-                "bending stress in z on "+position[i]+" in MPa",
-                self.colormap,
-            )
-        if stress.lower() in ["all", "tau_t"]:
-            self._plotting3D(
-                self.sigma[:, :, i, 3],
-                self.rS,
-                "torsional stress on "+position[i]+" in MPa",
-                self.colormap,
-            )
-        if stress.lower() in ["all", "equivalent"]:
-            self._plotting3D(
-                self.sigmaEqv[:, :, i],
-                self.rS,
-                "Equivalent stress on "+position[i]+" in MPa",
-                self.colormap,
-            )
-    if stress.lower() in ["all", "max"]:
-        self._plotting3D(
-            self.sigmaEqvMax,
-            self.rS,
-            "Maximum stress in MPa",
-            self.colormap,
-        )
-
-def PlotDisplacement3D(self, component="all", scale=1):
-    if not self.ComputedDisplacement:
-        self.ComputeDisplacement()
-    self.rS = self.r0S + self.uS * scale
-    if component.lower() in ["mag", "all"]:
-        self.dS = np.sqrt(self.uS[:, 0, :] ** 2 +
-                          self.uS[:, 1, :] ** 2 +
-                          self.uS[:, 2, :] ** 2)
-        self._plotting3D(
-            self.dS, self.rS, "deformation magnitude in mm", self.colormap
-        )
-    if component.lower() in ["x", "all"]:
-        self._plotting3D(
-            self.uS[:, 0, :], self.rS, "x-deformation in mm", self.colormap
-        )
-    if component.lower() in ["y", "all"]:
-        self._plotting3D(
-            self.uS[:, 1, :], self.rS, "y-deformation in mm", self.colormap
-        )
-    if component.lower() in ["z", "all"]:
-        self._plotting3D(
-            self.uS[:, 2, :], self.rS, "z-deformation in mm", self.colormap
-        )
-
-def PlotInternalForces3D(self, scale=1):
-    if not self.ComputedInternalForces:
-        self.ComputeInternalForces()
-    self.rS = self.r0S + self.uS * scale
-    name = ["Normal force", "Shear force in y", "Shear force in z",
-            "Torsional moment", "Bending moment in y", "Bending moment in z"]
-    label = ["Fn N", "Fqy in N", "Fqz in N", "Mt in Nmm", "Mby in Nmm", "Mbz in Nmm"]
-    for i in range(self.nNDoF):
-        self._plotting3D(
-            self.QS[:, :, i],
-            self.rS,
-            name[i]+" "+label[i],
-            self.colormap,
-        )
-
-
-def PlotMode3D(self, scale=1):
-    Phii = np.zeros([self.nNDoF * self.nN])
-    for ii in range(len(self.omega)):
-        Phii[self.DoF] = self.Phi[:, ii]
-        uE_Phi = np.zeros([self.nEl, 2*self.nNDoF])
-        uS_Phi = np.zeros([self.nEl, self.nNPoC, self.nSeg+1])
-        for i in range(self.nEl):
-            uE_Phi[i, :] = Phii[self.idx[i]]
-            for j in range(self.nSeg + 1):
-                ξ = j / (self.nSeg)
-                S = self.ShapeMat(ξ, self.ell[i])
-                uS_Phi[i, :, j] = self.TX[i] @ S @ self.T[i] @ uE_Phi[i, :]
-        # deformation
-        rPhi = self.r0S + uS_Phi * scale
-        dPhi = np.sqrt(uS_Phi[:, 0, :]**2+uS_Phi[:, 1, :]**2+uS_Phi[:, 2, :]**2)
-        self._plotting3D(
-            dPhi,
-            rPhi,
-            ("mode " + str(ii + 1) + "\n" + str(round(self.f0[ii], 4)) + " Hz"),
-            self.colormap,
-        )
 
 def colorline(x, y, z, cmap="jet", linewidth=2, alpha=1.0, plot=True, norm=None):
     x = x.flatten()
