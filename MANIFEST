@@ -6,6 +6,8 @@ EasyBeam/BeamAnalysis.py
 EasyBeam/BeamFFRF2D.py
 EasyBeam/BeamFFRF3D.py
 EasyBeam/BeamPlotting.py
+EasyBeam/SymbolicDerivation2D.py
+EasyBeam/SymbolicDerivation3D.py
 EasyBeam/__init__.py
 EasyBeam/../EasyBeam/Beam2D.py
 EasyBeam/../EasyBeam/Beam3D.py
@@ -13,4 +15,13 @@ EasyBeam/../EasyBeam/BeamAnalysis.py
 EasyBeam/../EasyBeam/BeamFFRF2D.py
 EasyBeam/../EasyBeam/BeamFFRF3D.py
 EasyBeam/../EasyBeam/BeamPlotting.py
+EasyBeam/../EasyBeam/SymbolicDerivation2D.py
+EasyBeam/../EasyBeam/SymbolicDerivation3D.py
 EasyBeam/../EasyBeam/__init__.py
+EasyBeam/../EasyBeam/__pycache__/Beam2D.cpython-310.pyc
+EasyBeam/../EasyBeam/__pycache__/Beam3D.cpython-310.pyc
+EasyBeam/../EasyBeam/__pycache__/BeamAnalysis.cpython-310.pyc
+EasyBeam/../EasyBeam/__pycache__/BeamFFRF2D.cpython-310.pyc
+EasyBeam/../EasyBeam/__pycache__/BeamFFRF3D.cpython-310.pyc
+EasyBeam/../EasyBeam/__pycache__/BeamPlotting.cpython-310.pyc
+EasyBeam/../EasyBeam/__pycache__/__init__.cpython-310.pyc
