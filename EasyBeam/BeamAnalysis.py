@@ -333,6 +333,7 @@ class Beam:
             for j in range(self.nSeg+1):
                 ξ = j/(self.nSeg)
                 self.uS[iEl, :, j] = self.TX[iEl]@self.ShapeMat(ξ, self.ell[iEl])@self.uE[iEl]
+        self.uSmag = np.sqrt(np.sum(self.uS**2, axis=1))
 
     def ComputeInternalForces(self):
         self.CoputedInternalForces = True

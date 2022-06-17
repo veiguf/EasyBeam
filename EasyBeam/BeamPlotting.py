@@ -152,17 +152,15 @@ def PlotDisplacement(self, component="all", scale=1):
     self.rS = self.r0S + self.uS * scale
 
     if self.nNPoC == 2:
-        self.dS = np.sqrt(self.uS[:, 0, :] ** 2 + self.uS[:, 1, :] ** 2)
         label = ["deformation\nmagnitude\n$|u|$ [mm]",
                  "$x$-deformation\n$u_x$ [mm]", "$y$-deformation\n$u_y$ [mm]"]
     elif self.nNPoC == 3:
-        self.dS = np.sqrt(self.uS[:, 0, :]**2+self.uS[:, 1, :]**2+self.uS[:, 2, :]**2)
         label = ["deformation magnitude in mm", "x-deformation in mm",
                  "y-deformation in mm", "z-deformation in mm"]
 
     if component.lower() in ["mag", "all"]:
         self._plotting(
-            self.dS, self.rS, label[0], self.colormap
+            self.uSmag, self.rS, label[0], self.colormap
         )
     if component.lower() in ["x", "all"]:
         self._plotting(
