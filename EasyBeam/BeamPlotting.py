@@ -6,6 +6,7 @@ import pyvista
 # import matplotlib.colors as colors
 import numpy as np
 
+
 def _plotting2D(self, val, disp, title, colormap):
 
     fig, ax = plt.subplots()
@@ -338,29 +339,45 @@ def PlotMesh2D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, F
     plt.show()
 
 def PlotMesh3D(self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1):
-
+    pyvista.set_plot_theme('document')
     pyvista.global_theme.axes.box = False
     pyvista.global_theme.axes.x_color = 'black'
     pyvista.global_theme.axes.y_color = 'black'
     pyvista.global_theme.axes.z_color = 'black'
     pyvista.global_theme.font.color = 'black'
+    pyvista.global_theme.transparent_background = True
+
+    plotter = pyvista.Plotter(
+        lighting='three lights',
+        off_screen=False,
+        )
 
     mesh = pyvista.PolyData(self.Nodes, np.vstack((np.ones(np.array(self.El).shape[0], int)*2, (np.array(self.El)-1).T)).T)
-    mesh.plot(off_screen=False,
-              full_screen=False,
-              interactive=True,
-              parallel_projection=True,
-              show_axes=True,
-              # scalars=colors,
-              render_lines_as_tubes=True,
-              style='wireframe',
-              line_width=10,
-              cmap="turbo",
-              lighting='three lights',
-              color="#1f77b4",
-              show_scalar_bar=False,
-              background='w')
-
+    plotter.add_mesh(
+        mesh.copy(),
+        render_lines_as_tubes=False,
+        line_width=2-5,
+        style='wireframe',
+        cmap="turbo",
+        color="#1f77b4",
+        show_scalar_bar=False,
+        culling=True,
+        )
+    plotter.enable_parallel_projection()
+    plotter.add_mesh(
+        mesh.copy(),
+        render_points_as_spheres=True,
+        point_size=5,
+        style='points',
+        cmap="turbo",
+        color="#1f77b4",
+        show_scalar_bar=False,
+        culling=True,
+        )
+    plotter.show(
+        full_screen=False,
+        interactive=True,
+        )
 class MidpointNormalizeNew(mpl.colors.Normalize):
     def __init__(self, vmin, vmax, midpoint=0, clip=False):
         self.midpoint = midpoint
