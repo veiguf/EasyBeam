@@ -391,17 +391,46 @@ class Beam:
                                                                      3*self.sigma[iEl, j, ii, 3] * self.sigmaNabla[iEl, j, ii, 3, i]) / self.sigmaEqv[iEl, j, ii]
                     self.sigmaEqvMaxNabla[iEl, j, i] = self.sigmaEqvNabla[iEl, j, np.argmax(self.sigmaEqv[iEl, j, :]), i]
 
-    def EigenvalueAnalysis(self, nEig=2):
+    def EigenvalueAnalysis(self, nEig=2, addSpring2D=False, addNodalMass2D=False,
+                           eigSolver="eigh"):
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
         self.m = self.Assemble(self.MassMatElem)
-        try:
-            lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF, :][:, self.DoF],
-                                                self.m[self.DoF, :][:, self.DoF],
-                                                eigvals=(0, nEig-1))
-            self.EigenvalSolver = "scipy.linalg.eigh"
-        except:
+        if addSpring2D:
+            for iSpring in range(len(addSpring2D)):
+                SpringDoF = (self.nNDoF*addSpring2D[iSpring][0]-np.array([3, 2, 1])).tolist()
+                SpringDoF += (self.nNDoF*addSpring2D[iSpring][1]-np.array([3, 2, 1])).tolist()
+                # kx
+                self.k[SpringDoF[0], SpringDoF[0]] += addSpring2D[iSpring][2]
+                self.k[SpringDoF[3], SpringDoF[3]] += addSpring2D[iSpring][2]
+                self.k[SpringDoF[0], SpringDoF[3]] -= addSpring2D[iSpring][2]
+                self.k[SpringDoF[3], SpringDoF[0]] -= addSpring2D[iSpring][2]
+                # ky
+                self.k[SpringDoF[1], SpringDoF[1]] += addSpring2D[iSpring][3]
+                self.k[SpringDoF[4], SpringDoF[4]] += addSpring2D[iSpring][3]
+                self.k[SpringDoF[1], SpringDoF[4]] -= addSpring2D[iSpring][3]
+                self.k[SpringDoF[4], SpringDoF[1]] -= addSpring2D[iSpring][3]
+                # kT
+                self.k[SpringDoF[2], SpringDoF[2]] += addSpring2D[iSpring][4]
+                self.k[SpringDoF[5], SpringDoF[5]] += addSpring2D[iSpring][4]
+                self.k[SpringDoF[2], SpringDoF[5]] -= addSpring2D[iSpring][4]
+                self.k[SpringDoF[5], SpringDoF[2]] -= addSpring2D[iSpring][4]
+        if addNodalMass2D:
+            for iMass in range(len(addNodalMass2D)):
+                MassDoF = (self.nNDoF*addNodalMass2D[iMass][0]-np.array([3, 2, 1])).tolist()
+                self.m[MassDoF[0], MassDoF[0]] += addNodalMass2D[iMass][1]
+                self.m[MassDoF[1], MassDoF[1]] += addNodalMass2D[iMass][2]
+                self.m[MassDoF[2], MassDoF[2]] += addNodalMass2D[iMass][3]
+        if eigSolver=="eigh":
+            try:
+                lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF, :][:, self.DoF],
+                                                    self.m[self.DoF, :][:, self.DoF],
+                                                    eigvals=(0, nEig-1))
+                self.EigenvalSolver = "scipy.linalg.eigh"
+            except:
+                eigSolver="eig"
+        if eigSolver=="eig":
             lambdaComplex, self.Phi = spla.eig(self.k[self.DoF, :][:, self.DoF],
                                                self.m[self.DoF, :][:, self.DoF])
             self.EigenvalSolver = "scipy.linalg.eig"
