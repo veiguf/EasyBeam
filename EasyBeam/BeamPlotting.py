@@ -60,10 +60,17 @@ def _plotting3D(self, val, disp, title, colormap):
     pyvista.global_theme.axes.z_color = 'black'
     pyvista.global_theme.font.color = 'black'
 
-    grid = pyvista.StructuredGrid(disp[:, 0, :].flatten(order="C"),
-                                  disp[:, 1, :].flatten(order="C"),
-                                  disp[:, 2, :].flatten(order="C"))
-    grid.cell_data[title] = val.flatten(order="C")[:-1]
+    lines = np.zeros([self.nEl*(self.nSeg), 3], dtype=int)
+    for i in range(self.nEl):
+        lines[i*(self.nSeg):(i+1)*(self.nSeg)] = np.array([np.ones(self.nSeg)*2,
+                                                           np.arange(i*(self.nSeg+1), (i+1)*(self.nSeg+1)-1),
+                                                           np.arange(i*(self.nSeg+1)+1, (i+1)*(self.nSeg+1))]).T
+    grid = pyvista.PolyData(np.vstack((disp[:, 0, :].flatten(order="c"),
+                                       disp[:, 1, :].flatten(order="c"),
+                                       disp[:, 2, :].flatten(order="c"))).T,
+                            lines)
+    grid.point_data[title] = val.flatten(order="c")
+
     grid.plot(off_screen=False,
               full_screen=False,
               interactive=True,
