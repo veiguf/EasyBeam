@@ -69,7 +69,7 @@ def _plotting2D(self, val, disp, title, colormap, save, valName, fileType):
     plt.ylim(ymin - ydelta * buff, ymax + ydelta * buff)
     # cb.ax.set_title(title)
     if save:
-        plt.savefig(self.ModelName+ valName+"."+fileType)
+        plt.savefig(self.ModelName + valName + '.' + fileType)
     plt.show()
 
 
@@ -119,7 +119,9 @@ def _plotting3D(self, val, disp, title, colormap, save, fileName, fileType):
     )
 
 
-def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="svg"):
+def PlotStress(
+    self, points='all', stress='all', scale=1, save=False, figType='svg'
+):
     if not self.ComputedStress:
         self.ComputeStress()
     self.rS = self.r0S + self.uS * scale
@@ -176,9 +178,8 @@ def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="s
             prefix[0] + suffix[0],
             self.colormap,
             save,
-            "Stress"+stress.title(),
-            figType
-
+            'Stress' + stress.title(),
+            figType,
         )
     for i in points:
         if stress.lower() in ['all', 'equivalent']:
@@ -188,8 +189,8 @@ def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="s
                 prefix[1] + position[i] + suffix[1],
                 self.colormap,
                 save,
-                "Stress"+stress.title(),
-                figType
+                'Stress' + stress.title(),
+                figType,
             )
         if stress.lower() in ['all', 'axial']:
             self._plotting(
@@ -198,8 +199,8 @@ def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="s
                 prefix[2] + position[i] + suffix[2],
                 self.colormap,
                 save,
-                "Stress"+stress.title(),
-                figType
+                'Stress' + stress.title(),
+                figType,
             )
         if stress.lower() in ['all', 'bending', 'bending_y']:
             self._plotting(
@@ -208,8 +209,8 @@ def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="s
                 prefix[3] + position[i] + suffix[3],
                 self.colormap,
                 save,
-                "Stress"+stress.title(),
-                figType
+                'Stress' + stress.title(),
+                figType,
             )
         if (
             stress.lower() in ['all', 'bending', 'bending_z']
@@ -221,8 +222,8 @@ def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="s
                 prefix[4] + position[i] + suffix[4],
                 self.colormap,
                 save,
-                "Stress"+stress.title(),
-                figType
+                'Stress' + stress.title(),
+                figType,
             )
         if stress.lower() in ['all', 'torsional'] and self.nSVal == 4:
             self._plotting(
@@ -231,12 +232,14 @@ def PlotStress(self, points='all', stress='all', scale=1, save=False, figType="s
                 prefix[5] + position[i] + suffix[5],
                 self.colormap,
                 save,
-                "Stress"+stress.title(),
-                figType
+                'Stress' + stress.title(),
+                figType,
             )
 
 
-def PlotDisplacement(self, component='all', scale=1, save=False, figType="svg"):
+def PlotDisplacement(
+    self, component='all', scale=1, save=False, figType='svg'
+):
     if not self.ComputedDisplacement:
         self.ComputeDisplacement()
     self.rS = self.r0S + self.uS * scale
@@ -256,28 +259,48 @@ def PlotDisplacement(self, component='all', scale=1, save=False, figType="svg"):
         ]
 
     if component.lower() in ['mag', 'all']:
-        self._plotting(self.uSmag, self.rS, label[0], self.colormap,
-        save,
-        "Disp"+component.title(),
-        figType)
+        self._plotting(
+            self.uSmag,
+            self.rS,
+            label[0],
+            self.colormap,
+            save,
+            'Disp' + component.title(),
+            figType,
+        )
     if component.lower() in ['x', 'all']:
-        self._plotting(self.uS[:, 0, :], self.rS, label[1], self.colormap,
-        save,
-        "Disp"+component.title(),
-        figType)
+        self._plotting(
+            self.uS[:, 0, :],
+            self.rS,
+            label[1],
+            self.colormap,
+            save,
+            'Disp' + component.title(),
+            figType,
+        )
     if component.lower() in ['y', 'all']:
-        self._plotting(self.uS[:, 1, :], self.rS, label[2], self.colormap,
-        save,
-        "Disp"+component.title(),
-        figType)
+        self._plotting(
+            self.uS[:, 1, :],
+            self.rS,
+            label[2],
+            self.colormap,
+            save,
+            'Disp' + component.title(),
+            figType,
+        )
     if component.lower() in ['z', 'all'] and self.nNPoC == 3:
-        self._plotting(self.uS[:, 2, :], self.rS, label[3], self.colormap,
-        save,
-        "Disp"+component.title(),
-        figType)
+        self._plotting(
+            self.uS[:, 2, :],
+            self.rS,
+            label[3],
+            self.colormap,
+            save,
+            'Disp' + component.title(),
+            figType,
+        )
 
 
-def PlotInternalForces(self, scale=1, save=False, figType="svg"):
+def PlotInternalForces(self, scale=1, save=False, figType='svg'):
     if not self.ComputedInternalForces:
         self.ComputeInternalForces()
     self.rS = self.r0S + self.uS * scale
@@ -305,11 +328,12 @@ def PlotInternalForces(self, scale=1, save=False, figType="svg"):
             label[i],
             self.colormap,
             save,
-            "ForceInt",
-            figType)
+            'ForceInt',
+            figType,
+        )
 
 
-def PlotMode(self, scale=1, save=False, figType="svg"):
+def PlotMode(self, scale=1, save=False, figType='svg'):
     Phii = np.zeros([self.nNDoF * self.nN])
     for ii in range(len(self.omega)):
         Phii[self.DoF] = self.Phi[:, ii]
@@ -343,12 +367,21 @@ def PlotMode(self, scale=1, save=False, figType="svg"):
             ),
             self.colormap,
             save,
-            "Mode_"+str(ii + 1),
-            figType)
+            'Mode_' + str(ii + 1),
+            figType,
+        )
 
 
 def PlotMesh2D(
-    self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1, save=False, figType="svg"):
+    self,
+    NodeNumber=True,
+    ElementNumber=True,
+    Loads=True,
+    BC=True,
+    FontMag=1,
+    save=False,
+    figType='svg',
+):
     if not self.Initialized:
         self.Initialize()
     fig, ax = plt.subplots()
@@ -469,12 +502,20 @@ def PlotMesh2D(
     plt.xlim(xmin - xdelta * buff, xmax + xdelta * buff)
     plt.ylim(ymin - ydelta * buff, ymax + ydelta * buff)
     if save:
-        plt.savefig(self.ModelName+"Mesh."+figType)
+        plt.savefig(self.ModelName + 'Mesh.' + figType)
     plt.show()
 
 
 def PlotMesh3D(
-    self, NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=1, save=False, figType="svg"):
+    self,
+    NodeNumber=True,
+    ElementNumber=True,
+    Loads=True,
+    BC=True,
+    FontMag=1,
+    save=False,
+    figType='svg',
+):
     pyvista.set_plot_theme('document')
     pyvista.global_theme.axes.box = False
     pyvista.global_theme.axes.x_color = 'black'
@@ -518,10 +559,18 @@ def PlotMesh3D(
         show_scalar_bar=False,
         culling=True,
     )
-    plotter.show(
-        full_screen=False,
-        interactive=True,
-    )
+    if save:
+        plotter.show(
+            screenshot=self.ModelName + 'Mesh.png',
+            full_screen=False,
+            interactive=False
+        )
+
+    else:
+        plotter.show(
+            full_screen=False,
+            interactive=True,
+        )
 
 
 class MidpointNormalizeNew(mpl.colors.Normalize):
