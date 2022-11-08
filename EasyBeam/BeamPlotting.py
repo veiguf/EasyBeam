@@ -506,6 +506,102 @@ def PlotMesh2D(
     plt.show()
 
 
+def PlotMeshThick(
+    self,
+    NodeNumber=True,
+    ElementNumber=True,
+    Loads=True,
+    BC=True,
+    FontMag=1,
+    save=False,
+    figType='svg',
+):
+    class data_linewidth_plot():
+        def __init__(self, x, y, **kwargs):
+            self.ax = kwargs.pop("ax", plt.gca())
+            self.fig = self.ax.get_figure()
+            self.lw_data = kwargs.pop("linewidth", 1)
+            self.lw = 1
+            self.fig.canvas.draw()
+
+            self.ppd = 72./self.fig.dpi
+            self.trans = self.ax.transData.transform
+            self.linehandle, = self.ax.plot([],[],**kwargs)
+            if "label" in kwargs: kwargs.pop("label")
+            self.line, = self.ax.plot(x, y, **kwargs)
+            self.line.set_color("gray")#  self.linehandle.get_color())
+            self._resize()
+            self.cid = self.fig.canvas.mpl_connect('draw_event', self._resize)
+
+        def _resize(self, event=None):
+            lw =  ((self.trans((1, self.lw_data))-self.trans((0, 0)))*self.ppd)[1]
+            if lw != self.lw:
+                self.line.set_linewidth(lw)
+                self.lw = lw
+                self._redraw_later()
+
+        def _redraw_later(self):
+            self.timer = self.fig.canvas.new_timer(interval=10)
+            self.timer.single_shot = True
+            self.timer.add_callback(lambda : self.fig.canvas.draw_idle())
+            self.timer.start()
+
+
+    if not self.Initialized:
+        self.Initialize()
+    fig, ax = plt.subplots()
+    ax.axis('off')
+    ax.set_aspect('equal')
+    deltaMax = max(
+        self.Nodes[:, 0].max() - self.Nodes[:, 0].min(),
+        self.Nodes[:, 1].max() - self.Nodes[:, 1].min(),
+    )
+    p = deltaMax * 0.0075
+    for i in range(self.nEl):
+        xEl = (
+            self.Nodes[self.El[i, 0] - 1, 0],
+            self.Nodes[self.El[i, 1] - 1, 0],
+        )
+        yEl = (
+            self.Nodes[self.El[i, 0] - 1, 1],
+            self.Nodes[self.El[i, 1] - 1, 1],
+        )
+
+        for ii in range(len(self.Properties)):
+            if self.PropID[i] == self.Properties[ii][0]:
+                if self.Properties[ii][4] in [1, "round"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [2, "roundtube"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [3, "rect", "Rectangle"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [4, "recttube"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [6, "C"]:
+                    t = self.Properties[ii][5]
+
+        #plt.plot(xEl, yEl, c='gray', lw=t, ls='-')
+        data_linewidth_plot(xEl, yEl, linewidth=t)
+    xmin = self.Nodes[:, 0].min()
+    xmax = self.Nodes[:, 0].max()
+    if self.Nodes[:, 1].max() - self.Nodes[:, 1].min() < 0.1:
+        ymin = -10
+        ymax = 10
+    else:
+        ymin = self.Nodes[:, 1].min()
+        ymax = self.Nodes[:, 1].max()
+
+    xdelta = xmax - xmin
+    ydelta = ymax - ymin
+    buff = 0.1
+
+    plt.xlim(xmin - xdelta * buff, xmax + xdelta * buff)
+    plt.ylim(ymin - ydelta * buff, ymax + ydelta * buff)
+    if save:
+        plt.savefig(self.ModelName + 'MeshThick.' + figType)
+    plt.show()
+
+
 def PlotMesh3D(
     self,
     NodeNumber=True,
