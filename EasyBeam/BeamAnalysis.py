@@ -9,6 +9,7 @@ import time
 class Beam:
     from EasyBeam.BeamPlotting import (PlotDisplacement, PlotStress,
                                        PlotInternalForces, PlotMode)
+    ModelName = "model"
     nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
@@ -391,7 +392,7 @@ class Beam:
                                                                      3*self.sigma[iEl, j, ii, 3] * self.sigmaNabla[iEl, j, ii, 3, i]) / self.sigmaEqv[iEl, j, ii]
                     self.sigmaEqvMaxNabla[iEl, j, i] = self.sigmaEqvNabla[iEl, j, np.argmax(self.sigmaEqv[iEl, j, :]), i]
 
-    def EigenvalueAnalysis(self, nEig=2, addSpring2D=False, addNodalMass2D=False,
+    def EigenvalueAnalysis(self, nEig=2, addSpring2D=False, addNodalMass2D=False, addNodalMass3D=False,
                            eigSolver="eigh"):
         if not self.Initialized:
             self.Initialize()
@@ -422,6 +423,15 @@ class Beam:
                 self.m[MassDoF[0], MassDoF[0]] += addNodalMass2D[iMass][1]
                 self.m[MassDoF[1], MassDoF[1]] += addNodalMass2D[iMass][2]
                 self.m[MassDoF[2], MassDoF[2]] += addNodalMass2D[iMass][3]
+        if addNodalMass3D:
+            for iMass in range(len(addNodalMass3D)):
+                MassDoF = (self.nNDoF*addNodalMass3D[iMass][0]-np.array([6, 5, 4, 3, 2, 1])).tolist()
+                self.m[MassDoF[0], MassDoF[0]] += addNodalMass3D[iMass][1]
+                self.m[MassDoF[1], MassDoF[1]] += addNodalMass3D[iMass][2]
+                self.m[MassDoF[2], MassDoF[2]] += addNodalMass3D[iMass][3]
+                self.m[MassDoF[3], MassDoF[3]] += addNodalMass3D[iMass][4]
+                self.m[MassDoF[4], MassDoF[4]] += addNodalMass3D[iMass][5]
+                self.m[MassDoF[5], MassDoF[5]] += addNodalMass3D[iMass][6]
         if eigSolver=="eigh":
             try:
                 lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF, :][:, self.DoF],
