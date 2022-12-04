@@ -73,12 +73,13 @@ def _plotting2D(self, val, disp, title, colormap, save, valName, fileType):
     plt.show()
 
 
-def _plotting3D(self, val, disp, title, colormap, save, fileName, fileType):
+def _plotting3D(self, val, disp, title, colormap, save, valName, fileType):
     pyvista.global_theme.axes.box = False
     pyvista.global_theme.axes.x_color = 'black'
     pyvista.global_theme.axes.y_color = 'black'
     pyvista.global_theme.axes.z_color = 'black'
     pyvista.global_theme.font.color = 'black'
+    pyvista.global_theme.font.family = 'times'
 
     lines = np.zeros([self.nEl * (self.nSeg), 3], dtype=int)
     for i in range(self.nEl):
@@ -101,22 +102,35 @@ def _plotting3D(self, val, disp, title, colormap, save, fileName, fileType):
     )
     grid.point_data[title] = val.flatten(order='c')
 
-    grid.plot(
-        off_screen=False,
-        full_screen=False,
-        interactive=True,
-        parallel_projection=True,
-        show_axes=True,
-        show_bounds=False,
-        # scalars=colors,
+    plotter = pyvista.Plotter(lighting='three lights', off_screen=False,)
+    plotter.add_mesh(
+        grid.copy(),
         render_lines_as_tubes=True,
-        style='wireframe',
         line_width=10,
+        render_points_as_spheres=True,
+        point_size=5,
+        style='wireframe',
         cmap=colormap,
-        lighting='three lights',
         show_scalar_bar=True,
-        background='w',
+        culling=True,
     )
+    plotter.enable_parallel_projection()
+    plotter.show_axes()
+
+    if save:
+        plotter.show(
+            screenshot=self.ModelName + valName + '.' + fileType,
+            full_screen=False,
+            interactive=False,
+            window_size=[4096, 3072]
+        )
+
+    else:
+        plotter.show(
+            full_screen=False,
+            interactive=True,
+        )
+
 
 
 def PlotStress(
@@ -637,10 +651,10 @@ def PlotMesh3D(
     plotter.add_mesh(
         mesh.copy(),
         render_lines_as_tubes=False,
-        line_width=2 - 5,
+        line_width=1,
         style='wireframe',
         cmap='turbo',
-        color='#1f77b4',
+        color=[31, 119, 180],  # [255, 127, 14]
         show_scalar_bar=False,
         culling=True,
     )
@@ -648,10 +662,10 @@ def PlotMesh3D(
     plotter.add_mesh(
         mesh.copy(),
         render_points_as_spheres=True,
-        point_size=5,
+        point_size=3,
         style='points',
         cmap='turbo',
-        color='#1f77b4',
+        color=[31, 119, 180],  # 
         show_scalar_bar=False,
         culling=True,
     )
@@ -659,7 +673,8 @@ def PlotMesh3D(
         plotter.show(
             screenshot=self.ModelName + 'Mesh.png',
             full_screen=False,
-            interactive=False
+            interactive=False,
+            window_size=[4096, 3072]
         )
 
     else:
