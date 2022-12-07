@@ -101,6 +101,10 @@ def _plotting3D(self, val, disp, title, colormap, save, valName, fileType):
         lines,
     )
     grid.point_data[title] = val.flatten(order='c')
+    sargs = dict(# height=0.8, vertical=True, position_x=0.05, position_y=0.1,
+                 width=0.8, position_x=0.1,
+                 title_font_size=40, label_font_size=32
+                 )
 
     plotter = pyvista.Plotter(lighting='three lights', off_screen=False,)
     plotter.add_mesh(
@@ -113,16 +117,17 @@ def _plotting3D(self, val, disp, title, colormap, save, valName, fileType):
         cmap=colormap,
         show_scalar_bar=True,
         culling=True,
+        scalar_bar_args=sargs
     )
     plotter.enable_parallel_projection()
     plotter.show_axes()
 
-    if save:
+    if save==True:
         plotter.show(
             screenshot=self.ModelName + valName + '.' + fileType,
             full_screen=False,
             interactive=False,
-            window_size=[4096, 3072]
+            window_size=[1920, 1043]
         )
 
     else:
@@ -659,17 +664,19 @@ def PlotMesh3D(
         culling=True,
     )
     plotter.enable_parallel_projection()
+    plotter.show_axes()
+
     plotter.add_mesh(
         mesh.copy(),
         render_points_as_spheres=True,
         point_size=3,
         style='points',
         cmap='turbo',
-        color=[31, 119, 180],  # 
+        color=[31, 119, 180],
         show_scalar_bar=False,
         culling=True,
     )
-    if save:
+    if save==True:
         plotter.show(
             screenshot=self.ModelName + 'Mesh.png',
             full_screen=False,
