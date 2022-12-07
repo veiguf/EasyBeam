@@ -19,7 +19,7 @@ if __name__ == '__main__':
     extra_files = package_files('EasyBeam')
     setup(
         name='EasyBeam',
-        version='1.1.1',
+        version='1.1.2',
         description='Easy Application for Structural analYsis with BEAMs',
         author='V. Gufler, E. J. Wehrle',
         author_email='veit.gufler@unibz.it',
