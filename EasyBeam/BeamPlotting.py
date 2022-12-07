@@ -102,7 +102,7 @@ def _plotting3D(self, val, disp, title, colormap, save, valName, fileType):
     )
     grid.point_data[title] = val.flatten(order='c')
     sargs = dict(# height=0.8, vertical=True, position_x=0.05, position_y=0.1,
-                 width=0.8, position_x=0.1,
+                 # width=0.8, position_x=0.1,
                  title_font_size=40, label_font_size=32
                  )
 
