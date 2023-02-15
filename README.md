@@ -1,10 +1,10 @@
 <p align=center><img width="100%" src="figures/EasyBeamBlue.svg"></p>
 
-[![GitHub release](https://img.shields.io/github/release/veiguf/EasyBeam.svg?style=flat-square&logo=github&label=release&logoColor=white)](https://github.com/veiguf/EasyBeam/releases)
+[![GitHub release](https://img.shields.io/github/release/veiguf/EasyBeam.svg?style=flat-square&logo=github&logoColor=white&label=release)](https://github.com/veiguf/EasyBeam/releases)
 [![PyPI Version](https://img.shields.io/pypi/v/EasyBeam.svg?style=flat-square)](https://pypi.python.org/pypi/EasyBeam/)
 [![DOI](https://zenodo.org/badge/312570858.svg)](https://zenodo.org/badge/latestdoi/312570858)
-[![GitHub license](https://img.shields.io/github/license/veiguf/EasyBeam.svg?style=flat-square&logo=github&label=license&logoColor=white)](https://github.com/veiguf/EasyBeam/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/veiguf/EasyBeam.svg?style=flat-square&logo=github&label=Stars&logoColor=white)](https://github.com/veiguf/EasyBeam/stargazers)
+[![GitHub license](https://img.shields.io/github/license/veiguf/EasyBeam.svg?style=flat-square&logo=github&logoColor=white&label=license)](https://github.com/veiguf/EasyBeam/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/veiguf/EasyBeam.svg?style=flat-square&logo=github&logoColor=white&label=Stars)](https://github.com/veiguf/EasyBeam/stargazers)
 [![PyPi downloads](https://img.shields.io/pypi/dm/EasyBeam.svg?style=flat-square)](https://pypistats.org/packages/easybeam)
 
 # EasyBeam
