@@ -525,7 +525,7 @@ def PlotMesh2D(
     plt.show()
 
 
-def PlotMeshThick(
+def PlotMeshThick2(
     self,
     NodeNumber=True,
     ElementNumber=True,
@@ -616,6 +616,95 @@ def PlotMeshThick(
 
     plt.xlim(xmin - xdelta * buff, xmax + xdelta * buff)
     plt.ylim(ymin - ydelta * buff, ymax + ydelta * buff)
+    if save:
+        plt.savefig(self.ModelName + 'MeshThick.' + figType)
+    plt.show()
+
+
+def PlotMeshThick(
+    self,
+    NodeNumber=True,
+    ElementNumber=True,
+    Loads=True,
+    BC=True,
+    FontMag=1,
+    save=False,
+    figType='svg',
+):
+    
+    from matplotlib.lines import Line2D
+    class LineDataUnits(Line2D):
+        def __init__(self, *args, **kwargs):
+            _lw_data = kwargs.pop("linewidth", 1) 
+            super().__init__(*args, **kwargs)
+            self._lw_data = _lw_data
+    
+        def _get_lw(self):
+            if self.axes is not None:
+                ppd = 72./self.axes.figure.dpi
+                trans = self.axes.transData.transform
+                return ((trans((1, self._lw_data))-trans((0, 0)))*ppd)[1]
+            else:
+                return 1
+    
+        def _set_lw(self, lw):
+            self._lw_data = lw
+    
+        _linewidth = property(_get_lw, _set_lw)
+        
+
+    if not self.Initialized:
+        self.Initialize()
+    fig, ax = plt.subplots()
+    ax.axis('off')
+    ax.set_aspect('equal')
+    deltaMax = max(
+        self.Nodes[:, 0].max() - self.Nodes[:, 0].min(),
+        self.Nodes[:, 1].max() - self.Nodes[:, 1].min(),
+    )
+    p = deltaMax * 0.0075
+    if self.Nodes[:, 1].max() - self.Nodes[:, 1].min() < 0.1:
+        ymin = -10
+        ymax = 10
+    else:
+        ymin = self.Nodes[:, 1].min()
+        ymax = self.Nodes[:, 1].max()
+    xmin = self.Nodes[:, 0].min()
+    xmax = self.Nodes[:, 0].max()
+    xdelta = xmax - xmin
+    ydelta = ymax - ymin
+    buff = 0.1
+
+    plt.xlim(xmin - xdelta * buff, xmax + xdelta * buff)
+    plt.ylim(ymin - ydelta * buff, ymax + ydelta * buff)
+    for i in range(self.nEl):
+        xEl = (
+            self.Nodes[self.El[i, 0] - 1, 0],
+            self.Nodes[self.El[i, 1] - 1, 0],
+        )
+        yEl = (
+            self.Nodes[self.El[i, 0] - 1, 1],
+            self.Nodes[self.El[i, 1] - 1, 1],
+        )
+
+        for ii in range(len(self.Properties)):
+            if self.PropID[i] == self.Properties[ii][0]:
+                if self.Properties[ii][4] in [1, "round"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [2, "roundtube"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [3, "rect", "Rectangle"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [4, "recttube"]:
+                    t = self.Properties[ii][5]
+                elif self.Properties[ii][4] in [6, "C"]:
+                    t = self.Properties[ii][5]
+
+        #plt.plot(xEl, yEl, c='gray', lw=t, ls='-')
+        line = LineDataUnits(xEl, yEl, linewidth=t)
+        ax.add_line(line)
+
+
     if save:
         plt.savefig(self.ModelName + 'MeshThick.' + figType)
     plt.show()
