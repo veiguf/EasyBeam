@@ -1,6 +1,6 @@
 import numpy as np
 from copy import deepcopy
-from EasyBeam import BeamFFRF3D
+
 
 def S__Elem(self, i):
     ell = self.ell[i]
@@ -207,8 +207,8 @@ def FFRF_OutputSensitivities(self, xDelta=1e-9):
         print('Use stiffMatType = "Euler-Bernoulli"\
               \nand massMatType = "consistent"')
 
-
 if __name__ == '__main__':
+    from EasyBeam import BeamFFRF3D
 
     class Crank(BeamFFRF3D):
         wC = 20     # mm

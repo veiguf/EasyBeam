@@ -260,16 +260,16 @@ class Beam:
                     ξ = j/(self.nSeg)
                     self.r0S[i, :, j] = self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]@self.r0[self.idx[i]]
 
+    def NMat(self, i, ξ):
+        NMat = np.zeros([self.nNPoC, self.nNDoF*self.nN])
+        NMat[:, self.idx[i]] += self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]
+        return NMat
+
     def Assemble(self, MatElem):
         Matrix = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN])
         for i in range(self.nEl):
             Matrix[np.ix_(self.idx[i], self.idx[i])] += self.T[i].T@MatElem(i)@self.T[i]
         return Matrix
-
-    def NMat(self, i, ξ):
-        NMat = np.zeros([self.nNPoC, self.nNDoF*self.nN])
-        NMat[:, self.idx[i]] += self.TX[i]@self.ShapeMat(ξ, self.ell[i])@self.T[i]
-        return NMat
 
     def AssembleOneDirection(self, MatElem):  # needed for FFRF
         Matrix = np.zeros([self.nNPoC, self.nNDoF*self.nN])
@@ -486,6 +486,12 @@ class BeamFFRF3D(Beam3D):
     from EasyBeam.BeamFFRF3D import (S__Elem, S11Elem, S22Elem, S33Elem,
                                      S12Elem, S13Elem,S23Elem,FFRF_Output,
                                      FFRF_OutputSensitivities)
+
+class BeamFFRF3D_NEW(Beam3D):
+    from EasyBeam.BeamFFRF3D_new import (IψElem, IψSElem, IuSψElem, IuSψSElem,
+                                         IψψElem, IψSψElem, IψSψSElem, Bt, Br,
+                                         AssembleOneDirectionSkew, AssembleSkew,
+                                         AssembleSkewSkew, FFRF_Output, FFRF_OutputSensitivities)
 
 if __name__ == '__main__':
 
