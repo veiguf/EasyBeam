@@ -302,6 +302,8 @@ class Beam:
     def ModelPartialDerivatives(self, xDelta):
         self.ModeledPartialDerivatives = True
         if not self.SensitivityAnalyzed:
+            if hasattr(self, 'm'):
+                self.mNabla = np.zeros((self.nNDoF*self.nN, self.nNDoF*self.nN, self.nx))
             self.kNabla = np.zeros([self.nNDoF*self.nN, self.nNDoF*self.nN, self.nx])
             self.FNabla = np.zeros([self.nNDoF*self.nN, self.nx])
         self.TNabla = np.zeros([self.nEl, 2*self.nNDoF, 2*self.nNDoF, self.nx])
@@ -315,6 +317,9 @@ class Beam:
                     getattr(new, new.DesVar[i])+xPert)
             new.Initialize()
             if not self.SensitivityAnalyzed:
+                if hasattr(self, 'm'):
+                    new.m = new.Assemble(new.MassMatElem)
+                    self.mNabla[:,:,i] = ((new.m-self.m)/xPert)
                 new.k = new.Assemble(new.StiffMatElem)
                 self.kNabla[:, :, i] = (new.k-self.k)/xPert
                 self.FNabla[:, i] = (new.F-self.F)/xPert
@@ -394,6 +399,7 @@ class Beam:
 
     def EigenvalueAnalysis(self, nEig=2, addSpring2D=False, addNodalMass2D=False, addNodalMass3D=False,
                            eigSolver="eigh"):
+        self.nEig = nEig
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
@@ -451,8 +457,16 @@ class Beam:
         self.f0 = self.omega/2/np.pi
         self.Phi = self.Phi[:, iSort]
 
-    def EigenvalueSensitivity(self):
-        pass
+    def EigenvalueSensitivity(self, xDelta=1e-9):
+        if not self.ModeledPartialDerivatives:
+            self.ModelPartialDerivatives(xDelta)
+        self.SensitivityAnalyzed = True
+        self.omegaNabla = np.zeros((self.nEig, self.nx))
+        self.f0Nabla = np.zeros((self.nEig, self.nx))
+        for i in range(self.nEig):
+            self.omegaNabla[i, :] = 1/(2*self.omega[i])*self.Phi[:, i]@(self.kNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]-self.omega[i]**2*self.mNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]).transpose(2,0,1)@self.Phi[:, i]
+            self.f0Nabla[i] = self.omegaNabla[i]/2/np.pi
+
 
 class Beam2D(Beam):
     from EasyBeam.Beam2D import (ShapeMat, TransXMat, TransMat,
