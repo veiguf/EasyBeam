@@ -402,6 +402,14 @@ def FFRF_Output(self):
         print('Use stiffMatType = "Euler-Bernoulli"\
               \nand massMatType = "consistent" or "lumped"')
 
+    # # the following is for testing in lumped mass paper:
+    # h = self.Properties[0][5]
+    # w = self.Properties[0][6]
+    # l = np.sum(self.ell)
+    # self.Θo = np.diag([1/12*self.mass*(w**2+h**2),
+    #                    1/12*self.mass*(l**2+h**2)+self.mass*(l/2)**2,
+    #                    1/12*self.mass*(l**2+w**2)+self.mass*(l/2)**2])
+
 def FFRF_OutputSensitivities(self, xDelta=1e-9):
     if ((self.stiffMatType[0].lower() == "e" and self.massMatType[0].lower() == "c") or 
         (self.stiffMatType[0].lower() == "e" and self.massMatType[0].lower() == "l")):
