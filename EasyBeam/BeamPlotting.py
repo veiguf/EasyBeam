@@ -121,6 +121,11 @@ def _plotting3D(self, val, disp, title, colormap, save, valName, fileType):
     )
     plotter.enable_parallel_projection()
     plotter.show_axes()
+    # This initial 3D view and can be modified manually here
+    plotter.camera_position = 'yz'
+    plotter.camera.azimuth += 25  # 45
+    plotter.camera.elevation += 15 #  np.arctan(1/np.sqrt(2))*180/np.pi
+    plotter.camera.roll += 0 #  np.arctan(1/np.sqrt(2))*180/np.pi
 
     if save==True:
         plotter.show(
@@ -352,9 +357,11 @@ def PlotInternalForces(self, scale=1, save=False, figType='svg'):
         )
 
 
-def PlotMode(self, scale=1, save=False, figType='svg'):
+def PlotMode(self, scale=1, save=False, figType='svg', extraName='', modes=False):
     Phii = np.zeros([self.nNDoF * self.nN])
-    for ii in range(len(self.omega)):
+    if not modes:
+        modes = range(len(self.omega))
+    for ii in modes:
         Phii[self.DoF] = self.Phi[:, ii]
         uE_Phi = np.zeros([self.nEl, 2 * self.nNDoF])
         uS_Phi = np.zeros([self.nEl, self.nNPoC, self.nSeg + 1])
@@ -386,7 +393,7 @@ def PlotMode(self, scale=1, save=False, figType='svg'):
             ),
             self.colormap,
             save,
-            'Mode_' + str(ii + 1),
+            'Mode_' + str(ii + 1) + extraName,
             figType,
         )
 
