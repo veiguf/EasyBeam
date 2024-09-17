@@ -285,3 +285,6 @@ if __name__ == '__main__':
     print(np.max(SrfNabla-Test.SrfNabla))
     print(np.max(SffNabla-Test.SffNabla))
     print(np.max(r0Nabla-Test.r0Nabla))
+
+    r0M = np.kron(np.eye(3), r0).T
+    Theta = r0M.T@Srr0@r0M
