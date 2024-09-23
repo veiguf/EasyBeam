@@ -8,7 +8,7 @@ Created on Thu Dec 23 11:02:08 2021
 
 import sympy as sym
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from sympy.physics.quantum import TensorProduct as kron
 
 def Skew(v):
@@ -32,16 +32,32 @@ x, y, z = sym.symbols("x y z")
 w, h, ell = sym.symbols("w h ell")
 ρ = sym.Symbol("rho")
 A = sym.Symbol("A")
-# x1, y1, z1 = sym.symbols('x1 y1 z1')
-# x2, y2, z2 = sym.symbols('x2 y2 z2')
+x1, y1, z1 = sym.symbols('x1 y1 z1')
+x2, y2, z2 = sym.symbols('x2 y2 z2')
+
+c1 = (x2-x1)/ell
+c2 = (y2-y1)/ell
+c3 = (z2-z1)/ell
+
+T = sym.Matrix([[c1, -(c1*c2)/sym.sqrt(c1**2+c3**2), -c3/sym.sqrt(c1**2+c3**2)],
+                [c2,          sym.sqrt(c1**2+c3**2),                     0],
+                [c3, -(c2*c3)/sym.sqrt(c1**2+c3**2),  c1/sym.sqrt(c1**2+c3**2)]])
+
 ζ1, ζ2, ζ3, ζ4, ζ5, ζ6, ζ7, ζ8, ζ9, ζ10, ζ11, ζ12 = sym.symbols('ζ1 ζ2 ζ3 ζ4 ζ5 ζ6 ζ7 ζ8 ζ9 ζ10 ζ11 ζ12')
 
 ξ =  x/ell
 η = y/ell
 ζ = z/ell
 
-uO = ell*sym.Matrix([ξ, η, ζ])
+# T = sym.MatrixSymbol('T', 3, 3)
+u1 = sym.Matrix([x1, y1, z1])
+
+uO = u1+T*ell*sym.Matrix([ξ, η, ζ])
+# uO = ell*sym.Matrix([ξ, η, ζ])
 uS = Skew(uO)
+
+uOs = ell*sym.Matrix([ξ, η, ζ])
+uSs = Skew(uOs)
 
 S = sym.Matrix([[                  1-ξ,                   0,                    0],
                 [         6*(ξ-ξ**2)*η,     1-3*ξ**2+2*ξ**3,                    0],
@@ -58,10 +74,6 @@ S = sym.Matrix([[                  1-ξ,                   0,                   
 
 SS = SkewOfMatrix(S)
 
-e = sym.diag(1, 1, 1)
-ζ = sym.Matrix([ζ1, ζ2, ζ3, ζ4, ζ5, ζ6, ζ7, ζ8, ζ9, ζ10, ζ11, ζ12])
-R = sym.diag(1, 1, 1)
-
 m = sym.integrate(ρ, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))               # scalar
 m = m.simplify()
 m = m.subs(w*h, A)
@@ -70,9 +82,43 @@ Xo = sym.integrate(ρ*uO, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))          
 Xo = Xo.simplify()
 Xo = Xo.subs(w*h, A)
 
+Xos1 = sym.integrate(ρ*u1, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
+Xos1 = Xos1.simplify()
+Xos1 = Xos1.subs(w*h, A)
+Xos2 = sym.integrate(ρ*uOs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
+Xos2 = Xos2.simplify()
+Xos2 = Xos2.subs(w*h, A)
+Xos = Xos1+T@Xos2
+Xos = Xos.simplify()
+Xos = Xos.subs(w*h, A)
+
 Θo = sym.integrate(ρ*uS.T*uS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))      # 3x3
 Θo = Θo.simplify()
 Θo = Θo.subs(w*h, A)
+
+Θos1 = sym.integrate(ρ*Skew(u1).T*Skew(u1), (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
+Θos1 = Θos1.simplify()
+Θos1 = Θos1.subs(w*h, A)
+
+Θos2 = sym.integrate(ρ*Skew(u1).T*uSs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
+Θos2 = Θos2.simplify()
+Θos2 = Θos2.subs(w*h, A)
+
+Θos3 = sym.integrate(ρ*uSs.T*Skew(u1), (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
+Θos3 = Θos3.simplify()
+Θos3 = Θos3.subs(w*h, A)
+
+Θos4 = sym.integrate(ρ*uSs.T*uSs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
+Θos4 = Θos4.simplify()
+Θos4 = Θos4.subs(w*h, A)
+
+Θos = Θos1+T.T@Θos4@T  # Θos2@T+T.T@Θos3+
+Θos = Θos.simplify()
+Θos = Θos.subs(w*h, A)
+
+D = Θo-Θos
+D = D.simplify()
+D = D.subs(w*h, A)
 
 Iψ = sym.integrate(ρ*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))            # 3x12
 Iψ = Iψ.simplify()
@@ -102,7 +148,12 @@ IψSψS = sym.integrate(ρ*SS.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
 IψSψS = IψSψS.simplify()
 IψSψS = IψSψS.subs(w*h, A)
 
+"""
 ###############################################################################
+
+e = sym.diag(1, 1, 1)
+ζ = sym.Matrix([ζ1, ζ2, ζ3, ζ4, ζ5, ζ6, ζ7, ζ8, ζ9, ζ10, ζ11, ζ12])
+R = sym.diag(1, 1, 1)
 
 mtt1 = m*e
 mtr1 = -R*(Skew(Xo)+IψS*kron(ζ, e))
@@ -133,7 +184,7 @@ for i in range(3):
         Is[3*i+j] = sym.integrate(ρ*uO[i]*uO[j], (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
         Iv[3*i+j] = sym.integrate(ρ*uO[i]*S[j, :], (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
         Im[3*i+j] = sym.integrate(ρ*S[i, :].T*S[j, :], (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-        print(3*i+j, i+1, j+1)
+        # print(3*i+j, i+1, j+1)
 
 I4 = sym.Matrix([[Iv[5]-Iv[7]],
                  [Iv[6]-Iv[2]],
@@ -180,19 +231,10 @@ mff2 = I6
 
 ###############################################################################
 
-# v1, v2, v3, v4, v5, v6, v7, v8, v9 = sym.symbols('v1 v2 v3 v4 v5 v6 v7 v8 v9')
-# x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12 = sym.symbols('x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12')
-# y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12 = sym.symbols('y1 y2 y3 y4 y5 y6 y7 y8 y9 y10 y11 y12')
-# z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12 = sym.symbols('z1 z2 z3 z4 z5 z6 z7 z8 z9 z10 z11 z12')
-
-# v = sym.Matrix([[v1, v2, v3],
-#                 [v4, v5, v6],
-#                 [v7, v8, v9]])
-
-# w = sym.Matrix([[x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12],
-#                 [y1, y2, y3, y4, y5, y6, y7, y8, y9, y10, y11, y12],
-#                 [z1, z2, z3, z4, z5, z6, z7, z8, z9, z10, z11, z12]])
-
-# # Testing
-# V = SkewOfMatrix(v@w)
-# W = Skew(v[0, :]).T*SkewOfMatrix(w)
+print(mtt1-mtt2)
+print(mtr1-mtr2)
+print(mtf1-mtf2)
+print((mrr1-mrr2).simplify())
+print((mrf1-mrf2).simplify())
+print((mff1-mff2).simplify())
+"""
