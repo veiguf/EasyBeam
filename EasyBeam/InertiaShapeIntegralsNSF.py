@@ -22,8 +22,9 @@ def Skew(v):
     return(s)
 
 def SkewOfMatrix(m):
-    S = sym.zeros(3, 3*12)
-    for i in range(12):
+    x = len(m[0, :])
+    S = sym.zeros(3, 3*x)
+    for i in range(x):
         S[:, 3*i:3*(i+1)] = Skew(m[:, i])
     return S
 
@@ -32,18 +33,22 @@ x, y, z = sym.symbols("x y z")
 w, h, ell = sym.symbols("w h ell")
 ρ = sym.Symbol("rho")
 A = sym.Symbol("A")
+
 x1, y1, z1 = sym.symbols('x1 y1 z1')
-x2, y2, z2 = sym.symbols('x2 y2 z2')
+# x2, y2, z2 = sym.symbols('x2 y2 z2')
 
-c1 = (x2-x1)/ell
-c2 = (y2-y1)/ell
-c3 = (z2-z1)/ell
+# c1 = (x2-x1)/ell
+# c2 = (y2-y1)/ell
+# c3 = (z2-z1)/ell
 
-T = sym.Matrix([[c1, -(c1*c2)/sym.sqrt(c1**2+c3**2), -c3/sym.sqrt(c1**2+c3**2)],
-                [c2,          sym.sqrt(c1**2+c3**2),                     0],
-                [c3, -(c2*c3)/sym.sqrt(c1**2+c3**2),  c1/sym.sqrt(c1**2+c3**2)]])
+# T = sym.Matrix([[c1, -(c1*c2)/sym.sqrt(c1**2+c3**2), -c3/sym.sqrt(c1**2+c3**2)],
+#                 [c2,          sym.sqrt(c1**2+c3**2),                     0],
+#                 [c3, -(c2*c3)/sym.sqrt(c1**2+c3**2),  c1/sym.sqrt(c1**2+c3**2)]])
 
-ζ1, ζ2, ζ3, ζ4, ζ5, ζ6, ζ7, ζ8, ζ9, ζ10, ζ11, ζ12 = sym.symbols('ζ1 ζ2 ζ3 ζ4 ζ5 ζ6 ζ7 ζ8 ζ9 ζ10 ζ11 ζ12')
+T11, T12, T13, T21, T22, T23, T31, T32, T33 = sym.symbols("T11 T12 T13 T21 T22 T23 T31 T32 T33")
+T = sym.Matrix([[T11, T12, T13],
+                [T21, T22, T23],
+                [T31, T32, T33]])
 
 ξ =  x/ell
 η = y/ell
@@ -51,13 +56,16 @@ T = sym.Matrix([[c1, -(c1*c2)/sym.sqrt(c1**2+c3**2), -c3/sym.sqrt(c1**2+c3**2)],
 
 # T = sym.MatrixSymbol('T', 3, 3)
 u1 = sym.Matrix([x1, y1, z1])
+u1s = Skew(u1)
 
-uO = u1+T*ell*sym.Matrix([ξ, η, ζ])
-# uO = ell*sym.Matrix([ξ, η, ζ])
-uS = Skew(uO)
+uL = ell*sym.Matrix([ξ, η, ζ])
+uLs = Skew(uL)
 
-uOs = ell*sym.Matrix([ξ, η, ζ])
-uSs = Skew(uOs)
+uX = T*uL
+uXs = Skew(uX)
+
+uO = u1+uX
+uOs = Skew(uO)
 
 S = sym.Matrix([[                  1-ξ,                   0,                    0],
                 [         6*(ξ-ξ**2)*η,     1-3*ξ**2+2*ξ**3,                    0],
@@ -81,77 +89,53 @@ m = m.subs(w*h, A)
 Xo = sym.integrate(ρ*uO, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))           # 3x1
 Xo = Xo.simplify()
 Xo = Xo.subs(w*h, A)
+print("\n Xo \n", Xo)
 
-Xos1 = sym.integrate(ρ*u1, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-Xos1 = Xos1.simplify()
-Xos1 = Xos1.subs(w*h, A)
-Xos2 = sym.integrate(ρ*uOs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-Xos2 = Xos2.simplify()
-Xos2 = Xos2.subs(w*h, A)
-Xos = Xos1+T@Xos2
-Xos = Xos.simplify()
-Xos = Xos.subs(w*h, A)
-
-Θo = sym.integrate(ρ*uS.T*uS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))      # 3x3
+Θo = sym.integrate(ρ*uOs.T*uOs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))      # 3x3
 Θo = Θo.simplify()
 Θo = Θo.subs(w*h, A)
-
-Θos1 = sym.integrate(ρ*Skew(u1).T*Skew(u1), (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-Θos1 = Θos1.simplify()
-Θos1 = Θos1.subs(w*h, A)
-
-Θos2 = sym.integrate(ρ*Skew(u1).T*uSs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-Θos2 = Θos2.simplify()
-Θos2 = Θos2.subs(w*h, A)
-
-Θos3 = sym.integrate(ρ*uSs.T*Skew(u1), (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-Θos3 = Θos3.simplify()
-Θos3 = Θos3.subs(w*h, A)
-
-Θos4 = sym.integrate(ρ*uSs.T*uSs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))
-Θos4 = Θos4.simplify()
-Θos4 = Θos4.subs(w*h, A)
-
-Θos = Θos1+T.T@Θos4@T  # Θos2@T+T.T@Θos3+
-Θos = Θos.simplify()
-Θos = Θos.subs(w*h, A)
-
-D = Θo-Θos
-D = D.simplify()
-D = D.subs(w*h, A)
+print("\n Θo \n", Θo)
 
 Iψ = sym.integrate(ρ*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))            # 3x12
 Iψ = Iψ.simplify()
 Iψ = Iψ.subs(w*h, A)
+print("\n Iψ.T \n", Iψ.T)
 
 IψS = sym.integrate(ρ*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))          # 3x36
 IψS = IψS.simplify()
 IψS = IψS.subs(w*h, A)
+print("\n IψS.T \n", IψS.T)
 
-IuSψ = sym.integrate(ρ*uS.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 3x12
+IuSψ = sym.integrate(ρ*uOs.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 3x12
 IuSψ = IuSψ.simplify()
 IuSψ = IuSψ.subs(w*h, A)
+print("\n IuSψ.T \n", IuSψ.T)
 
-IuSψS = sym.integrate(ρ*uS.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 3x36
+IuSψS = sym.integrate(ρ*uOs.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 3x36
 IuSψS = IuSψS.simplify()
 IuSψS = IuSψS.subs(w*h, A)
+print("\n IuSψS.T \n", IuSψS.T)
 
 Iψψ = sym.integrate(ρ*S.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))       # 12x12
 Iψψ = Iψψ.simplify()
 Iψψ = Iψψ.subs(w*h, A)
+print("\n Iψψ \n", Iψψ)
 
 IψSψ = sym.integrate(ρ*SS.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 36x12
 IψSψ = IψSψ.simplify()
 IψSψ = IψSψ.subs(w*h, A)
+print("\n IψSψ \n", IψSψ)
 
 IψSψS = sym.integrate(ρ*SS.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 36x36
 IψSψS = IψSψS.simplify()
 IψSψS = IψSψS.subs(w*h, A)
+print("\n IψSψS \n", IψSψS)
 
 """
 ###############################################################################
 
 e = sym.diag(1, 1, 1)
+ζ1, ζ2, ζ3, ζ4, ζ5, ζ6, ζ7, ζ8, ζ9, ζ10, ζ11, ζ12 = sym.symbols('ζ1 ζ2 ζ3 ζ4 ζ5 ζ6 ζ7 ζ8 ζ9 ζ10 ζ11 ζ12')
 ζ = sym.Matrix([ζ1, ζ2, ζ3, ζ4, ζ5, ζ6, ζ7, ζ8, ζ9, ζ10, ζ11, ζ12])
 R = sym.diag(1, 1, 1)
 

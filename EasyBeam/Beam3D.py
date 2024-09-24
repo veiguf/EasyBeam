@@ -58,15 +58,15 @@ def TransXMat(self, i):
     # from Shabana (2020) Eq. (6.114)
     # local x-axis goes from first element to the second element
     # local z-axis is perpendicular (cross product) to local x-axis and global y-axis
-    a1 = self.Nodes[self.El[i, 0]-1, 0]
-    a2 = self.Nodes[self.El[i, 0]-1, 1]
-    a3 = self.Nodes[self.El[i, 0]-1, 2]
-    b1 = self.Nodes[self.El[i, 1]-1, 0]
-    b2 = self.Nodes[self.El[i, 1]-1, 1]
-    b3 = self.Nodes[self.El[i, 1]-1, 2]
-    c1 = (b1-a1)/self.ell[i]
-    c2 = (b2-a2)/self.ell[i]
-    c3 = (b3-a3)/self.ell[i]
+    a1 = self.Nodes[self.El[i, 0]-1, 0]  # x1
+    a2 = self.Nodes[self.El[i, 0]-1, 1]  # y1
+    a3 = self.Nodes[self.El[i, 0]-1, 2]  # z1
+    b1 = self.Nodes[self.El[i, 1]-1, 0]  # x1
+    b2 = self.Nodes[self.El[i, 1]-1, 1]  # y2
+    b3 = self.Nodes[self.El[i, 1]-1, 2]  # z2
+    c1 = (b1-a1)/self.ell[i]  # xDelta/ell
+    c2 = (b2-a2)/self.ell[i]  # yDelta/ell
+    c3 = (b3-a3)/self.ell[i]  # zDelta/ell
     if (c1**2+c3**2) == 0:
         T3 = np.array([[ 0, -c2, 0],
                        [c2,   0, 0],
