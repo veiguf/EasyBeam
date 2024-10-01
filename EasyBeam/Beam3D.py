@@ -144,48 +144,78 @@ def MatMat(self, i):
 
 def MassMatElem(self, i):
     A = self.A[i]
-    E = self.E[i]
     ell = self.ell[i]
-    Ix = self.Ix[i]
     rho = self.rho[i]
 
     if self.stiffMatType[0].lower() in ["e", "b"]:
         if self.massMatType[0].lower() == "c":
-            c = A*rho*ell/420
-            m = np.zeros((12, 12))
-            m[0, 0] = m[6, 6] = 140
-            m[1, 1] = m[7, 7] = 156
-            m[2, 2] = m[8, 8] = 156
-            m[3, 3] = m[9, 9] = 140*Ix/A
-            m[4, 4] = m[10, 10] = 4*ell**2
-            m[5, 5] = m[11, 11] = 4*ell**2
-            m[0, 6] = 70
-            m[1, 5] = 22*ell
-            m[1, 7] = 54
-            m[1, 11] = -13*ell
-            m[2, 4] = -22*ell
-            m[2, 8] = 54
-            m[2, 10] = 13*ell
-            m[3, 9] = 70*Ix/A
-            m[4, 8] = -13*ell
-            m[4, 10] = -3*ell**2
-            m[5, 7] = 13*ell
-            m[5, 11] = -3*ell**2
-            m[7, 11] = -22*ell
-            m[8, 10] = 22*ell
-            m += np.triu(m, k=1).T
-            m *= c
+            if self.shapeFunType[0].lower() == "e":
+                m = np.array([[A*ell*rho/3,                    0,                    0, 0,                    0,                   0, A*ell*rho/6,                    0,                    0, 0,                   0,                    0],
+                              [          0,      13*A*ell*rho/35,                    0, 0,                    0, 11*A*ell**2*rho/210,           0,       9*A*ell*rho/70,                    0, 0,                   0, -13*A*ell**2*rho/420],
+                              [          0,                    0,      13*A*ell*rho/35, 0, -11*A*ell**2*rho/210,                   0,           0,                    0,       9*A*ell*rho/70, 0, 13*A*ell**2*rho/420,                    0],
+                              [          0,                    0,                    0, 0,                    0,                   0,           0,                    0,                    0, 0,                   0,                    0],
+                              [          0,                    0, -11*A*ell**2*rho/210, 0,     A*ell**3*rho/105,                   0,           0,                    0, -13*A*ell**2*rho/420, 0,   -A*ell**3*rho/140,                    0],
+                              [          0,  11*A*ell**2*rho/210,                    0, 0,                    0,    A*ell**3*rho/105,           0,  13*A*ell**2*rho/420,                    0, 0,                   0,    -A*ell**3*rho/140],
+                              [A*ell*rho/6,                    0,                    0, 0,                    0,                   0, A*ell*rho/3,                    0,                    0, 0,                   0,                    0],
+                              [          0,       9*A*ell*rho/70,                    0, 0,                    0, 13*A*ell**2*rho/420,           0,      13*A*ell*rho/35,                    0, 0,                   0, -11*A*ell**2*rho/210],
+                              [          0,                    0,       9*A*ell*rho/70, 0, -13*A*ell**2*rho/420,                   0,           0,                    0,      13*A*ell*rho/35, 0, 11*A*ell**2*rho/210,                    0],
+                              [          0,                    0,                    0, 0,                    0,                   0,           0,                    0,                    0, 0,                   0,                    0],
+                              [          0,                    0,  13*A*ell**2*rho/420, 0,    -A*ell**3*rho/140,                   0,           0,                    0,  11*A*ell**2*rho/210, 0,    A*ell**3*rho/105,                    0],
+                              [          0, -13*A*ell**2*rho/420,                    0, 0,                    0,   -A*ell**3*rho/140,           0, -11*A*ell**2*rho/210,                    0, 0,                   0,     A*ell**3*rho/105]])
+            elif self.shapeFunType[0].lower() == "i":
+                # for rectangular cross sections only!!!
+                for ii in range(len(self.Properties)):
+                    if self.PropID[i] == self.Properties[ii][0]:
+                        h = self.Properties[ii][5]
+                        w = self.Properties[ii][6]
+                m = np.array([[A*ell*rho/3,                                   0,                                   0,                          0,                                    0,                                    0, A*ell*rho/6,                                   0,                                   0,                          0,                                    0,                                    0],
+                              [          0, A*rho*(26*ell**2 + 7*w**2)/(70*ell),                                   0,                          0,                                    0,       A*rho*(44*ell**2 + 7*w**2)/840,           0,  A*rho*(9*ell**2 - 7*w**2)/(70*ell),                                   0,                          0,                                    0,      A*rho*(-26*ell**2 + 7*w**2)/840],
+                              [          0,                                   0, A*rho*(26*ell**2 + 7*h**2)/(70*ell),                          0,      A*rho*(-44*ell**2 - 7*h**2)/840,                                    0,           0,                                   0,  A*rho*(9*ell**2 - 7*h**2)/(70*ell),                          0,       A*rho*(26*ell**2 - 7*h**2)/840,                                    0],
+                              [          0,                                   0,                                   0, A*ell*rho*(h**2 + w**2)/36,                                    0,                                    0,           0,                                   0,                                   0, A*ell*rho*(h**2 + w**2)/72,                                    0,                                    0],
+                              [          0,                                   0,     A*rho*(-44*ell**2 - 7*h**2)/840,                          0,    A*ell*rho*(6*ell**2 + 7*h**2)/630,                                    0,           0,                                   0,     A*rho*(-26*ell**2 + 7*h**2)/840,                          0, A*ell*rho*(-18*ell**2 - 7*h**2)/2520,                                    0],
+                              [          0,      A*rho*(44*ell**2 + 7*w**2)/840,                                   0,                          0,                                    0,    A*ell*rho*(6*ell**2 + 7*w**2)/630,           0,      A*rho*(26*ell**2 - 7*w**2)/840,                                   0,                          0,                                    0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520],
+                              [A*ell*rho/6,                                   0,                                   0,                          0,                                    0,                                    0, A*ell*rho/3,                                   0,                                   0,                          0,                                    0,                                    0],
+                              [          0,  A*rho*(9*ell**2 - 7*w**2)/(70*ell),                                   0,                          0,                                    0,       A*rho*(26*ell**2 - 7*w**2)/840,           0, A*rho*(26*ell**2 + 7*w**2)/(70*ell),                                   0,                          0,                                    0,      -A*rho*(44*ell**2 + 7*w**2)/840],
+                              [          0,                                   0,  A*rho*(9*ell**2 - 7*h**2)/(70*ell),                          0,      A*rho*(-26*ell**2 + 7*h**2)/840,                                    0,           0,                                   0, A*rho*(26*ell**2 + 7*h**2)/(70*ell),                          0,       A*rho*(44*ell**2 + 7*h**2)/840,                                    0],
+                              [          0,                                   0,                                   0, A*ell*rho*(h**2 + w**2)/72,                                    0,                                    0,           0,                                   0,                                   0, A*ell*rho*(h**2 + w**2)/36,                                    0,                                    0],
+                              [          0,                                   0,      A*rho*(26*ell**2 - 7*h**2)/840,                          0, A*ell*rho*(-18*ell**2 - 7*h**2)/2520,                                    0,           0,                                   0,      A*rho*(44*ell**2 + 7*h**2)/840,                          0,    A*ell*rho*(6*ell**2 + 7*h**2)/630,                                    0],
+                              [          0,     A*rho*(-26*ell**2 + 7*w**2)/840,                                   0,                          0,                                    0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520,           0,     -A*rho*(44*ell**2 + 7*w**2)/840,                                   0,                          0,                                    0,    A*ell*rho*(6*ell**2 + 7*w**2)/630]])
         elif self.massMatType[0].lower() == "l":
-            # HRZ lumping: please check!
-            c = A*rho*ell
-            m = np.zeros([12, 12])
-            m[0, 0] = m[6, 6] = 1/2
-            m[1, 1] = m[7, 7] = 1/2
-            m[2, 2] = m[8, 8] = 1/2
-            m[3, 3] = m[9, 9] = 1/2*Ix/A
-            m[4, 4] = m[10, 10] = 1/64*ell**2
-            m[5, 5] = m[11, 11] = 1/64*ell**2
-            m *= c
+            if self.shapeFunType[0].lower() == "e":
+                c = A*rho*ell
+                m = np.array([[1/2,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0, 1/2,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0, 1/2, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0, ell**2/78,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0, ell**2/78,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0, 1/2,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0, 1/2,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0, 1/2, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0, ell**2/78,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0, ell**2/78]])
+                m *= c
+            elif self.shapeFunType[0].lower() == "i":
+                # for rectangular cross sections only!!!
+                c = A*rho*ell
+                for ii in range(len(self.Properties)):
+                    if self.PropID[i] == self.Properties[ii][0]:
+                        h = self.Properties[ii][5]
+                        w = self.Properties[ii][6]
+                m = np.array([[1/2,   0,   0,                 0,                                                    0,                                                    0,   0,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0, 1/2,   0,                 0,                                                    0,                                                    0,   0,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0, 1/2,                 0,                                                    0,                                                    0,   0,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0, h**2/24 + w**2/24,                                                    0,                                                    0,   0,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0, ell**2*(6*ell**2 + 7*h**2)/(18*(26*ell**2 + 7*w**2)),                                                    0,   0,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0,                                                    0, ell**2*(6*ell**2 + 7*w**2)/(18*(26*ell**2 + 7*h**2)),   0,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0,                                                    0,                                                    0, 1/2,   0,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0,                                                    0,                                                    0,   0, 1/2,   0,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0,                                                    0,                                                    0,   0,   0, 1/2,                 0,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0,                                                    0,                                                    0,   0,   0,   0, h**2/24 + w**2/24,                                                    0,                                                    0],
+                              [  0,   0,   0,                 0,                                                    0,                                                    0,   0,   0,   0,                 0, ell**2*(6*ell**2 + 7*h**2)/(18*(26*ell**2 + 7*w**2)),                                                    0],
+                              [  0,   0,   0,                 0,                                                    0,                                                    0,   0,   0,   0,                 0,                                                    0, ell**2*(6*ell**2 + 7*w**2)/(18*(26*ell**2 + 7*h**2))]])
+                m *= c
     elif self.stiffMatType[0].lower() == "t":
         pass
     return m

@@ -51,10 +51,9 @@ T = sym.Matrix([[T11, T12, T13],
                 [T31, T32, T33]])
 
 ξ =  x/ell
-η = y/ell
-ζ = z/ell
+η =  y/ell  # 0
+ζ =  z/ell  # 0
 
-# T = sym.MatrixSymbol('T', 3, 3)
 u1 = sym.Matrix([x1, y1, z1])
 u1s = Skew(u1)
 
@@ -82,6 +81,8 @@ S = sym.Matrix([[                  1-ξ,                   0,                   
 
 SS = SkewOfMatrix(S)
 
+printMatrices = False
+
 m = sym.integrate(ρ, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))               # scalar
 m = m.simplify()
 m = m.subs(w*h, A)
@@ -89,47 +90,65 @@ m = m.subs(w*h, A)
 Xo = sym.integrate(ρ*uO, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))           # 3x1
 Xo = Xo.simplify()
 Xo = Xo.subs(w*h, A)
-print("\n Xo \n", Xo)
+if printMatrices:
+    print("\n Xo \n", Xo)
 
 Θo = sym.integrate(ρ*uOs.T*uOs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))      # 3x3
 Θo = Θo.simplify()
 Θo = Θo.subs(w*h, A)
-print("\n Θo \n", Θo)
+if printMatrices:
+    print("\n Θo \n", Θo)
 
 Iψ = sym.integrate(ρ*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))            # 3x12
 Iψ = Iψ.simplify()
 Iψ = Iψ.subs(w*h, A)
-print("\n Iψ.T \n", Iψ.T)
+if printMatrices:
+    print("\n Iψ.T \n", Iψ.T)
 
 IψS = sym.integrate(ρ*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))          # 3x36
 IψS = IψS.simplify()
 IψS = IψS.subs(w*h, A)
-print("\n IψS.T \n", IψS.T)
+if printMatrices:
+    print("\n IψS.T \n", IψS.T)
 
 IuSψ = sym.integrate(ρ*uOs.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 3x12
 IuSψ = IuSψ.simplify()
 IuSψ = IuSψ.subs(w*h, A)
-print("\n IuSψ.T \n", IuSψ.T)
+if printMatrices:
+    print("\n IuSψ.T \n", IuSψ.T)
 
 IuSψS = sym.integrate(ρ*uOs.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 3x36
 IuSψS = IuSψS.simplify()
 IuSψS = IuSψS.subs(w*h, A)
-print("\n IuSψS.T \n", IuSψS.T)
+if printMatrices:
+    print("\n IuSψS.T \n", IuSψS.T)
 
 Iψψ = sym.integrate(ρ*S.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))       # 12x12
 Iψψ = Iψψ.simplify()
 Iψψ = Iψψ.subs(w*h, A)
-print("\n Iψψ \n", Iψψ)
+if printMatrices:
+    print("\n Iψψ \n", Iψψ)
 
 IψSψ = sym.integrate(ρ*SS.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 36x12
 IψSψ = IψSψ.simplify()
 IψSψ = IψSψ.subs(w*h, A)
-print("\n IψSψ \n", IψSψ)
+if printMatrices:
+    print("\n IψSψ \n", IψSψ)
 
 IψSψS = sym.integrate(ρ*SS.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 36x36
 IψSψS = IψSψS.simplify()
 IψSψS = IψSψS.subs(w*h, A)
-print("\n IψSψS \n", IψSψS)
+if printMatrices:
+    print("\n IψSψS \n", IψSψS)
+
+# HRZ lumping from Felippa et al (2014) Appendix 4.1:
+mlum = sym.zeros(12, 12)
+for i in range(3):
+    S = Iψψ[i, i]+Iψψ[6+i, 6+i]
+    mlum[i, i] = (Iψψ[i, i]/S).simplify()
+    mlum[3+i, 3+i] = (Iψψ[3+i, 3+i]/S).simplify()
+    mlum[6+i, 6+i] = (Iψψ[6+i, 6+i]/S).simplify()
+    mlum[9+i, 9+i] = (Iψψ[9+i, 9+i]/S).simplify()
 
 """
 ###############################################################################
