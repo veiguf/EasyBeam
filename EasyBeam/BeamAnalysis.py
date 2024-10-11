@@ -160,7 +160,7 @@ class Beam:
                             c1 = 1/3*(1-0.63/(h/b)+0.052/(h/b)**5)
                             c2 = 1-0.65/(1+(h/b)**3)
                             c3 = 0.743+0.514/(1+(h/b)**3)
-                            self.Ix[i] = c1*h*b**3
+                            # self.Ix[i] = c1*h*b**3
                             if self.nNDoF == 3:
                                 self.Sec[i, :, :] = np.array([[   0,    0, 0],
                                                               [   0,  h/2, 0],
@@ -179,7 +179,7 @@ class Beam:
                             c1 = 1/3*(1-0.63/(b/h)+0.052/(b/h)**5)
                             c2 = 1-0.65/(1+(b/h)**3)
                             c3 = 0.743+0.514/(1+(b/h)**3)
-                            self.Ix[i] = c1*b*h**3
+                            # self.Ix[i] = c1*b*h**3
                             if self.nNDoF == 3:
                                 self.Sec[i, :, :] = np.array([[   0,    0, 0],
                                                               [   0,  h/2, 0],
@@ -196,6 +196,7 @@ class Beam:
                                                               [ b/2, -h/2,       0]])
                         self.Iy[i] = b*h**3/12
                         self.Iz[i] = h*b**3/12
+                        self.Ix[i] = self.Iy[i]+self.Iz[i]
                         self.ϰ[i] = 10*(1+self.nu[i])/(12+11*self.nu[i])  #Solid rectangular cross-sectional geometry after Cowper (1966)
                     elif self.Properties[ii][4] in [4, "recttube"]:
                         h = self.Properties[ii][5]
