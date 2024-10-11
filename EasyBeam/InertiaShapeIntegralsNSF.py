@@ -8,7 +8,7 @@ Created on Thu Dec 23 11:02:08 2021
 
 import sympy as sym
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from sympy.physics.quantum import TensorProduct as kron
 
 def Skew(v):
@@ -33,6 +33,7 @@ x, y, z = sym.symbols("x y z")
 w, h, ell = sym.symbols("w h ell")
 ρ = sym.Symbol("rho")
 A = sym.Symbol("A")
+Ix = sym.Symbol("I_x")
 
 x1, y1, z1 = sym.symbols('x1 y1 z1')
 # x2, y2, z2 = sym.symbols('x2 y2 z2')
@@ -50,9 +51,9 @@ T = sym.Matrix([[T11, T12, T13],
                 [T21, T22, T23],
                 [T31, T32, T33]])
 
-ξ =  x/ell
-η =  y/ell  # 0
-ζ =  z/ell  # 0
+ξ = x/ell
+η = 0  # y/ell  # 0
+ζ = 0  # z/ell  # 0
 
 u1 = sym.Matrix([x1, y1, z1])
 u1s = Skew(u1)
@@ -126,6 +127,11 @@ if printMatrices:
 Iψψ = sym.integrate(ρ*S.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))       # 12x12
 Iψψ = Iψψ.simplify()
 Iψψ = Iψψ.subs(w*h, A)
+
+IψψTorsion = sym.zeros(12, 12)
+IψψTorsion[3, 3] = IψψTorsion[9, 9] = A*ell*ρ*Ix/(3*A)
+IψψTorsion[3, 9] = IψψTorsion[9, 3] = A*ell*ρ*Ix/(6*A)
+Iψψ += IψψTorsion
 if printMatrices:
     print("\n Iψψ \n", Iψψ)
 
@@ -144,11 +150,11 @@ if printMatrices:
 # HRZ lumping from Felippa et al (2014) Appendix 4.1:
 mlum = sym.zeros(12, 12)
 for i in range(3):
-    S = Iψψ[i, i]+Iψψ[6+i, 6+i]
-    mlum[i, i] = (Iψψ[i, i]/S).simplify()
-    mlum[3+i, 3+i] = (Iψψ[3+i, 3+i]/S).simplify()
-    mlum[6+i, 6+i] = (Iψψ[6+i, 6+i]/S).simplify()
-    mlum[9+i, 9+i] = (Iψψ[9+i, 9+i]/S).simplify()
+    Sum = Iψψ[i, i]+Iψψ[6+i, 6+i]
+    mlum[i, i] = (Iψψ[i, i]/Sum).simplify()
+    mlum[3+i, 3+i] = (Iψψ[3+i, 3+i]/Sum).simplify()
+    mlum[6+i, 6+i] = (Iψψ[6+i, 6+i]/Sum).simplify()
+    mlum[9+i, 9+i] = (Iψψ[9+i, 9+i]/Sum).simplify()
 
 """
 ###############################################################################

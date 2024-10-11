@@ -241,7 +241,6 @@ def IuSψSElem(self, i):
                          [                                  0,                 A*ell**2*rho*(3*T31*ell + 5*z1)/60,                -A*ell**2*rho*(3*T21*ell + 5*y1)/60]],
                         dtype=float).T)
 
-
 def IψψElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
