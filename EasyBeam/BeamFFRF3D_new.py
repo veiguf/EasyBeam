@@ -91,7 +91,7 @@ def IuSψElem(self, i):
     y1 = self.Nodes[self.El[i, 0]-1, 1]
     z1 = self.Nodes[self.El[i, 0]-1, 2]
 
-    if self.shapeFunType[0].lower() == "e":
+    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
         x2 = self.Nodes[self.El[i, 1]-1, 0]
         y2 = self.Nodes[self.El[i, 1]-1, 1]
         z2 = self.Nodes[self.El[i, 1]-1, 2]
@@ -146,7 +146,7 @@ def IuSψSElem(self, i):
     y1 = self.Nodes[self.El[i, 0]-1, 1]
     z1 = self.Nodes[self.El[i, 0]-1, 2]
 
-    if self.shapeFunType[0].lower() == "e":
+    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
         x2 = self.Nodes[self.El[i, 1]-1, 0]
         y2 = self.Nodes[self.El[i, 1]-1, 1]
         z2 = self.Nodes[self.El[i, 1]-1, 2]
@@ -261,6 +261,22 @@ def IψψElem(self, i):
                          [          0, -13*A*ell**2*rho/420,                    0, 0,                    0,   -A*ell**3*rho/140,           0, -11*A*ell**2*rho/210,                    0, 0,                   0,     A*ell**3*rho/105]],
                         dtype=float))
 
+    elif self.shapeFunType[0].lower() == "t":
+        Ix = self.Ix[i]
+        return(np.array([[A*ell*rho/3,                    0,                    0,                0,                    0,                   0, A*ell*rho/6,                    0,                    0,                0,                   0,                    0],
+                         [          0,      13*A*ell*rho/35,                    0,                0,                    0, 11*A*ell**2*rho/210,           0,       9*A*ell*rho/70,                    0,                0,                   0, -13*A*ell**2*rho/420],
+                         [          0,                    0,      13*A*ell*rho/35,                0, -11*A*ell**2*rho/210,                   0,           0,                    0,       9*A*ell*rho/70,                0, 13*A*ell**2*rho/420,                    0],
+                         [          0,                    0,                    0, A*ell*rho*Ix/A/3,                    0,                   0,           0,                    0,                    0, A*ell*rho*Ix/A/6,                   0,                    0],
+                         [          0,                    0, -11*A*ell**2*rho/210,                0,     A*ell**3*rho/105,                   0,           0,                    0, -13*A*ell**2*rho/420,                0,   -A*ell**3*rho/140,                    0],
+                         [          0,  11*A*ell**2*rho/210,                    0,                0,                    0,    A*ell**3*rho/105,           0,  13*A*ell**2*rho/420,                    0,                0,                   0,    -A*ell**3*rho/140],
+                         [A*ell*rho/6,                    0,                    0,                0,                    0,                   0, A*ell*rho/3,                    0,                    0,                0,                   0,                    0],
+                         [          0,       9*A*ell*rho/70,                    0,                0,                    0, 13*A*ell**2*rho/420,           0,      13*A*ell*rho/35,                    0,                0,                   0, -11*A*ell**2*rho/210],
+                         [          0,                    0,       9*A*ell*rho/70,                0, -13*A*ell**2*rho/420,                   0,           0,                    0,      13*A*ell*rho/35,                0, 11*A*ell**2*rho/210,                    0],
+                         [          0,                    0,                    0, A*ell*rho*Ix/A/6,                    0,                   0,           0,                    0,                    0, A*ell*rho*Ix/A/3,                   0,                    0],
+                         [          0,                    0,  13*A*ell**2*rho/420,                0,    -A*ell**3*rho/140,                   0,           0,                    0,  11*A*ell**2*rho/210,                0,    A*ell**3*rho/105,                    0],
+                         [          0, -13*A*ell**2*rho/420,                    0,                0,                    0,   -A*ell**3*rho/140,           0, -11*A*ell**2*rho/210,                    0,                0,                   0,     A*ell**3*rho/105]],
+                        dtype=float))
+
     elif self.shapeFunType[0].lower() == "i":
         # for rectangular cross sections only!!!
         for ii in range(len(self.Properties)):
@@ -287,7 +303,7 @@ def IψSψElem(self, i):
     rho = self.rho[i]
     A = self.A[i]
 
-    if self.shapeFunType[0].lower() == "e":
+    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
         return(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 7*A*ell*rho/20, 0, -A*ell**2*rho/20, 0, 0, 0, 3*A*ell*rho/20, 0, A*ell**2*rho/30, 0],
                          [0, -7*A*ell*rho/20, 0, 0, 0, -A*ell**2*rho/20, 0, -3*A*ell*rho/20, 0, 0, 0, A*ell**2*rho/30],
@@ -375,7 +391,7 @@ def IψSψSElem(self, i):
     rho = self.rho[i]
     A = self.A[i]
 
-    if self.shapeFunType[0].lower() == "e":
+    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
         return(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, A*ell*rho/3, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, A*ell*rho/6, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0],
                          [0, 0, A*ell*rho/3, 0, 0, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, A*ell**2*rho/20, 0, 0, 0, 0, 0, 0, 0, A*ell*rho/6, 0, 0, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, -A*ell**2*rho/30, 0, 0, 0, 0, 0],
@@ -510,7 +526,7 @@ def FFRF_Output(self):
             x1 = self.Nodes[self.El[i, 0]-1, 0]
             y1 = self.Nodes[self.El[i, 0]-1, 1]
             z1 = self.Nodes[self.El[i, 0]-1, 2]
-            if self.shapeFunType[0].lower() == "e":
+            if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
                 x2 = self.Nodes[self.El[i, 1]-1, 0]
                 y2 = self.Nodes[self.El[i, 1]-1, 1]
                 z2 = self.Nodes[self.El[i, 1]-1, 2]

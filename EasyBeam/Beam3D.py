@@ -153,6 +153,19 @@ def MassMatElem(self, i):
     if self.stiffMatType[0].lower() in ["e", "b"]:
         if self.massMatType[0].lower() == "c":
             if self.shapeFunType[0].lower() == "e":
+                m = np.array([[A*ell*rho/3,                    0,                    0, 0,                    0,                   0, A*ell*rho/6,                    0,                    0, 0,                   0,                    0],
+                              [          0,      13*A*ell*rho/35,                    0, 0,                    0, 11*A*ell**2*rho/210,           0,       9*A*ell*rho/70,                    0, 0,                   0, -13*A*ell**2*rho/420],
+                              [          0,                    0,      13*A*ell*rho/35, 0, -11*A*ell**2*rho/210,                   0,           0,                    0,       9*A*ell*rho/70, 0, 13*A*ell**2*rho/420,                    0],
+                              [          0,                    0,                    0, 0,                    0,                   0,           0,                    0,                    0, 0,                   0,                    0],
+                              [          0,                    0, -11*A*ell**2*rho/210, 0,     A*ell**3*rho/105,                   0,           0,                    0, -13*A*ell**2*rho/420, 0,   -A*ell**3*rho/140,                    0],
+                              [          0,  11*A*ell**2*rho/210,                    0, 0,                    0,    A*ell**3*rho/105,           0,  13*A*ell**2*rho/420,                    0, 0,                   0,    -A*ell**3*rho/140],
+                              [A*ell*rho/6,                    0,                    0, 0,                    0,                   0, A*ell*rho/3,                    0,                    0, 0,                   0,                    0],
+                              [          0,       9*A*ell*rho/70,                    0, 0,                    0, 13*A*ell**2*rho/420,           0,      13*A*ell*rho/35,                    0, 0,                   0, -11*A*ell**2*rho/210],
+                              [          0,                    0,       9*A*ell*rho/70, 0, -13*A*ell**2*rho/420,                   0,           0,                    0,      13*A*ell*rho/35, 0, 11*A*ell**2*rho/210,                    0],
+                              [          0,                    0,                    0, 0,                    0,                   0,           0,                    0,                    0, 0,                   0,                    0],
+                              [          0,                    0,  13*A*ell**2*rho/420, 0,    -A*ell**3*rho/140,                   0,           0,                    0,  11*A*ell**2*rho/210, 0,    A*ell**3*rho/105,                    0],
+                              [          0, -13*A*ell**2*rho/420,                    0, 0,                    0,   -A*ell**3*rho/140,           0, -11*A*ell**2*rho/210,                    0, 0,                   0,     A*ell**3*rho/105]])
+            elif self.shapeFunType[0].lower() == "t":
                 m = np.array([[A*ell*rho/3,                    0,                    0,                0,                    0,                   0, A*ell*rho/6,                    0,                    0,                0,                   0,                    0],
                               [          0,      13*A*ell*rho/35,                    0,                0,                    0, 11*A*ell**2*rho/210,           0,       9*A*ell*rho/70,                    0,                0,                   0, -13*A*ell**2*rho/420],
                               [          0,                    0,      13*A*ell*rho/35,                0, -11*A*ell**2*rho/210,                   0,           0,                    0,       9*A*ell*rho/70,                0, 13*A*ell**2*rho/420,                    0],
@@ -185,6 +198,21 @@ def MassMatElem(self, i):
                               [          0,     A*rho*(-26*ell**2 + 7*w**2)/840,                                   0,                          0,                                    0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520,           0,     -A*rho*(44*ell**2 + 7*w**2)/840,                                   0,                          0,                                    0,    A*ell*rho*(6*ell**2 + 7*w**2)/630]])
         elif self.massMatType[0].lower() == "l":
             if self.shapeFunType[0].lower() == "e":
+                c = A*rho*ell
+                m = np.array([[1/2,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0, 1/2,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0, 1/2, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0, ell**2/78,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0, ell**2/78,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0, 1/2,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0, 1/2,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0, 1/2, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0, ell**2/78,         0],
+                              [  0,   0,   0, 0,         0,         0,   0,   0,   0, 0,         0, ell**2/78]])
+                m *= c
+            elif self.shapeFunType[0].lower() == "t":
                 c = A*rho*ell
                 m = np.array([[1/2,   0,   0,      0,         0,         0,   0,   0,   0,      0,         0,         0],
                               [  0, 1/2,   0,      0,         0,         0,   0,   0,   0,      0,         0,         0],
@@ -239,7 +267,7 @@ def MassMatElem(self, i):
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0],
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0]])
                 m *= c
-            elif self.shapeFunType[0].lower() == "t":
+            elif self.shapeFunType[0].lower() == "x":
                 # for rectangular cross sections only!!!
                 c = A*rho*ell
                 for ii in range(len(self.Properties)):
