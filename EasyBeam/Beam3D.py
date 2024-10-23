@@ -268,12 +268,7 @@ def MassMatElem(self, i):
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0]])
                 m *= c
             elif self.shapeFunType[0].lower() == "x":
-                # for rectangular cross sections only!!!
                 c = A*rho*ell
-                for ii in range(len(self.Properties)):
-                    if self.PropID[i] == self.Properties[ii][0]:
-                        h = self.Properties[ii][5]
-                        w = self.Properties[ii][6]
                 m = np.array([[1/2,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0],
                               [  0, 1/2,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0],
                               [  0,   0, 1/2,      0,      0,      0,   0,   0,   0,      0,      0,      0],
@@ -288,12 +283,7 @@ def MassMatElem(self, i):
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0]])
                 m *= c
             elif self.shapeFunType[0].lower() == "a":
-                # for rectangular cross sections only!!!
                 c = A*rho*ell
-                for ii in range(len(self.Properties)):
-                    if self.PropID[i] == self.Properties[ii][0]:
-                        h = self.Properties[ii][5]
-                        w = self.Properties[ii][6]
                 m = np.array([[1/2,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0],
                               [  0, 1/2,   0,      0,      0,      0,   0,   0,   0,      0,      0,      0],
                               [  0,   0, 1/2,      0,      0,      0,   0,   0,   0,      0,      0,      0],
@@ -306,6 +296,21 @@ def MassMatElem(self, i):
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0, Ix/A/2,      0,      0],
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0,      0, Iy/A/2,      0],
                               [  0,   0,   0,      0,      0,      0,   0,   0,   0,      0,      0, Iz/A/2]])
+                m *= c
+            elif self.shapeFunType[0].lower() == "c":
+                c = A*rho*ell
+                m = np.array([[1/2,   0,   0,      0,                0,                0,   0,   0,   0,      0,                0,                0],
+                              [  0, 1/2,   0,      0,                0,                0,   0,   0,   0,      0,                0,                0],
+                              [  0,   0, 1/2,      0,                0,                0,   0,   0,   0,      0,                0,                0],
+                              [  0,   0,   0, Ix/A/2,                0,                0,   0,   0,   0,      0,                0,                0],
+                              [  0,   0,   0,      0, Iy/A/2-ell**2/12,                0,   0,   0,   0,      0,                0,                0],
+                              [  0,   0,   0,      0,                0, Iz/A/2-ell**2/12,   0,   0,   0,      0,                0,                0],
+                              [  0,   0,   0,      0,                0,                0, 1/2,   0,   0,      0,                0,                0],
+                              [  0,   0,   0,      0,                0,                0,   0, 1/2,   0,      0,                0,                0],
+                              [  0,   0,   0,      0,                0,                0,   0,   0, 1/2,      0,                0,                0],
+                              [  0,   0,   0,      0,                0,                0,   0,   0,   0, Ix/A/2,                0,                0],
+                              [  0,   0,   0,      0,                0,                0,   0,   0,   0,      0, Iy/A/2-ell**2/12,                0],
+                              [  0,   0,   0,      0,                0,                0,   0,   0,   0,      0,                0, Iz/A/2-ell**2/12]])
                 m *= c
     elif self.stiffMatType[0].lower() == "t":
         pass
