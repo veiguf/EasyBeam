@@ -34,6 +34,8 @@ w, h, ell = sym.symbols("w h ell")
 ρ = sym.Symbol("rho")
 A = sym.Symbol("A")
 Ix = sym.Symbol("I_x")
+Iy = sym.Symbol("I_y")
+Iz = sym.Symbol("I_z")
 
 x1, y1, z1 = sym.symbols('x1 y1 z1')
 # x2, y2, z2 = sym.symbols('x2 y2 z2')
@@ -77,19 +79,6 @@ S = sym.Matrix([[                  1-ξ,                   0,                   
                 [        6*(-ξ+ξ**2)*η,       3*ξ**2-2*ξ**3,                    0],
                 [        6*(-ξ+ξ**2)*ζ,                   0,        3*ξ**2-2*ξ**3],
                 [                    0,            -ell*ξ*ζ,              ell*ξ*η],
-                [  (-2*ξ+3*ξ**2)*ell*ζ,                   0,      (ξ**2-ξ**3)*ell],
-                [   (2*ξ-3*ξ**2)*ell*η,    (-ξ**2+ξ**3)*ell,                    0]]).T
-
-Z = sym.Matrix([[                  1-ξ,                   0,                    0],
-                [         6*(ξ-ξ**2)*η,     1-3*ξ**2+2*ξ**3,                    0],
-                [         6*(ξ-ξ**2)*ζ,                   0,      1-3*ξ**2+2*ξ**3],
-                [                    0,        -(1-ξ)*ell*ζ,         -(1-ξ)*ell*η],
-                [ (1-4*ξ+3*ξ**2)*ell*ζ,                   0, (-ξ+2*ξ**2-ξ**3)*ell],
-                [(-1+4*ξ-3*ξ**2)*ell*η, (ξ-2*ξ**2+ξ**3)*ell,                    0],
-                [                    ξ,                   0,                    0],
-                [        6*(-ξ+ξ**2)*η,       3*ξ**2-2*ξ**3,                    0],
-                [        6*(-ξ+ξ**2)*ζ,                   0,        3*ξ**2-2*ξ**3],
-                [                    0,            -ell*ξ*ζ,             -ell*ξ*η],
                 [  (-2*ξ+3*ξ**2)*ell*ζ,                   0,      (ξ**2-ξ**3)*ell],
                 [   (2*ξ-3*ξ**2)*ell*η,    (-ξ**2+ξ**3)*ell,                    0]]).T
 
@@ -138,12 +127,13 @@ if printMatrices:
     print("\n IuSψS.T \n", IuSψS.T)
 
 Iψψ = sym.integrate(ρ*S.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))       # 12x12
+# Iψψ = Iψψ/(A*ell*ρ)
 Iψψ = Iψψ.simplify()
 Iψψ = Iψψ.subs(w*h, A)
-
-Izz = sym.integrate(ρ*Z.T*Z, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))       # 12x12
-Izz = Izz.simplify()
-Izz = Izz.subs(w*h, A)
+Iψψ = Iψψ.subs(h**2, 12*Iy/A)
+Iψψ = Iψψ.subs(w**2, 12*Iz/A)
+Iψψ = Iψψ.simplify()
+Iψψ = Iψψ.subs(Iy+Iz, Ix)
 
 # IψψTorsion = sym.zeros(12, 12)
 # IψψTorsion[3, 3] = IψψTorsion[9, 9] = A*ell*ρ*Ix/(3*A)
