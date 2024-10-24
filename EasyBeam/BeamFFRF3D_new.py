@@ -87,11 +87,14 @@ def IuSψElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
     A = self.A[i]
+    Ix = self.Ix[i]
+    Iy = self.Iy[i]
+    Iz = self.Iz[i]
     x1 = self.Nodes[self.El[i, 0]-1, 0]
     y1 = self.Nodes[self.El[i, 0]-1, 1]
     z1 = self.Nodes[self.El[i, 0]-1, 2]
 
-    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
+    if (self.nodalInertia == False or self.nodalInertia[0].lower() == "t"):
         x2 = self.Nodes[self.El[i, 1]-1, 0]
         y2 = self.Nodes[self.El[i, 1]-1, 1]
         z2 = self.Nodes[self.El[i, 1]-1, 2]
@@ -109,7 +112,7 @@ def IuSψElem(self, i):
                          [-A*ell**2*rho*z1/30 - A*ell**2*rho*z2/20,                                        0,  A*ell**2*rho*x1/30 + A*ell**2*rho*x2/20]],
                         dtype=float).T)
 
-    elif self.shapeFunType[0].lower() == "i":
+    elif self.nodalInertia[0].lower() == "a":
         T11 = self.TX[i][0, 0]
         T21 = self.TX[i][1, 0]
         T31 = self.TX[i][2, 0]
@@ -119,34 +122,32 @@ def IuSψElem(self, i):
         T13 = self.TX[i][0, 2]
         T23 = self.TX[i][1, 2]
         T33 = self.TX[i][2, 2]
-        # for rectangular cross sections only!!!
-        for ii in range(len(self.Properties)):
-            if self.PropID[i] == self.Properties[ii][0]:
-                h = self.Properties[ii][5]
-                w = self.Properties[ii][6]
-        return(np.array([[                                  0,                      -A*ell*rho*(T31*ell + 3*z1)/6,                       A*ell*rho*(T21*ell + 3*y1)/6],
-                         [   A*ell*rho*(3*T31*ell + 10*z1)/20,                                 -A*T32*rho*w**2/12,  A*rho*(-9*T11*ell**2 + 5*T22*w**2 - 30*ell*x1)/60],
-                         [  -A*ell*rho*(3*T21*ell + 10*y1)/20, A*rho*(-5*T33*h**2 + 3*ell*(3*T11*ell + 10*x1))/60,                                  A*T23*h**2*rho/12],
-                         [A*ell*rho*(-T22*w**2 - T33*h**2)/24,                              A*T12*ell*rho*w**2/24,                              A*T13*ell*h**2*rho/24],
-                         [ A*ell**2*rho*(2*T21*ell + 5*y1)/60,                -A*ell**2*rho*(2*T11*ell + 5*x1)/60,                                                  0],
-                         [ A*ell**2*rho*(2*T31*ell + 5*z1)/60,                                                  0,                -A*ell**2*rho*(2*T11*ell + 5*x1)/60],
-                         [                                  0,                    -A*ell*rho*(2*T31*ell + 3*z1)/6,                     A*ell*rho*(2*T21*ell + 3*y1)/6],
-                         [   A*ell*rho*(7*T31*ell + 10*z1)/20,                                  A*T32*rho*w**2/12, -A*rho*(21*T11*ell**2 + 5*T22*w**2 + 30*ell*x1)/60],
-                         [  -A*ell*rho*(7*T21*ell + 10*y1)/20,  A*rho*(5*T33*h**2 + 3*ell*(7*T11*ell + 10*x1))/60,                                 -A*T23*h**2*rho/12],
-                         [A*ell*rho*(-T22*w**2 - T33*h**2)/24,                              A*T12*ell*rho*w**2/24,                              A*T13*ell*h**2*rho/24],
-                         [-A*ell**2*rho*(3*T21*ell + 5*y1)/60,                 A*ell**2*rho*(3*T11*ell + 5*x1)/60,                                                  0],
-                         [-A*ell**2*rho*(3*T31*ell + 5*z1)/60,                                                  0,                 A*ell**2*rho*(3*T11*ell + 5*x1)/60]],
+        return(np.array([[                                  0,                  -A*ell*rho*(T31*ell + 3*z1)/6,                    A*ell*rho*(T21*ell + 3*y1)/6],
+                         [   A*ell*rho*(3*T31*ell + 10*z1)/20,                                    -Iz*T32*rho, -rho*(A*ell*(3*T11*ell + 10*x1) - 20*Iz*T22)/20],
+                         [  -A*ell*rho*(3*T21*ell + 10*y1)/20, rho*(A*ell*(3*T11*ell + 10*x1) - 20*Iy*T33)/20,                                      Iy*T23*rho],
+                         [       -ell*rho*(Iy*T33 + Iz*T22)/2,                               Iz*T12*ell*rho/2,                                Iy*T13*ell*rho/2],
+                         [ A*ell**2*rho*(2*T21*ell + 5*y1)/60,            -A*ell**2*rho*(2*T11*ell + 5*x1)/60,                                               0],
+                         [ A*ell**2*rho*(2*T31*ell + 5*z1)/60,                                              0,             -A*ell**2*rho*(2*T11*ell + 5*x1)/60],
+                         [                                  0,                -A*ell*rho*(2*T31*ell + 3*z1)/6,                  A*ell*rho*(2*T21*ell + 3*y1)/6],
+                         [   A*ell*rho*(7*T31*ell + 10*z1)/20,                                     Iz*T32*rho, -rho*(A*ell*(7*T11*ell + 10*x1) + 20*Iz*T22)/20],
+                         [  -A*ell*rho*(7*T21*ell + 10*y1)/20, rho*(A*ell*(7*T11*ell + 10*x1) + 20*Iy*T33)/20,                                     -Iy*T23*rho],
+                         [       -ell*rho*(Iy*T33 + Iz*T22)/2,                               Iz*T12*ell*rho/2,                                Iy*T13*ell*rho/2],
+                         [-A*ell**2*rho*(3*T21*ell + 5*y1)/60,             A*ell**2*rho*(3*T11*ell + 5*x1)/60,                                               0],
+                         [-A*ell**2*rho*(3*T31*ell + 5*z1)/60,                                              0,              A*ell**2*rho*(3*T11*ell + 5*x1)/60]],
                         dtype=float).T)
 
 def IuSψSElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
     A = self.A[i]
+    Ix = self.Ix[i]
+    Iy = self.Iy[i]
+    Iz = self.Iz[i]
     x1 = self.Nodes[self.El[i, 0]-1, 0]
     y1 = self.Nodes[self.El[i, 0]-1, 1]
     z1 = self.Nodes[self.El[i, 0]-1, 2]
 
-    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
+    if (self.nodalInertia == False or self.nodalInertia[0].lower() == "t"):
         x2 = self.Nodes[self.El[i, 1]-1, 0]
         y2 = self.Nodes[self.El[i, 1]-1, 1]
         z2 = self.Nodes[self.El[i, 1]-1, 2]
@@ -188,7 +189,7 @@ def IuSψSElem(self, i):
                          [                                       0,  A*ell**2*rho*z1/30 + A*ell**2*rho*z2/20, -A*ell**2*rho*y1/30 - A*ell**2*rho*y2/20]],
                         dtype=float).T)
 
-    elif self.shapeFunType[0].lower() == "i":
+    elif self.nodalInertia[0].lower() == "a":
         T11 = self.TX[i][0, 0]
         T21 = self.TX[i][1, 0]
         T31 = self.TX[i][2, 0]
@@ -198,55 +199,53 @@ def IuSψSElem(self, i):
         T13 = self.TX[i][0, 2]
         T23 = self.TX[i][1, 2]
         T33 = self.TX[i][2, 2]
-        # for rectangular cross sections only!!!
-        for ii in range(len(self.Properties)):
-            if self.PropID[i] == self.Properties[ii][0]:
-                h = self.Properties[ii][5]
-                w = self.Properties[ii][6]
-        return(np.array([[                                  0,                                                  0,                                                  0],
-                         [      -A*ell*rho*(T21*ell + 3*y1)/6,                       A*ell*rho*(T11*ell + 3*x1)/6,                                                  0],
-                         [      -A*ell*rho*(T31*ell + 3*z1)/6,                                                  0,                       A*ell*rho*(T11*ell + 3*x1)/6],
-                         [   A*ell*rho*(3*T21*ell + 10*y1)/20,                  -A*ell*rho*(3*T11*ell + 10*x1)/20,                                                  0],
-                         [                 -A*T22*rho*w**2/12,                                  A*T12*rho*w**2/12,                                                  0],
-                         [                 -A*T32*rho*w**2/12,                  -A*ell*rho*(3*T31*ell + 10*z1)/20,   A*rho*(5*T12*w**2 + 9*T21*ell**2 + 30*ell*y1)/60],
-                         [   A*ell*rho*(3*T31*ell + 10*z1)/20,                                                  0,                  -A*ell*rho*(3*T11*ell + 10*x1)/20],
-                         [                 -A*T23*h**2*rho/12,  A*rho*(5*T13*h**2 + 3*ell*(3*T31*ell + 10*z1))/60,                  -A*ell*rho*(3*T21*ell + 10*y1)/20],
-                         [                 -A*T33*h**2*rho/12,                                                  0,                                  A*T13*h**2*rho/12],
-                         [A*ell*rho*(-T23*h**2 + T32*w**2)/24,                              A*T13*ell*h**2*rho/24,                             -A*T12*ell*rho*w**2/24],
-                         [                                  0,                              A*T32*ell*rho*w**2/24,                             -A*T22*ell*rho*w**2/24],
-                         [                                  0,                              A*T33*ell*h**2*rho/24,                             -A*T23*ell*h**2*rho/24],
-                         [-A*ell**2*rho*(2*T31*ell + 5*z1)/60,                                                  0,                 A*ell**2*rho*(2*T11*ell + 5*x1)/60],
-                         [                                  0,                -A*ell**2*rho*(2*T31*ell + 5*z1)/60,                 A*ell**2*rho*(2*T21*ell + 5*y1)/60],
-                         [                                  0,                                                  0,                                                  0],
-                         [ A*ell**2*rho*(2*T21*ell + 5*y1)/60,                -A*ell**2*rho*(2*T11*ell + 5*x1)/60,                                                  0],
-                         [                                  0,                                                  0,                                                  0],
-                         [                                  0,                -A*ell**2*rho*(2*T31*ell + 5*z1)/60,                 A*ell**2*rho*(2*T21*ell + 5*y1)/60],
-                         [                                  0,                                                  0,                                                  0],
-                         [    -A*ell*rho*(2*T21*ell + 3*y1)/6,                     A*ell*rho*(2*T11*ell + 3*x1)/6,                                                  0],
-                         [    -A*ell*rho*(2*T31*ell + 3*z1)/6,                                                  0,                     A*ell*rho*(2*T11*ell + 3*x1)/6],
-                         [   A*ell*rho*(7*T21*ell + 10*y1)/20,                  -A*ell*rho*(7*T11*ell + 10*x1)/20,                                                  0],
-                         [                  A*T22*rho*w**2/12,                                 -A*T12*rho*w**2/12,                                                  0],
-                         [                  A*T32*rho*w**2/12,                  -A*ell*rho*(7*T31*ell + 10*z1)/20, A*rho*(-5*T12*w**2 + 21*T21*ell**2 + 30*ell*y1)/60],
-                         [   A*ell*rho*(7*T31*ell + 10*z1)/20,                                                  0,                  -A*ell*rho*(7*T11*ell + 10*x1)/20],
-                         [                  A*T23*h**2*rho/12, A*rho*(-5*T13*h**2 + 3*ell*(7*T31*ell + 10*z1))/60,                  -A*ell*rho*(7*T21*ell + 10*y1)/20],
-                         [                  A*T33*h**2*rho/12,                                                  0,                                 -A*T13*h**2*rho/12],
-                         [A*ell*rho*(-T23*h**2 + T32*w**2)/24,                              A*T13*ell*h**2*rho/24,                             -A*T12*ell*rho*w**2/24],
-                         [                                  0,                              A*T32*ell*rho*w**2/24,                             -A*T22*ell*rho*w**2/24],
-                         [                                  0,                              A*T33*ell*h**2*rho/24,                             -A*T23*ell*h**2*rho/24],
-                         [ A*ell**2*rho*(3*T31*ell + 5*z1)/60,                                                  0,                -A*ell**2*rho*(3*T11*ell + 5*x1)/60],
-                         [                                  0,                 A*ell**2*rho*(3*T31*ell + 5*z1)/60,                -A*ell**2*rho*(3*T21*ell + 5*y1)/60],
-                         [                                  0,                                                  0,                                                  0],
-                         [-A*ell**2*rho*(3*T21*ell + 5*y1)/60,                 A*ell**2*rho*(3*T11*ell + 5*x1)/60,                                                  0],
-                         [                                  0,                                                  0,                                                  0],
-                         [                                  0,                 A*ell**2*rho*(3*T31*ell + 5*z1)/60,                -A*ell**2*rho*(3*T21*ell + 5*y1)/60]],
+        return(np.array([[                                  0,                                              0,                                              0],
+                         [      -A*ell*rho*(T21*ell + 3*y1)/6,                   A*ell*rho*(T11*ell + 3*x1)/6,                                              0],
+                         [      -A*ell*rho*(T31*ell + 3*z1)/6,                                              0,                   A*ell*rho*(T11*ell + 3*x1)/6],
+                         [   A*ell*rho*(3*T21*ell + 10*y1)/20,              -A*ell*rho*(3*T11*ell + 10*x1)/20,                                              0],
+                         [                        -Iz*T22*rho,                                     Iz*T12*rho,                                              0],
+                         [                        -Iz*T32*rho,              -A*ell*rho*(3*T31*ell + 10*z1)/20, rho*(A*ell*(3*T21*ell + 10*y1) + 20*Iz*T12)/20],
+                         [   A*ell*rho*(3*T31*ell + 10*z1)/20,                                              0,              -A*ell*rho*(3*T11*ell + 10*x1)/20],
+                         [                        -Iy*T23*rho, rho*(A*ell*(3*T31*ell + 10*z1) + 20*Iy*T13)/20,              -A*ell*rho*(3*T21*ell + 10*y1)/20],
+                         [                        -Iy*T33*rho,                                              0,                                     Iy*T13*rho],
+                         [       ell*rho*(-Iy*T23 + Iz*T32)/2,                               Iy*T13*ell*rho/2,                              -Iz*T12*ell*rho/2],
+                         [                                  0,                               Iz*T32*ell*rho/2,                              -Iz*T22*ell*rho/2],
+                         [                                  0,                               Iy*T33*ell*rho/2,                              -Iy*T23*ell*rho/2],
+                         [-A*ell**2*rho*(2*T31*ell + 5*z1)/60,                                              0,             A*ell**2*rho*(2*T11*ell + 5*x1)/60],
+                         [                                  0,            -A*ell**2*rho*(2*T31*ell + 5*z1)/60,             A*ell**2*rho*(2*T21*ell + 5*y1)/60],
+                         [                                  0,                                              0,                                              0],
+                         [ A*ell**2*rho*(2*T21*ell + 5*y1)/60,            -A*ell**2*rho*(2*T11*ell + 5*x1)/60,                                              0],
+                         [                                  0,                                              0,                                              0],
+                         [                                  0,            -A*ell**2*rho*(2*T31*ell + 5*z1)/60,             A*ell**2*rho*(2*T21*ell + 5*y1)/60],
+                         [                                  0,                                              0,                                              0],
+                         [    -A*ell*rho*(2*T21*ell + 3*y1)/6,                 A*ell*rho*(2*T11*ell + 3*x1)/6,                                              0],
+                         [    -A*ell*rho*(2*T31*ell + 3*z1)/6,                                              0,                 A*ell*rho*(2*T11*ell + 3*x1)/6],
+                         [   A*ell*rho*(7*T21*ell + 10*y1)/20,              -A*ell*rho*(7*T11*ell + 10*x1)/20,                                              0],
+                         [                         Iz*T22*rho,                                    -Iz*T12*rho,                                              0],
+                         [                         Iz*T32*rho,              -A*ell*rho*(7*T31*ell + 10*z1)/20, rho*(A*ell*(7*T21*ell + 10*y1) - 20*Iz*T12)/20],
+                         [   A*ell*rho*(7*T31*ell + 10*z1)/20,                                              0,              -A*ell*rho*(7*T11*ell + 10*x1)/20],
+                         [                         Iy*T23*rho, rho*(A*ell*(7*T31*ell + 10*z1) - 20*Iy*T13)/20,              -A*ell*rho*(7*T21*ell + 10*y1)/20],
+                         [                         Iy*T33*rho,                                              0,                                    -Iy*T13*rho],
+                         [       ell*rho*(-Iy*T23 + Iz*T32)/2,                               Iy*T13*ell*rho/2,                              -Iz*T12*ell*rho/2],
+                         [                                  0,                               Iz*T32*ell*rho/2,                              -Iz*T22*ell*rho/2],
+                         [                                  0,                               Iy*T33*ell*rho/2,                              -Iy*T23*ell*rho/2],
+                         [ A*ell**2*rho*(3*T31*ell + 5*z1)/60,                                              0,            -A*ell**2*rho*(3*T11*ell + 5*x1)/60],
+                         [                                  0,             A*ell**2*rho*(3*T31*ell + 5*z1)/60,            -A*ell**2*rho*(3*T21*ell + 5*y1)/60],
+                         [                                  0,                                              0,                                              0],
+                         [-A*ell**2*rho*(3*T21*ell + 5*y1)/60,             A*ell**2*rho*(3*T11*ell + 5*x1)/60,                                              0],
+                         [                                  0,                                              0,                                              0],
+                         [                                  0,             A*ell**2*rho*(3*T31*ell + 5*z1)/60,            -A*ell**2*rho*(3*T21*ell + 5*y1)/60]],
                         dtype=float).T)
 
 def IψψElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
     A = self.A[i]
+    Ix = self.Ix[i]
+    Iy = self.Iy[i]
+    Iz = self.Iz[i]
 
-    if self.shapeFunType[0].lower() == "e":
+    if self.nodalInertia == False:
         return(np.array([[A*ell*rho/3,                    0,                    0, 0,                    0,                   0, A*ell*rho/6,                    0,                    0, 0,                   0,                    0],
                          [          0,      13*A*ell*rho/35,                    0, 0,                    0, 11*A*ell**2*rho/210,           0,       9*A*ell*rho/70,                    0, 0,                   0, -13*A*ell**2*rho/420],
                          [          0,                    0,      13*A*ell*rho/35, 0, -11*A*ell**2*rho/210,                   0,           0,                    0,       9*A*ell*rho/70, 0, 13*A*ell**2*rho/420,                    0],
@@ -261,8 +260,7 @@ def IψψElem(self, i):
                          [          0, -13*A*ell**2*rho/420,                    0, 0,                    0,   -A*ell**3*rho/140,           0, -11*A*ell**2*rho/210,                    0, 0,                   0,     A*ell**3*rho/105]],
                         dtype=float))
 
-    elif self.shapeFunType[0].lower() == "t":
-        Ix = self.Ix[i]
+    elif self.nodalInertia[0].lower() == "t":
         return(np.array([[A*ell*rho/3,                    0,                    0,                0,                    0,                   0, A*ell*rho/6,                    0,                    0,                0,                   0,                    0],
                          [          0,      13*A*ell*rho/35,                    0,                0,                    0, 11*A*ell**2*rho/210,           0,       9*A*ell*rho/70,                    0,                0,                   0, -13*A*ell**2*rho/420],
                          [          0,                    0,      13*A*ell*rho/35,                0, -11*A*ell**2*rho/210,                   0,           0,                    0,       9*A*ell*rho/70,                0, 13*A*ell**2*rho/420,                    0],
@@ -277,24 +275,19 @@ def IψψElem(self, i):
                          [          0, -13*A*ell**2*rho/420,                    0,                0,                    0,   -A*ell**3*rho/140,           0, -11*A*ell**2*rho/210,                    0,                0,                   0,     A*ell**3*rho/105]],
                         dtype=float))
 
-    elif self.shapeFunType[0].lower() == "i":
-        # for rectangular cross sections only!!!
-        for ii in range(len(self.Properties)):
-            if self.PropID[i] == self.Properties[ii][0]:
-                h = self.Properties[ii][5]
-                w = self.Properties[ii][6]
-        return(np.array([[A*ell*rho/3,                                   0,                                   0,                                 0,                                    0,                                    0, A*ell*rho/6,                                   0,                                   0,                          0,                                    0,                                    0],
-                         [          0, A*rho*(26*ell**2 + 7*w**2)/(70*ell),                                   0,                                 0,                                    0,       A*rho*(44*ell**2 + 7*w**2)/840,           0,  A*rho*(9*ell**2 - 7*w**2)/(70*ell),                                   0,                          0,                                    0,      A*rho*(-26*ell**2 + 7*w**2)/840],
-                         [          0,                                   0, A*rho*(26*ell**2 + 7*h**2)/(70*ell),                                 0,      A*rho*(-44*ell**2 - 7*h**2)/840,                                    0,           0,                                   0,  A*rho*(9*ell**2 - 7*h**2)/(70*ell),                          0,       A*rho*(26*ell**2 - 7*h**2)/840,                                    0],
-                         [          0,                                   0,                                   0,        A*ell*rho*(h**2 + w**2)/36,                                    0,                                    0,           0,                                   0,                                   0, A*ell*rho*(h**2 + w**2)/72,                                    0,                                    0],
-                         [          0,                                   0,     A*rho*(-44*ell**2 - 7*h**2)/840,                                 0,    A*ell*rho*(6*ell**2 + 7*h**2)/630,                                    0,           0,                                   0,     A*rho*(-26*ell**2 + 7*h**2)/840,                          0, A*ell*rho*(-18*ell**2 - 7*h**2)/2520,                                    0],
-                         [          0,      A*rho*(44*ell**2 + 7*w**2)/840,                                   0,                                 0,                                    0,    A*ell*rho*(6*ell**2 + 7*w**2)/630,           0,      A*rho*(26*ell**2 - 7*w**2)/840,                                   0,                          0,                                    0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520],
-                         [A*ell*rho/6,                                   0,                                   0,                                 0,                                    0,                                    0, A*ell*rho/3,                                   0,                                   0,                          0,                                    0,                                    0],
-                         [          0,  A*rho*(9*ell**2 - 7*w**2)/(70*ell),                                   0,                                 0,                                    0,       A*rho*(26*ell**2 - 7*w**2)/840,           0, A*rho*(26*ell**2 + 7*w**2)/(70*ell),                                   0,                          0,                                    0,      -A*rho*(44*ell**2 + 7*w**2)/840],
-                         [          0,                                   0,  A*rho*(9*ell**2 - 7*h**2)/(70*ell),                                 0,      A*rho*(-26*ell**2 + 7*h**2)/840,                                    0,           0,                                   0, A*rho*(26*ell**2 + 7*h**2)/(70*ell),                          0,       A*rho*(44*ell**2 + 7*h**2)/840,                                    0],
-                         [          0,                                   0,                                   0,        A*ell*rho*(h**2 + w**2)/72,                                    0,                                    0,           0,                                   0,                                   0, A*ell*rho*(h**2 + w**2)/36,                                    0,                                    0],
-                         [          0,                                   0,      A*rho*(26*ell**2 - 7*h**2)/840,                                 0, A*ell*rho*(-18*ell**2 - 7*h**2)/2520,                                    0,           0,                                   0,      A*rho*(44*ell**2 + 7*h**2)/840,                          0,    A*ell*rho*(6*ell**2 + 7*h**2)/630,                                    0],
-                         [          0,     A*rho*(-26*ell**2 + 7*w**2)/840,                                   0,                                 0,                                    0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520,           0,     -A*rho*(44*ell**2 + 7*w**2)/840,                                   0,                          0,                                    0,    A*ell*rho*(6*ell**2 + 7*w**2)/630]],
+    elif self.nodalInertia[0].lower() == "a":
+        return(np.array([[A*ell*rho/3,                                   0,                                   0,            0,                                 0,                                 0, A*ell*rho/6,                                   0,                                   0,            0,                                 0,                                 0],
+                         [          0,  rho*(13*A*ell**2 + 42*Iz)/(35*ell),                                   0,            0,                                 0,     rho*(11*A*ell**2 + 21*Iz)/210,           0, 3*rho*(3*A*ell**2 - 28*Iz)/(70*ell),                                   0,            0,                                 0,    rho*(-13*A*ell**2 + 42*Iz)/420],
+                         [          0,                                   0,  rho*(13*A*ell**2 + 42*Iy)/(35*ell),            0,    -rho*(11*A*ell**2 + 21*Iy)/210,                                 0,           0,                                   0, 3*rho*(3*A*ell**2 - 28*Iy)/(70*ell),            0,     rho*(13*A*ell**2 - 42*Iy)/420,                                 0],
+                         [          0,                                   0,                                   0, Ix*ell*rho/3,                                 0,                                 0,           0,                                   0,                                   0, Ix*ell*rho/6,                                 0,                                 0],
+                         [          0,                                   0,      -rho*(11*A*ell**2 + 21*Iy)/210,            0,    ell*rho*(A*ell**2 + 14*Iy)/105,                                 0,           0,                                   0,      rho*(-13*A*ell**2 + 42*Iy)/420,            0, -ell*rho*(3*A*ell**2 + 14*Iy)/420,                                 0],
+                         [          0,       rho*(11*A*ell**2 + 21*Iz)/210,                                   0,            0,                                 0,    ell*rho*(A*ell**2 + 14*Iz)/105,           0,       rho*(13*A*ell**2 - 42*Iz)/420,                                   0,            0,                                 0, -ell*rho*(3*A*ell**2 + 14*Iz)/420],
+                         [A*ell*rho/6,                                   0,                                   0,            0,                                 0,                                 0, A*ell*rho/3,                                   0,                                   0,            0,                                 0,                                 0],
+                         [          0, 3*rho*(3*A*ell**2 - 28*Iz)/(70*ell),                                   0,            0,                                 0,     rho*(13*A*ell**2 - 42*Iz)/420,           0,  rho*(13*A*ell**2 + 42*Iz)/(35*ell),                                   0,            0,                                 0,    -rho*(11*A*ell**2 + 21*Iz)/210],
+                         [          0,                                   0, 3*rho*(3*A*ell**2 - 28*Iy)/(70*ell),            0,    rho*(-13*A*ell**2 + 42*Iy)/420,                                 0,           0,                                   0,  rho*(13*A*ell**2 + 42*Iy)/(35*ell),            0,     rho*(11*A*ell**2 + 21*Iy)/210,                                 0],
+                         [          0,                                   0,                                   0, Ix*ell*rho/6,                                 0,                                 0,           0,                                   0,                                   0, Ix*ell*rho/3,                                 0,                                 0],
+                         [          0,                                   0,       rho*(13*A*ell**2 - 42*Iy)/420,            0, -ell*rho*(3*A*ell**2 + 14*Iy)/420,                                 0,           0,                                   0,       rho*(11*A*ell**2 + 21*Iy)/210,            0,    ell*rho*(A*ell**2 + 14*Iy)/105,                                 0],
+                         [          0,      rho*(-13*A*ell**2 + 42*Iz)/420,                                   0,            0,                                 0, -ell*rho*(3*A*ell**2 + 14*Iz)/420,           0,      -rho*(11*A*ell**2 + 21*Iz)/210,                                   0,            0,                                 0,    ell*rho*(A*ell**2 + 14*Iz)/105]],
                         dtype=float))
 
 
@@ -302,8 +295,11 @@ def IψSψElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
     A = self.A[i]
+    Ix = self.Ix[i]
+    Iy = self.Iy[i]
+    Iz = self.Iz[i]
 
-    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
+    if (self.nodalInertia == False or self.nodalInertia[0].lower() == "t"):
         return(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 7*A*ell*rho/20, 0, -A*ell**2*rho/20, 0, 0, 0, 3*A*ell*rho/20, 0, A*ell**2*rho/30, 0],
                          [0, -7*A*ell*rho/20, 0, 0, 0, -A*ell**2*rho/20, 0, -3*A*ell*rho/20, 0, 0, 0, A*ell**2*rho/30],
@@ -342,47 +338,42 @@ def IψSψElem(self, i):
                          [-A*ell**2*rho/30, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, 0, 0]],
                         dtype=float))
 
-    elif self.shapeFunType[0].lower() == "i":
-        # for rectangular cross sections only!!!
-        for ii in range(len(self.Properties)):
-            if self.PropID[i] == self.Properties[ii][0]:
-                h = self.Properties[ii][5]
-                w = self.Properties[ii][6]
+    elif self.nodalInertia[0].lower() == "a":
         return(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 7*A*ell*rho/20, 0, -A*ell**2*rho/20, 0, 0, 0, 3*A*ell*rho/20, 0, A*ell**2*rho/30, 0],
                          [0, -7*A*ell*rho/20, 0, 0, 0, -A*ell**2*rho/20, 0, -3*A*ell*rho/20, 0, 0, 0, A*ell**2*rho/30],
                          [0, 0, -13*A*ell*rho/35, 0, 11*A*ell**2*rho/210, 0, 0, 0, -9*A*ell*rho/70, 0, -13*A*ell**2*rho/420, 0],
-                         [0, 0, 0, A*rho*w**2/24, 0, 0, 0, 0, 0, A*rho*w**2/24, 0, 0],
+                         [0, 0, 0, Iz*rho/2, 0, 0, 0, 0, 0, Iz*rho/2, 0, 0],
                          [7*A*ell*rho/20, 0, 0, 0, 0, 0, 3*A*ell*rho/20, 0, 0, 0, 0, 0],
                          [0, 13*A*ell*rho/35, 0, 0, 0, 11*A*ell**2*rho/210, 0, 9*A*ell*rho/70, 0, 0, 0, -13*A*ell**2*rho/420],
                          [-7*A*ell*rho/20, 0, 0, 0, 0, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0],
-                         [0, 0, 0, A*h**2*rho/24, 0, 0, 0, 0, 0, A*h**2*rho/24, 0, 0],
+                         [0, 0, 0, Iy*rho/2, 0, 0, 0, 0, 0, Iy*rho/2, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, -A*rho*w**2/24, 0, 0, 0, A*ell*rho*w**2/144, 0, A*rho*w**2/24, 0, 0, 0, -A*ell*rho*w**2/144],
-                         [0, 0, -A*h**2*rho/24, 0, -A*ell*h**2*rho/144, 0, 0, 0, A*h**2*rho/24, 0, A*ell*h**2*rho/144, 0],
+                         [0, -Iz*rho/2, 0, 0, 0, Iz*ell*rho/12, 0, Iz*rho/2, 0, 0, 0, -Iz*ell*rho/12],
+                         [0, 0, -Iy*rho/2, 0, -Iy*ell*rho/12, 0, 0, 0, Iy*rho/2, 0, Iy*ell*rho/12, 0],
                          [0, -11*A*ell**2*rho/210, 0, 0, 0, -A*ell**3*rho/105, 0, -13*A*ell**2*rho/420, 0, 0, 0, A*ell**3*rho/140],
                          [A*ell**2*rho/20, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0, 0, 0, 0],
-                         [0, 0, 0, A*ell*h**2*rho/144, 0, 0, 0, 0, 0, -A*ell*h**2*rho/144, 0, 0],
+                         [0, 0, 0, Iy*ell*rho/12, 0, 0, 0, 0, 0, -Iy*ell*rho/12, 0, 0],
                          [0, 0, -11*A*ell**2*rho/210, 0, A*ell**3*rho/105, 0, 0, 0, -13*A*ell**2*rho/420, 0, -A*ell**3*rho/140, 0],
-                         [0, 0, 0, -A*ell*rho*w**2/144, 0, 0, 0, 0, 0, A*ell*rho*w**2/144, 0, 0],
+                         [0, 0, 0, -Iz*ell*rho/12, 0, 0, 0, 0, 0, Iz*ell*rho/12, 0, 0],
                          [A*ell**2*rho/20, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0, 0, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, 0, 3*A*ell*rho/20, 0, -A*ell**2*rho/30, 0, 0, 0, 7*A*ell*rho/20, 0, A*ell**2*rho/20, 0],
                          [0, -3*A*ell*rho/20, 0, 0, 0, -A*ell**2*rho/30, 0, -7*A*ell*rho/20, 0, 0, 0, A*ell**2*rho/20],
                          [0, 0, -9*A*ell*rho/70, 0, 13*A*ell**2*rho/420, 0, 0, 0, -13*A*ell*rho/35, 0, -11*A*ell**2*rho/210, 0],
-                         [0, 0, 0, -A*rho*w**2/24, 0, 0, 0, 0, 0, -A*rho*w**2/24, 0, 0],
+                         [0, 0, 0, -Iz*rho/2, 0, 0, 0, 0, 0, -Iz*rho/2, 0, 0],
                          [3*A*ell*rho/20, 0, 0, 0, 0, 0, 7*A*ell*rho/20, 0, 0, 0, 0, 0],
                          [0, 9*A*ell*rho/70, 0, 0, 0, 13*A*ell**2*rho/420, 0, 13*A*ell*rho/35, 0, 0, 0, -11*A*ell**2*rho/210],
                          [-3*A*ell*rho/20, 0, 0, 0, 0, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0],
-                         [0, 0, 0, -A*h**2*rho/24, 0, 0, 0, 0, 0, -A*h**2*rho/24, 0, 0],
+                         [0, 0, 0, -Iy*rho/2, 0, 0, 0, 0, 0, -Iy*rho/2, 0, 0],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                         [0, -A*rho*w**2/24, 0, 0, 0, -A*ell*rho*w**2/144, 0, A*rho*w**2/24, 0, 0, 0, A*ell*rho*w**2/144],
-                         [0, 0, -A*h**2*rho/24, 0, A*ell*h**2*rho/144, 0, 0, 0, A*h**2*rho/24, 0, -A*ell*h**2*rho/144, 0],
+                         [0, -Iz*rho/2, 0, 0, 0, -Iz*ell*rho/12, 0, Iz*rho/2, 0, 0, 0, Iz*ell*rho/12],
+                         [0, 0, -Iy*rho/2, 0, Iy*ell*rho/12, 0, 0, 0, Iy*rho/2, 0, -Iy*ell*rho/12, 0],
                          [0, 13*A*ell**2*rho/420, 0, 0, 0, A*ell**3*rho/140, 0, 11*A*ell**2*rho/210, 0, 0, 0, -A*ell**3*rho/105],
                          [-A*ell**2*rho/30, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, 0, 0],
-                         [0, 0, 0, -A*ell*h**2*rho/144, 0, 0, 0, 0, 0, A*ell*h**2*rho/144, 0, 0],
+                         [0, 0, 0, -Iy*ell*rho/12, 0, 0, 0, 0, 0, Iy*ell*rho/12, 0, 0],
                          [0, 0, 13*A*ell**2*rho/420, 0, -A*ell**3*rho/140, 0, 0, 0, 11*A*ell**2*rho/210, 0, A*ell**3*rho/105, 0],
-                         [0, 0, 0, A*ell*rho*w**2/144, 0, 0, 0, 0, 0, -A*ell*rho*w**2/144, 0, 0],
+                         [0, 0, 0, Iz*ell*rho/12, 0, 0, 0, 0, 0, -Iz*ell*rho/12, 0, 0],
                          [-A*ell**2*rho/30, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, 0, 0]],
                         dtype=float))
 
@@ -390,8 +381,11 @@ def IψSψSElem(self, i):
     ell = self.ell[i]
     rho = self.rho[i]
     A = self.A[i]
+    Ix = self.Ix[i]
+    Iy = self.Iy[i]
+    Iz = self.Iz[i]
 
-    if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
+    if (self.nodalInertia == False or self.nodalInertia[0].lower() == "t"):
         return(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, A*ell*rho/3, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, A*ell*rho/6, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0],
                          [0, 0, A*ell*rho/3, 0, 0, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, A*ell**2*rho/20, 0, 0, 0, 0, 0, 0, 0, A*ell*rho/6, 0, 0, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, -A*ell**2*rho/30, 0, 0, 0, 0, 0],
@@ -430,48 +424,43 @@ def IψSψSElem(self, i):
                          [0, 0, 0, 0, 0, -13*A*ell**2*rho/420, 0, 13*A*ell**2*rho/420, 0, 0, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, 0, 0, -11*A*ell**2*rho/210, 0, 11*A*ell**2*rho/210, 0, 0, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, A*ell**3*rho/105]],
                         dtype=float))
 
-    elif self.shapeFunType[0].lower() == "i":
-        # for rectangular cross sections only!!!
-        for ii in range(len(self.Properties)):
-            if self.PropID[i] == self.Properties[ii][0]:
-                h = self.Properties[ii][5]
-                w = self.Properties[ii][6]
+    elif self.nodalInertia[0].lower() == "a":
         return(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, A*ell*rho/3, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, A*ell*rho/6, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0],
                          [0, 0, A*ell*rho/3, 0, 0, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, A*ell**2*rho/20, 0, 0, 0, 0, 0, 0, 0, A*ell*rho/6, 0, 0, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, -A*ell**2*rho/30, 0, 0, 0, 0, 0],
                          [0, -7*A*ell*rho/20, 0, 13*A*ell*rho/35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11*A*ell**2*rho/210, 0, 0, 0, -3*A*ell*rho/20, 0, 9*A*ell*rho/70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0],
-                         [0, 0, 0, 0, A*rho*w**2/(10*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*rho*w**2/120, 0, 0, 0, 0, 0, -A*rho*w**2/(10*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*rho*w**2/120, 0],
-                         [0, 0, 0, 0, 0, A*rho*(26*ell**2 + 7*w**2)/(70*ell), 0, -13*A*ell*rho/35, 0, -A*rho*w**2/24, 0, 0, 0, 11*A*ell**2*rho/210, 0, 0, 0, A*rho*(44*ell**2 + 7*w**2)/840, 0, 0, 0, 0, 0, A*rho*(9*ell**2 - 7*w**2)/(70*ell), 0, -9*A*ell*rho/70, 0, -A*rho*w**2/24, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0, 0, A*rho*(-26*ell**2 + 7*w**2)/840],
+                         [0, 0, 0, 0, 6*Iz*rho/(5*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iz*rho/10, 0, 0, 0, 0, 0, -6*Iz*rho/(5*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iz*rho/10, 0],
+                         [0, 0, 0, 0, 0, rho*(13*A*ell**2 + 42*Iz)/(35*ell), 0, -13*A*ell*rho/35, 0, -Iz*rho/2, 0, 0, 0, 11*A*ell**2*rho/210, 0, 0, 0, rho*(11*A*ell**2 + 21*Iz)/210, 0, 0, 0, 0, 0, 3*rho*(3*A*ell**2 - 28*Iz)/(70*ell), 0, -9*A*ell*rho/70, 0, -Iz*rho/2, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0, 0, rho*(-13*A*ell**2 + 42*Iz)/420],
                          [0, 0, -7*A*ell*rho/20, 0, 0, 0, 13*A*ell*rho/35, 0, 0, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0, 0, 0, 0, 0, 0, -3*A*ell*rho/20, 0, 0, 0, 9*A*ell*rho/70, 0, 0, 0, 0, 0, 13*A*ell**2*rho/420, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, -13*A*ell*rho/35, 0, A*rho*(26*ell**2 + 7*h**2)/(70*ell), 0, A*h**2*rho/24, 0, 0, 0, A*rho*(-44*ell**2 - 7*h**2)/840, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0, 0, 0, 0, -9*A*ell*rho/70, 0, A*rho*(9*ell**2 - 7*h**2)/(70*ell), 0, A*h**2*rho/24, 0, 0, 0, A*rho*(26*ell**2 - 7*h**2)/840, 0, 0, 0, 13*A*ell**2*rho/420],
-                         [0, 0, 0, 0, 0, 0, 0, 0, A*h**2*rho/(10*ell), 0, 0, 0, 0, 0, -A*h**2*rho/120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*h**2*rho/(10*ell), 0, 0, 0, 0, 0, -A*h**2*rho/120, 0, 0, 0],
-                         [0, 0, 0, 0, 0, -A*rho*w**2/24, 0, A*h**2*rho/24, 0, A*ell*rho*(h**2 + w**2)/36, 0, 0, 0, A*ell*h**2*rho/144, 0, 0, 0, A*ell*rho*w**2/144, 0, 0, 0, 0, 0, A*rho*w**2/24, 0, -A*h**2*rho/24, 0, A*ell*rho*(h**2 + w**2)/72, 0, 0, 0, -A*ell*h**2*rho/144, 0, 0, 0, -A*ell*rho*w**2/144],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*rho*w**2/36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*rho*w**2/72, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*h**2*rho/36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*h**2*rho/72, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, -13*A*ell*rho/35, 0, rho*(13*A*ell**2 + 42*Iy)/(35*ell), 0, Iy*rho/2, 0, 0, 0, -rho*(11*A*ell**2 + 21*Iy)/210, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0, 0, 0, 0, -9*A*ell*rho/70, 0, 3*rho*(3*A*ell**2 - 28*Iy)/(70*ell), 0, Iy*rho/2, 0, 0, 0, rho*(13*A*ell**2 - 42*Iy)/420, 0, 0, 0, 13*A*ell**2*rho/420],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 6*Iy*rho/(5*ell), 0, 0, 0, 0, 0, -Iy*rho/10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -6*Iy*rho/(5*ell), 0, 0, 0, 0, 0, -Iy*rho/10, 0, 0, 0],
+                         [0, 0, 0, 0, 0, -Iz*rho/2, 0, Iy*rho/2, 0, Ix*ell*rho/3, 0, 0, 0, Iy*ell*rho/12, 0, 0, 0, Iz*ell*rho/12, 0, 0, 0, 0, 0, Iz*rho/2, 0, -Iy*rho/2, 0, Ix*ell*rho/6, 0, 0, 0, -Iy*ell*rho/12, 0, 0, 0, -Iz*ell*rho/12],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iz*ell*rho/3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iz*ell*rho/6, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iy*ell*rho/3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iy*ell*rho/6, 0, 0, 0, 0, 0, 0],
                          [0, 0, A*ell**2*rho/20, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 11*A*ell**2*rho/210, 0, A*rho*(-44*ell**2 - 7*h**2)/840, 0, A*ell*h**2*rho/144, 0, 0, 0, A*ell*rho*(6*ell**2 + 7*h**2)/630, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, 0, 0, 13*A*ell**2*rho/420, 0, A*rho*(-26*ell**2 + 7*h**2)/840, 0, -A*ell*h**2*rho/144, 0, 0, 0, A*ell*rho*(-18*ell**2 - 7*h**2)/2520, 0, 0, 0, -A*ell**3*rho/140],
-                         [0, 0, 0, 0, 0, 0, 0, 0, -A*h**2*rho/120, 0, 0, 0, 0, 0, A*ell*h**2*rho/90, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*h**2*rho/120, 0, 0, 0, 0, 0, -A*ell*h**2*rho/360, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 11*A*ell**2*rho/210, 0, -rho*(11*A*ell**2 + 21*Iy)/210, 0, Iy*ell*rho/12, 0, 0, 0, ell*rho*(A*ell**2 + 14*Iy)/105, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, 0, 0, 13*A*ell**2*rho/420, 0, rho*(-13*A*ell**2 + 42*Iy)/420, 0, -Iy*ell*rho/12, 0, 0, 0, -ell*rho*(3*A*ell**2 + 14*Iy)/420, 0, 0, 0, -A*ell**3*rho/140],
+                         [0, 0, 0, 0, 0, 0, 0, 0, -Iy*rho/10, 0, 0, 0, 0, 0, 2*Iy*ell*rho/15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iy*rho/10, 0, 0, 0, 0, 0, -Iy*ell*rho/30, 0, 0, 0],
                          [0, -A*ell**2*rho/20, 0, 11*A*ell**2*rho/210, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, -A*ell**2*rho/30, 0, 13*A*ell**2*rho/420, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell**3*rho/140, 0, 0],
-                         [0, 0, 0, 0, A*rho*w**2/120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*rho*w**2/90, 0, 0, 0, 0, 0, -A*rho*w**2/120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell*rho*w**2/360, 0],
-                         [0, 0, 0, 0, 0, A*rho*(44*ell**2 + 7*w**2)/840, 0, -11*A*ell**2*rho/210, 0, A*ell*rho*w**2/144, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, A*ell*rho*(6*ell**2 + 7*w**2)/630, 0, 0, 0, 0, 0, A*rho*(26*ell**2 - 7*w**2)/840, 0, -13*A*ell**2*rho/420, 0, -A*ell*rho*w**2/144, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520],
+                         [0, 0, 0, 0, Iz*rho/10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2*Iz*ell*rho/15, 0, 0, 0, 0, 0, -Iz*rho/10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -Iz*ell*rho/30, 0],
+                         [0, 0, 0, 0, 0, rho*(11*A*ell**2 + 21*Iz)/210, 0, -11*A*ell**2*rho/210, 0, Iz*ell*rho/12, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, ell*rho*(A*ell**2 + 14*Iz)/105, 0, 0, 0, 0, 0, rho*(13*A*ell**2 - 42*Iz)/420, 0, -13*A*ell**2*rho/420, 0, -Iz*ell*rho/12, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, -ell*rho*(3*A*ell**2 + 14*Iz)/420],
                          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                          [0, A*ell*rho/6, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell**2*rho/30, 0, 0, 0, A*ell*rho/3, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell**2*rho/20, 0, 0],
                          [0, 0, A*ell*rho/6, 0, 0, 0, -3*A*ell*rho/20, 0, 0, 0, 0, 0, A*ell**2*rho/30, 0, 0, 0, 0, 0, 0, 0, A*ell*rho/3, 0, 0, 0, -7*A*ell*rho/20, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, 0, 0],
                          [0, -3*A*ell*rho/20, 0, 9*A*ell*rho/70, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13*A*ell**2*rho/420, 0, 0, 0, -7*A*ell*rho/20, 0, 13*A*ell*rho/35, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0],
-                         [0, 0, 0, 0, -A*rho*w**2/(10*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*rho*w**2/120, 0, 0, 0, 0, 0, A*rho*w**2/(10*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*rho*w**2/120, 0],
-                         [0, 0, 0, 0, 0, A*rho*(9*ell**2 - 7*w**2)/(70*ell), 0, -9*A*ell*rho/70, 0, A*rho*w**2/24, 0, 0, 0, 13*A*ell**2*rho/420, 0, 0, 0, A*rho*(26*ell**2 - 7*w**2)/840, 0, 0, 0, 0, 0, A*rho*(26*ell**2 + 7*w**2)/(70*ell), 0, -13*A*ell*rho/35, 0, A*rho*w**2/24, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0, 0, -A*rho*(44*ell**2 + 7*w**2)/840],
+                         [0, 0, 0, 0, -6*Iz*rho/(5*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -Iz*rho/10, 0, 0, 0, 0, 0, 6*Iz*rho/(5*ell), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -Iz*rho/10, 0],
+                         [0, 0, 0, 0, 0, 3*rho*(3*A*ell**2 - 28*Iz)/(70*ell), 0, -9*A*ell*rho/70, 0, Iz*rho/2, 0, 0, 0, 13*A*ell**2*rho/420, 0, 0, 0, rho*(13*A*ell**2 - 42*Iz)/420, 0, 0, 0, 0, 0, rho*(13*A*ell**2 + 42*Iz)/(35*ell), 0, -13*A*ell*rho/35, 0, Iz*rho/2, 0, 0, 0, -11*A*ell**2*rho/210, 0, 0, 0, -rho*(11*A*ell**2 + 21*Iz)/210],
                          [0, 0, -3*A*ell*rho/20, 0, 0, 0, 9*A*ell*rho/70, 0, 0, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0, 0, 0, 0, 0, 0, -7*A*ell*rho/20, 0, 0, 0, 13*A*ell*rho/35, 0, 0, 0, 0, 0, 11*A*ell**2*rho/210, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, -9*A*ell*rho/70, 0, A*rho*(9*ell**2 - 7*h**2)/(70*ell), 0, -A*h**2*rho/24, 0, 0, 0, A*rho*(-26*ell**2 + 7*h**2)/840, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0, 0, 0, 0, -13*A*ell*rho/35, 0, A*rho*(26*ell**2 + 7*h**2)/(70*ell), 0, -A*h**2*rho/24, 0, 0, 0, A*rho*(44*ell**2 + 7*h**2)/840, 0, 0, 0, 11*A*ell**2*rho/210],
-                         [0, 0, 0, 0, 0, 0, 0, 0, -A*h**2*rho/(10*ell), 0, 0, 0, 0, 0, A*h**2*rho/120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*h**2*rho/(10*ell), 0, 0, 0, 0, 0, A*h**2*rho/120, 0, 0, 0],
-                         [0, 0, 0, 0, 0, -A*rho*w**2/24, 0, A*h**2*rho/24, 0, A*ell*rho*(h**2 + w**2)/72, 0, 0, 0, -A*ell*h**2*rho/144, 0, 0, 0, -A*ell*rho*w**2/144, 0, 0, 0, 0, 0, A*rho*w**2/24, 0, -A*h**2*rho/24, 0, A*ell*rho*(h**2 + w**2)/36, 0, 0, 0, A*ell*h**2*rho/144, 0, 0, 0, A*ell*rho*w**2/144],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*rho*w**2/72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*rho*w**2/36, 0, 0, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*h**2*rho/72, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*h**2*rho/36, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, -9*A*ell*rho/70, 0, 3*rho*(3*A*ell**2 - 28*Iy)/(70*ell), 0, -Iy*rho/2, 0, 0, 0, rho*(-13*A*ell**2 + 42*Iy)/420, 0, 0, 0, -13*A*ell**2*rho/420, 0, 0, 0, 0, 0, -13*A*ell*rho/35, 0, rho*(13*A*ell**2 + 42*Iy)/(35*ell), 0, -Iy*rho/2, 0, 0, 0, rho*(11*A*ell**2 + 21*Iy)/210, 0, 0, 0, 11*A*ell**2*rho/210],
+                         [0, 0, 0, 0, 0, 0, 0, 0, -6*Iy*rho/(5*ell), 0, 0, 0, 0, 0, Iy*rho/10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6*Iy*rho/(5*ell), 0, 0, 0, 0, 0, Iy*rho/10, 0, 0, 0],
+                         [0, 0, 0, 0, 0, -Iz*rho/2, 0, Iy*rho/2, 0, Ix*ell*rho/6, 0, 0, 0, -Iy*ell*rho/12, 0, 0, 0, -Iz*ell*rho/12, 0, 0, 0, 0, 0, Iz*rho/2, 0, -Iy*rho/2, 0, Ix*ell*rho/3, 0, 0, 0, Iy*ell*rho/12, 0, 0, 0, Iz*ell*rho/12],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iz*ell*rho/6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iz*ell*rho/3, 0, 0, 0, 0, 0, 0, 0],
+                         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iy*ell*rho/6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iy*ell*rho/3, 0, 0, 0, 0, 0, 0],
                          [0, 0, -A*ell**2*rho/30, 0, 0, 0, 13*A*ell**2*rho/420, 0, 0, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, 0, 0, 0, 0, -A*ell**2*rho/20, 0, 0, 0, 11*A*ell**2*rho/210, 0, 0, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, 0, 0],
-                         [0, 0, 0, 0, 0, -13*A*ell**2*rho/420, 0, A*rho*(26*ell**2 - 7*h**2)/840, 0, -A*ell*h**2*rho/144, 0, 0, 0, A*ell*rho*(-18*ell**2 - 7*h**2)/2520, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, 0, 0, -11*A*ell**2*rho/210, 0, A*rho*(44*ell**2 + 7*h**2)/840, 0, A*ell*h**2*rho/144, 0, 0, 0, A*ell*rho*(6*ell**2 + 7*h**2)/630, 0, 0, 0, A*ell**3*rho/105],
-                         [0, 0, 0, 0, 0, 0, 0, 0, -A*h**2*rho/120, 0, 0, 0, 0, 0, -A*ell*h**2*rho/360, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*h**2*rho/120, 0, 0, 0, 0, 0, A*ell*h**2*rho/90, 0, 0, 0],
+                         [0, 0, 0, 0, 0, -13*A*ell**2*rho/420, 0, rho*(13*A*ell**2 - 42*Iy)/420, 0, -Iy*ell*rho/12, 0, 0, 0, -ell*rho*(3*A*ell**2 + 14*Iy)/420, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, 0, 0, -11*A*ell**2*rho/210, 0, rho*(11*A*ell**2 + 21*Iy)/210, 0, Iy*ell*rho/12, 0, 0, 0, ell*rho*(A*ell**2 + 14*Iy)/105, 0, 0, 0, A*ell**3*rho/105],
+                         [0, 0, 0, 0, 0, 0, 0, 0, -Iy*rho/10, 0, 0, 0, 0, 0, -Iy*ell*rho/30, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, Iy*rho/10, 0, 0, 0, 0, 0, 2*Iy*ell*rho/15, 0, 0, 0],
                          [0, A*ell**2*rho/30, 0, -13*A*ell**2*rho/420, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, A*ell**2*rho/20, 0, -11*A*ell**2*rho/210, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell**3*rho/105, 0, 0],
-                         [0, 0, 0, 0, A*rho*w**2/120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -A*ell*rho*w**2/360, 0, 0, 0, 0, 0, -A*rho*w**2/120, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, A*ell*rho*w**2/90, 0],
-                         [0, 0, 0, 0, 0, A*rho*(-26*ell**2 + 7*w**2)/840, 0, 13*A*ell**2*rho/420, 0, -A*ell*rho*w**2/144, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, -A*ell*rho*(18*ell**2 + 7*w**2)/2520, 0, 0, 0, 0, 0, -A*rho*(44*ell**2 + 7*w**2)/840, 0, 11*A*ell**2*rho/210, 0, A*ell*rho*w**2/144, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, A*ell*rho*(6*ell**2 + 7*w**2)/630]],
+                         [0, 0, 0, 0, Iz*rho/10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -Iz*ell*rho/30, 0, 0, 0, 0, 0, -Iz*rho/10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2*Iz*ell*rho/15, 0],
+                         [0, 0, 0, 0, 0, rho*(-13*A*ell**2 + 42*Iz)/420, 0, 13*A*ell**2*rho/420, 0, -Iz*ell*rho/12, 0, 0, 0, -A*ell**3*rho/140, 0, 0, 0, -ell*rho*(3*A*ell**2 + 14*Iz)/420, 0, 0, 0, 0, 0, -rho*(11*A*ell**2 + 21*Iz)/210, 0, 11*A*ell**2*rho/210, 0, Iz*ell*rho/12, 0, 0, 0, A*ell**3*rho/105, 0, 0, 0, ell*rho*(A*ell**2 + 14*Iz)/105]],
                         dtype=float))
 
 def Bt(self, j):
@@ -518,6 +507,9 @@ def FFRF_Output(self):
             ell = self.ell[i]
             rho = self.rho[i]
             A = self.A[i]
+            Ix = self.Ix[i]
+            Iy = self.Iy[i]
+            Iz = self.Iz[i]
 
             self.idxSkew[i] = np.r_[self.nNDoF*(self.El[i, 0]-1)*self.nNPoC:(self.nNDoF*(self.El[i, 0]-1)+self.nNDoF)*self.nNPoC,
                                     self.nNDoF*(self.El[i, 1]-1)*self.nNPoC:(self.nNDoF*(self.El[i, 1]-1)+self.nNDoF)*self.nNPoC].tolist()
@@ -526,7 +518,7 @@ def FFRF_Output(self):
             x1 = self.Nodes[self.El[i, 0]-1, 0]
             y1 = self.Nodes[self.El[i, 0]-1, 1]
             z1 = self.Nodes[self.El[i, 0]-1, 2]
-            if (self.shapeFunType[0].lower() == "e" or self.shapeFunType[0].lower() == "t"):
+            if (self.nodalInertia == False or self.nodalInertia[0].lower() == "t"):
                 x2 = self.Nodes[self.El[i, 1]-1, 0]
                 y2 = self.Nodes[self.El[i, 1]-1, 1]
                 z2 = self.Nodes[self.El[i, 1]-1, 2]
@@ -540,7 +532,7 @@ def FFRF_Output(self):
                                                [-x1*z1/3 - x1*z2/6 - x2*z1/6 - x2*z2/3,
                                                 -y1*z1/3 - y1*z2/6 - y2*z1/6 - y2*z2/3,
                                                 x1**2/3 + x1*x2/3 + x2**2/3 + y1**2/3 + y1*y2/3 + y2**2/3]])
-            elif self.shapeFunType[0].lower() == "i":
+            elif self.nodalInertia[0].lower() == "a":
                 T11 = self.TX[i][0, 0]
                 T21 = self.TX[i][1, 0]
                 T31 = self.TX[i][2, 0]
@@ -550,21 +542,16 @@ def FFRF_Output(self):
                 T13 = self.TX[i][0, 2]
                 T23 = self.TX[i][1, 2]
                 T33 = self.TX[i][2, 2]
-                # for rectangular cross sections only!!!
-                for ii in range(len(self.Properties)):
-                    if self.PropID[i] == self.Properties[ii][0]:
-                        h = self.Properties[ii][5]
-                        w = self.Properties[ii][6]
                 self.Xo += np.array([A*ell*rho*(T11*ell + 2*x1)/2, A*ell*rho*(T21*ell + 2*y1)/2, A*ell*rho*(T31*ell + 2*z1)/2])
-                self.Θo += np.array([[A*ell*rho*(4*T21**2*ell**2 + 12*T21*ell*y1 + T22**2*w**2 + 4*T31**2*ell**2 + 12*T31*ell*z1 + T32**2*w**2 + h**2*(T23**2 + T33**2) + 12*y1**2 + 12*z1**2)/12,
-                                      A*ell*rho*(-4*T11*T21*ell**2 - 6*T11*ell*y1 - T12*T22*w**2 - T13*T23*h**2 - 6*T21*ell*x1 - 12*x1*y1)/12,
-                                      A*ell*rho*(-4*T11*T31*ell**2 - 6*T11*ell*z1 - T12*T32*w**2 - T13*T33*h**2 - 6*T31*ell*x1 - 12*x1*z1)/12],
-                                     [A*ell*rho*(-4*T11*T21*ell**2 - 6*T11*ell*y1 - T12*T22*w**2 - T13*T23*h**2 - 6*T21*ell*x1 - 12*x1*y1)/12,
-                                      A*ell*rho*(4*T11**2*ell**2 + 12*T11*ell*x1 + T12**2*w**2 + 4*T31**2*ell**2 + 12*T31*ell*z1 + T32**2*w**2 + h**2*(T13**2 + T33**2) + 12*x1**2 + 12*z1**2)/12,
-                                      A*ell*rho*(-4*T21*T31*ell**2 - 6*T21*ell*z1 - T22*T32*w**2 - T23*T33*h**2 - 6*T31*ell*y1 - 12*y1*z1)/12],
-                                     [A*ell*rho*(-4*T11*T31*ell**2 - 6*T11*ell*z1 - T12*T32*w**2 - T13*T33*h**2 - 6*T31*ell*x1 - 12*x1*z1)/12,
-                                      A*ell*rho*(-4*T21*T31*ell**2 - 6*T21*ell*z1 - T22*T32*w**2 - T23*T33*h**2 - 6*T31*ell*y1 - 12*y1*z1)/12,
-                                      A*ell*rho*(4*T11**2*ell**2 + 12*T11*ell*x1 + T12**2*w**2 + 4*T21**2*ell**2 + 12*T21*ell*y1 + T22**2*w**2 + h**2*(T13**2 + T23**2) + 12*x1**2 + 12*y1**2)/12]])
+                self.Θo += np.array([[ell*rho*(A*(T21**2*ell**2 + 3*T21*ell*y1 + T31**2*ell**2 + 3*T31*ell*z1 + 3*y1**2 + 3*z1**2) + 3*Iy*(T23**2 + T33**2) + 3*Iz*T22**2 + 3*Iz*T32**2)/3,
+                                      -ell*rho*(A*(2*T11*T21*ell**2 + 3*T11*ell*y1 + 3*T21*ell*x1 + 6*x1*y1) + 6*Iy*T13*T23 + 6*Iz*T12*T22)/6
+                                      -ell*rho*(A*(2*T11*T31*ell**2 + 3*T11*ell*z1 + 3*T31*ell*x1 + 6*x1*z1) + 6*Iy*T13*T33 + 6*Iz*T12*T32)/6],
+                                     [-ell*rho*(A*(2*T11*T21*ell**2 + 3*T11*ell*y1 + 3*T21*ell*x1 + 6*x1*y1) + 6*Iy*T13*T23 + 6*Iz*T12*T22)/6,
+                                      ell*rho*(A*(T11**2*ell**2 + 3*T11*ell*x1 + T31**2*ell**2 + 3*T31*ell*z1 + 3*x1**2 + 3*z1**2) + 3*Iy*(T13**2 + T33**2) + 3*Iz*T12**2 + 3*Iz*T32**2)/3,
+                                      -ell*rho*(A*(2*T21*T31*ell**2 + 3*T21*ell*z1 + 3*T31*ell*y1 + 6*y1*z1) + 6*Iy*T23*T33 + 6*Iz*T22*T32)/6],
+                                     [-ell*rho*(A*(2*T11*T31*ell**2 + 3*T11*ell*z1 + 3*T31*ell*x1 + 6*x1*z1) + 6*Iy*T13*T33 + 6*Iz*T12*T32)/6,
+                                      -ell*rho*(A*(2*T21*T31*ell**2 + 3*T21*ell*z1 + 3*T31*ell*y1 + 6*y1*z1) + 6*Iy*T23*T33 + 6*Iz*T22*T32)/6,
+                                      ell*rho*(A*(T11**2*ell**2 + 3*T11*ell*x1 + T21**2*ell**2 + 3*T21*ell*y1 + 3*x1**2 + 3*y1**2) + 3*Iy*(T13**2 + T23**2) + 3*Iz*T12**2 + 3*Iz*T22**2)/3]])
         self.Xo /= self.mass
         self.kff = self.Assemble(self.StiffMatElem)
         self.mff = self.Assemble(self.MassMatElem)
