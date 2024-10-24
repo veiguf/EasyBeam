@@ -33,9 +33,9 @@ x, y, z = sym.symbols("x y z")
 w, h, ell = sym.symbols("w h ell")
 ρ = sym.Symbol("rho")
 A = sym.Symbol("A")
-Ix = sym.Symbol("I_x")
-Iy = sym.Symbol("I_y")
-Iz = sym.Symbol("I_z")
+Ix = sym.Symbol("Ix")
+Iy = sym.Symbol("Iy")
+Iz = sym.Symbol("Iz")
 
 x1, y1, z1 = sym.symbols('x1 y1 z1')
 # x2, y2, z2 = sym.symbols('x2 y2 z2')
@@ -84,7 +84,7 @@ S = sym.Matrix([[                  1-ξ,                   0,                   
 
 SS = SkewOfMatrix(S)
 
-printMatrices = False
+printMatrices = True
 
 m = sym.integrate(ρ, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))               # scalar
 m = m.simplify()
@@ -99,6 +99,11 @@ if printMatrices:
 Θo = sym.integrate(ρ*uOs.T*uOs, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))      # 3x3
 Θo = Θo.simplify()
 Θo = Θo.subs(w*h, A)
+Θo = Θo.subs(h**2, 12*Iy/A)
+Θo = Θo.subs(w**2, 12*Iz/A)
+Θo = Θo.simplify()
+Θo = Θo.subs(Iy+Iz, Ix)
+
 if printMatrices:
     print("\n Θo \n", Θo)
 
@@ -117,12 +122,20 @@ if printMatrices:
 IuSψ = sym.integrate(ρ*uOs.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 3x12
 IuSψ = IuSψ.simplify()
 IuSψ = IuSψ.subs(w*h, A)
+IuSψ = IuSψ.subs(h**2, 12*Iy/A)
+IuSψ = IuSψ.subs(w**2, 12*Iz/A)
+IuSψ = IuSψ.simplify()
+IuSψ = IuSψ.subs(Iy+Iz, Ix)
 if printMatrices:
     print("\n IuSψ.T \n", IuSψ.T)
 
 IuSψS = sym.integrate(ρ*uOs.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 3x36
 IuSψS = IuSψS.simplify()
 IuSψS = IuSψS.subs(w*h, A)
+IuSψS = IuSψS.subs(h**2, 12*Iy/A)
+IuSψS = IuSψS.subs(w**2, 12*Iz/A)
+IuSψS = IuSψS.simplify()
+IuSψS = IuSψS.subs(Iy+Iz, Ix)
 if printMatrices:
     print("\n IuSψS.T \n", IuSψS.T)
 
@@ -145,12 +158,20 @@ if printMatrices:
 IψSψ = sym.integrate(ρ*SS.T*S, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))     # 36x12
 IψSψ = IψSψ.simplify()
 IψSψ = IψSψ.subs(w*h, A)
+IψSψ = IψSψ.subs(h**2, 12*Iy/A)
+IψSψ = IψSψ.subs(w**2, 12*Iz/A)
+IψSψ = IψSψ.simplify()
+IψSψ = IψSψ.subs(Iy+Iz, Ix)
 if printMatrices:
     print("\n IψSψ \n", IψSψ)
 
 IψSψS = sym.integrate(ρ*SS.T*SS, (x, 0, ell), (y, -w/2, w/2), (z, -h/2, h/2))   # 36x36
 IψSψS = IψSψS.simplify()
 IψSψS = IψSψS.subs(w*h, A)
+IψSψS = IψSψS.subs(h**2, 12*Iy/A)
+IψSψS = IψSψS.subs(w**2, 12*Iz/A)
+IψSψS = IψSψS.simplify()
+IψSψS = IψSψS.subs(Iy+Iz, Ix)
 if printMatrices:
     print("\n IψSψS \n", IψSψS)
 

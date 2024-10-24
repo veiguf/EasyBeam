@@ -13,7 +13,8 @@ class Beam:
     nSeg = 10
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
-    shapeFunType = "excludingCrossSectionInformation"  # "includingCrossSectionInformation"
+    nodalInertia = "all"  # False, "torsion", "all"
+    alphaLump = 0  # -1/12, 0, 1/78
     lineStyleUndeformed = "-"
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
     plotting = True
