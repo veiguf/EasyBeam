@@ -544,7 +544,7 @@ def FFRF_Output(self):
                 T33 = self.TX[i][2, 2]
                 self.Xo += np.array([A*ell*rho*(T11*ell + 2*x1)/2, A*ell*rho*(T21*ell + 2*y1)/2, A*ell*rho*(T31*ell + 2*z1)/2])
                 self.Θo += np.array([[ell*rho*(A*(T21**2*ell**2 + 3*T21*ell*y1 + T31**2*ell**2 + 3*T31*ell*z1 + 3*y1**2 + 3*z1**2) + 3*Iy*(T23**2 + T33**2) + 3*Iz*T22**2 + 3*Iz*T32**2)/3,
-                                      -ell*rho*(A*(2*T11*T21*ell**2 + 3*T11*ell*y1 + 3*T21*ell*x1 + 6*x1*y1) + 6*Iy*T13*T23 + 6*Iz*T12*T22)/6
+                                      -ell*rho*(A*(2*T11*T21*ell**2 + 3*T11*ell*y1 + 3*T21*ell*x1 + 6*x1*y1) + 6*Iy*T13*T23 + 6*Iz*T12*T22)/6,
                                       -ell*rho*(A*(2*T11*T31*ell**2 + 3*T11*ell*z1 + 3*T31*ell*x1 + 6*x1*z1) + 6*Iy*T13*T33 + 6*Iz*T12*T32)/6],
                                      [-ell*rho*(A*(2*T11*T21*ell**2 + 3*T11*ell*y1 + 3*T21*ell*x1 + 6*x1*y1) + 6*Iy*T13*T23 + 6*Iz*T12*T22)/6,
                                       ell*rho*(A*(T11**2*ell**2 + 3*T11*ell*x1 + T31**2*ell**2 + 3*T31*ell*z1 + 3*x1**2 + 3*z1**2) + 3*Iy*(T13**2 + T33**2) + 3*Iz*T12**2 + 3*Iz*T32**2)/3,

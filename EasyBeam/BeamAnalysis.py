@@ -445,10 +445,14 @@ class Beam:
             try:
                 lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF, :][:, self.DoF],
                                                     self.m[self.DoF, :][:, self.DoF],
-                                                    eigvals=(0, nEig-1))
+                                                    subset_by_index=(0, nEig-1),
+                                                    #eigvals=(0, nEig-1)
+                                                    )
                 self.EigenvalSolver = "scipy.linalg.eigh"
             except:
                 eigSolver="eig"
+                print("eigensolver scipy.linalg.eigh failed")
+                print("switching to scipy.linalg.eig")
         if eigSolver=="eig":
             lambdaComplex, self.Phi = spla.eig(self.k[self.DoF, :][:, self.DoF],
                                                self.m[self.DoF, :][:, self.DoF])
@@ -466,8 +470,14 @@ class Beam:
         self.SensitivityAnalyzed = True
         self.omegaNabla = np.zeros((self.nEig, self.nx))
         self.f0Nabla = np.zeros((self.nEig, self.nx))
+
         for i in range(self.nEig):
-            self.omegaNabla[i, :] = 1/(2*self.omega[i])*self.Phi[:, i]@(self.kNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]-self.omega[i]**2*self.mNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]).transpose(2,0,1)@self.Phi[:, i]
+            if self.EigenvalSolver=="scipy.linalg.eigh":
+                cSolver = 1
+            else:
+                cSolver = 1/(self.Phi[:, i].T@self.m[self.DoF, :][:, self.DoF]@self.Phi[:, i])
+            self.omegaNabla[i, :] = cSolver*1/(2*self.omega[i])*self.Phi[:, i]@(self.kNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]-self.omega[i]**2*self.mNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]).transpose(2,0,1)@self.Phi[:, i]
+            #self.omegaNabla[i, :] = 1/(2*self.omega[i])*self.Phi[:, i]@(self.kNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]-self.omega[i]**2*self.mNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]).transpose(2,0,1)@self.Phi[:, i]
             self.f0Nabla[i] = self.omegaNabla[i]/2/np.pi
 
 
