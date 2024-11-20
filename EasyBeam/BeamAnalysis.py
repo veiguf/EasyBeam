@@ -443,8 +443,8 @@ class Beam:
                 self.m[MassDoF[5], MassDoF[5]] += addNodalMass3D[iMass][6]
         if eigSolver=="eigh":
             try:
-                lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF, :][:, self.DoF],
-                                                    self.m[self.DoF, :][:, self.DoF],
+                lambdaComplex, self.Phi = spla.eigh(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                                    self.m[self.DoF_DL, :][:, self.DoF_DL],
                                                     subset_by_index=(0, nEig-1),
                                                     #eigvals=(0, nEig-1)
                                                     )
@@ -454,8 +454,8 @@ class Beam:
                 print("eigensolver scipy.linalg.eigh failed")
                 print("switching to scipy.linalg.eig")
         if eigSolver=="eig":
-            lambdaComplex, self.Phi = spla.eig(self.k[self.DoF, :][:, self.DoF],
-                                               self.m[self.DoF, :][:, self.DoF])
+            lambdaComplex, self.Phi = spla.eig(self.k[self.DoF_DL, :][:, self.DoF_DL],
+                                               self.m[self.DoF_DL, :][:, self.DoF_DL])
             self.EigenvalSolver = "scipy.linalg.eig"
         self.lambdaR = abs(lambdaComplex.real)
         iSort = self.lambdaR.real.argsort()
@@ -475,7 +475,7 @@ class Beam:
             if self.EigenvalSolver=="scipy.linalg.eigh":
                 cSolver = 1
             else:
-                cSolver = 1/(self.Phi[:, i].T@self.m[self.DoF, :][:, self.DoF]@self.Phi[:, i])
+                cSolver = 1/(self.Phi[:, i].T@self.m[self.DoF_DL, :][:, self.DoF_DL]@self.Phi[:, i])
             self.omegaNabla[i, :] = cSolver*1/(2*self.omega[i])*self.Phi[:, i]@(self.kNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]-self.omega[i]**2*self.mNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]).transpose(2,0,1)@self.Phi[:, i]
             #self.omegaNabla[i, :] = 1/(2*self.omega[i])*self.Phi[:, i]@(self.kNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]-self.omega[i]**2*self.mNabla[self.DoF_DL, :, :][:, self.DoF_DL, :]).transpose(2,0,1)@self.Phi[:, i]
             self.f0Nabla[i] = self.omegaNabla[i]/2/np.pi
@@ -558,16 +558,22 @@ if __name__ == '__main__':
     Test = Model()
     # Test.PlotMesh(NodeNumber=True, ElementNumber=True, Loads=True, BC=True, FontMag=2)
 
+    # Primary analysis
     Test.StaticAnalysis()
     Test.ComputeStress()
-    # Test.PlotDisplacement('mag', scale=20)
-    # Test.PlotStress('max', scale=20)
+    Test.EigenvalueAnalysis(nEig=3)
+    
+        
+    # Plotting
+    Test.PlotDisplacement('mag', scale=20)
+    Test.PlotStress('max', scale=20)   
+    Test.PlotMode(scale=0.1)
 
+    
+    # Sensitivity analysis
     Test.SensitivityAnalysis()
     Test.ComputeStressSensitivity()
-
-    # Test.EigenvalueAnalysis(nEig=len(Test.DoF))
-    # Test.PlotMode(scale=0.1)
+    Test.EigenvalueSensitivity()
 
     t1 = time.time()
 
