@@ -144,14 +144,14 @@ def _plotting3D(self, val, disp, title, colormap, save, valName, fileType):
 
 
 def PlotStress(
-    self, points='all', stress='all', scale=1, save=False, figType='svg'
+    self, stress='all', points='all', scale=1, save=False, figType='svg'
 ):
     if not self.ComputedStress:
         self.ComputeStress()
     self.rS = self.r0S + self.uS * scale
 
     if points == 'all':  # points should be "all" or a list of section points
-        points = np.arange(0, self.nSec, 1).tolist()
+        pointList = np.arange(0, self.nSec, 1).tolist()
     if self.nNDoF == 3:
         position = ['neutral fiber', 'upper fiber', 'lower fiber']
         prefix = [
@@ -205,7 +205,7 @@ def PlotStress(
             'Stress' + stress.title(),
             figType,
         )
-    for i in points:
+    for i in pointList:
         if stress.lower() in ['all', 'equivalent']:
             self._plotting(
                 self.sigmaEqv[:, :, i],
@@ -362,7 +362,7 @@ def PlotMode(self, scale=1, save=False, figType='svg', extraName='', modes=False
     if not modes:
         modes = range(len(self.omega))
     for ii in modes:
-        Phii[self.DoF] = self.Phi[:, ii]
+        Phii[self.DoF_DL] = self.Phi[:, ii]
         uE_Phi = np.zeros([self.nEl, 2 * self.nNDoF])
         uS_Phi = np.zeros([self.nEl, self.nNPoC, self.nSeg + 1])
         for i in range(self.nEl):
@@ -869,6 +869,6 @@ def colorline(
 
 
 def make_segments(x, y):
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+    pointList = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([pointList[:-1], pointList[1:]], axis=1)
     return segments
