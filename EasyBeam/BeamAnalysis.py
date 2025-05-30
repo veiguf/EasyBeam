@@ -14,6 +14,7 @@ class Beam:
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
     nodalInertia = "all"  # False, "torsion", "all"
+    deadLoad = False  # selfweight
     alphaLump = 0  # -1/12, 0, 1/78
     lineStyleUndeformed = "-"
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
@@ -77,7 +78,6 @@ class Beam:
                 if (isinstance(self.Load[i][1][ii], int) or
                     isinstance(self.Load[i][1][ii], float)):
                     self.F[self.nNDoF*(self.Load[i][0]-1)+ii] = self.Load[i][1][ii]
-
         self.rho = np.zeros([self.nEl])
         self.E = np.zeros([self.nEl])
         self.nu = np.zeros([self.nEl])
@@ -285,6 +285,10 @@ class Beam:
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
+        if self.deadLoad:
+            self.m = self.Assemble(self.MassMatElem)
+            self.FDead = self.m@np.stack([self.aGravity]*self.nN,axis=0).reshape(self.nN*self.nNDoF,)
+            self.F += self.FDead
         self.u[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
                                               self.F[self.DoF_DL]-
                                               self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL])
@@ -491,6 +495,7 @@ class Beam2D(Beam):
     nNPoC = 2   # number of nodal position coordinates
     nSVal = 2   # number of strain/stress values
     nSec = 3   # number of section points (integration points in the section)
+    aGravity = np.array([[0, -9810, 0]]).T   #hardcoded in mm/s²
 
 class Beam3D(Beam):
     """
@@ -504,6 +509,7 @@ class Beam3D(Beam):
     nNPoC = 3   # number of nodal position coordinates
     nSVal = 4   # number of strain/stress values
     nSec = 9   # number of section points (integration points in the section)
+    aGravity = np.array([[0, 0, -9810, 0, 0, 0]]).T   #hardcoded in mm/s²
 
 class BeamFFRF2D(Beam2D):
     from EasyBeam.BeamFFRF2D import (StfElem, SrfElem, FFRF_Output,

@@ -16,6 +16,8 @@ nu = 0.3
 # Initialisiern des Problems
 Cantilever = Beam2D()
 
+Cantilever.deadLoad = True
+
 # Setze Elementenbeschreibung
 Cantilever.stiffMatType = "Euler-Bernoulli"  # Euler-Bernoulli or Timoshenko-Ehrenfest
 Cantilever.massMatType = "consistent"        # lumped or consistent
@@ -56,11 +58,21 @@ print('Eigenvalue solver:', Cantilever.EigenvalSolver)
 
 # Analytical values, continuous beam theory for eigenfrequencies
 print("Analytical results")
-print("maximum stress [MPa]:")
+
+print("maximum stress due to F [MPa]:")
 sigmaMax = np.abs(F*l/I*h/2)
 print(sigmaMax)
-print("maximum displacement [mm]:")
+
+print("maximum displacement due to F [mm]:")
 wMax = F*l**3/(3*E*I)
+print(wMax)
+
+print("maximum stress due to deadLoad [MPa]:")
+sigmaMax = np.abs((rho*9810*A)*l**2*h/(4*I))
+print(sigmaMax)
+
+print("maximum displacement due to deadLoad [mm]:")
+wMax = (rho*9810*A)*l**4/(8*E*I)
 print(wMax)
 
 print("first three bending modes [Hz]:")

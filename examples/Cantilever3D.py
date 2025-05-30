@@ -14,7 +14,10 @@ class Model(Beam3D):
     nu_x = 0.29
 
     DesVar = ["h_x", "b_x"]
+
     def __init__(self):
+
+        self.deadLoad = True
 
         self.nEl = 5
         self.nSeg = 20
@@ -72,10 +75,14 @@ Cantilever.PlotMode(scale=5)
 # Analytical values, continuous beam theory for eigenfrequencies
 print()
 print("Analytical results")
-sigmaMax = np.abs(Cantilever.F_x*Cantilever.l_x/Cantilever.Iy[0]*Cantilever.Sec[0, 3, 1])
-wMax = Cantilever.F_x*Cantilever.l_x**3/(3*Cantilever.E[0]*Cantilever.Iy[0])
-print("maximum stress [MPa]:", sigmaMax)
-print("maximum displacement [mm]:", wMax)
+sigmaMaxF = np.abs(Cantilever.F_x*Cantilever.l_x/Cantilever.Iy[0]*Cantilever.Sec[0, 3, 1])
+wMaxF = Cantilever.F_x*Cantilever.l_x**3/(3*Cantilever.E[0]*Cantilever.Iy[0])
+print("maximum stress due to F [MPa]:", sigmaMaxF)
+print("maximum displacement due to F [mm]:", wMaxF)
+sigmaMaxDL = np.abs((Cantilever.rho_x*9810*Cantilever.b_x*Cantilever.h_x)*Cantilever.l_x**2*Cantilever.h_x/(4*Cantilever.Iy[0]))
+wMaxDL = (Cantilever.rho_x*9810*Cantilever.b_x*Cantilever.h_x)*Cantilever.l_x**4/(8*Cantilever.E[0]*Cantilever.Iy[0])
+print("maximum stress due to deadLoad [MPa]:", sigmaMaxDL)
+print("maximum displacement due to deadLoad [mm]:", wMaxDL)
 
 # print("first three bending modes in z [Hz]:")
 fBz = np.zeros([3])
