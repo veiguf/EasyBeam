@@ -14,7 +14,7 @@ class Beam:
     massMatType = "consistent"
     stiffMatType = "Euler-Bernoulli"
     nodalInertia = "all"  # False, "torsion", "all"
-    deadLoad = False  # selfweight
+    selfload = False
     alphaLump = 0  # -1/12, 0, 1/78
     lineStyleUndeformed = "-"
     colormap = "coolwarm" # "RdBu" #"coolwarm_r" #"Blues"
@@ -285,13 +285,18 @@ class Beam:
         if not self.Initialized:
             self.Initialize()
         self.k = self.Assemble(self.StiffMatElem)
-        if self.deadLoad:
+        if self.selfload:
             self.m = self.Assemble(self.MassMatElem)
-            self.FDead = self.m@np.stack([self.aGravity]*self.nN,axis=0).reshape(self.nN*self.nNDoF,)
-            self.F += self.FDead
+            self.ag = np.stack([self.aGravity]*self.nN,axis=0).reshape(self.nN*self.nNDoF,)
+            self.FSelf = self.m@self.ag
+        else:
+            self.FSelf = np.zeros_like(self.F)
+            #self.F += self.FSelf
         self.u[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
                                               self.F[self.DoF_DL]-
-                                              self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL])
+                                              self.k[self.DoF_DL, :][:, self.DL]@self.u[self.DL]+
+                                              + self.FSelf[self.DoF_DL])
+
         self.F[self.BC_DL] = self.k[self.BC_DL, :][:, self.DoF]@self.u[self.DoF]
         self.r = self.r0+self.u
 
@@ -301,8 +306,14 @@ class Beam:
         self.SensitivityAnalyzed = True
         self.uNabla = np.zeros((len(self.u), np.size(self.DesVar)))
         FPseudo = np.zeros((len(self.F), self.nx))
+        if self.selfload:
+            self.FSelfNabla = np.zeros([self.nNDoF*self.nN, self.nx])
         for i in range(self.nx):
-            FPseudo[:, i] = self.FNabla[:, i]-self.kNabla[:, :, i]@self.u
+            if self.selfload:
+                self.FSelfNabla[:, i] = self.mNabla[:, :, i]@self.ag
+                FPseudo[:, i] = self.FNabla[:, i]-self.kNabla[:, :, i]@self.u+self.FSelfNabla[:, i]
+            else:
+                FPseudo[:, i] = self.FNabla[:, i]-self.kNabla[:, :, i]@self.u
         self.uNabla[self.DoF_DL] = np.linalg.solve(self.k[self.DoF_DL, :][:, self.DoF_DL],
                                                    FPseudo[self.DoF_DL, :])
 
